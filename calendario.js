@@ -1,7 +1,3 @@
-// ═══════════════════════════════════════════
-// Calendário fiscal + obrigações
-// ═══════════════════════════════════════════
-
 document.addEventListener('click', e => {
   const panel = document.getElementById('notifPanel');
   const sino = document.getElementById('sinoBell');
@@ -750,4 +746,3 @@ function toggleCheckItem(demandaId, idx, total) {
   const label = document.querySelector(`label[for="cl_${idx}"]`);
   if (label) label.style.textDecoration = concl.includes(idx)?'line-through':'none';
 }
-
