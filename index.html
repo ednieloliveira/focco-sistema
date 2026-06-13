@@ -2996,19 +2996,43 @@ async function loadCaixa(){
 
 
 // ── ABRIR MODAL DE NOVA DEMANDA ───────────────────────────────────────────────
+// Icones modernos por departamento
+const DEP_ICONS = {
+  'Escrita Fiscal':                       '📊',
+  'Departamento Pessoal':                 '👥',
+  'Contabilidade':                        '📒',
+  'Rural':                                '🌿',
+  'Legalizacao e Societario':             '⚖️',
+  'Abertura de Empresas':                 '🏢',
+  'Despachante Imobiliario':              '🏠',
+  'IRPF':                                 '🧾',
+  'Parcelamentos e Regularizacao Fiscal': '💳',
+  'Prefeitura e Alvaras':                 '🏛️',
+  'Certidoes e Documentacoes':            '📜',
+  'Atendimento ao Cliente':               '🤝',
+};
+
+function getDepIcon(dep) {
+  if (dep.icone && dep.icone.trim()) return dep.icone;
+  // Busca pelo nome sem acento
+  for (const [k, v] of Object.entries(DEP_ICONS)) {
+    if (dep.nome && dep.nome.toLowerCase().includes(k.toLowerCase().split(' ')[0])) return v;
+  }
+  return '📋';
+}
+
 function abrirNovaDemanda() {
-  // Limpar campos
   ['ndDesc','ndPrazo'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   ['ndCli','ndDep','ndCat','ndTipo','ndResp','ndPrio'].forEach(id=>{
     const el=document.getElementById(id);
     if(el){ el.innerHTML='<option value="">Selecione...</option>'; }
   });
   const prio=document.getElementById('ndPrio');
-  if(prio) prio.innerHTML='<option value="normal">Normal</option><option value="baixa">Baixa</option><option value="alta">Alta</option><option value="urgente">Urgente</option>';
+  if(prio) prio.innerHTML='<option value="normal">⚪ Normal</option><option value="baixa">🔵 Baixa</option><option value="alta">🟡 Alta</option><option value="urgente">🔴 Urgente</option>';
   const prev=document.getElementById('ndPrevWrap');
   if(prev) prev.style.display='none';
 
-  // Popular clientes
+  // Popular clientes do cache
   const cliSel=document.getElementById('ndCli');
   if(cliSel){
     cliSel.innerHTML='<option value="">Selecione o cliente...</option>';
@@ -3016,19 +3040,19 @@ function abrirNovaDemanda() {
       .forEach(c=>cliSel.innerHTML+=`<option value="${c.id}">${c.nome}</option>`);
   }
 
-  // Popular departamentos
+  // Popular departamentos com icones modernos
   const depSel=document.getElementById('ndDep');
   if(depSel){
     depSel.innerHTML='<option value="">Selecione o departamento...</option>';
     dbGet('departamentos').filter(d=>d.ativo!==false).sort((a,b)=>(a.ordem||0)-(b.ordem||0))
-      .forEach(d=>depSel.innerHTML+=`<option value="${d.id}">${d.icone||''} ${d.nome}</option>`);
+      .forEach(d=>depSel.innerHTML+=`<option value="${d.id}">${getDepIcon(d)} ${d.nome}</option>`);
   }
 
-  // Popular responsáveis
+  // Popular responsaveis
   const respSel=document.getElementById('ndResp');
   if(respSel){
-    respSel.innerHTML='<option value="">Selecione o responsável...</option>';
-    dbGet('profiles').filter(p=>p.ativo!==false)
+    respSel.innerHTML='<option value="">Selecione o responsavel...</option>';
+    dbGet('profiles').filter(p=>p.ativo!==false).sort((a,b)=>a.nome.localeCompare(b.nome))
       .forEach(p=>respSel.innerHTML+=`<option value="${p.id}" ${p.id===U?.id?'selected':''}>${p.nome}</option>`);
   }
 
