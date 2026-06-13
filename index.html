@@ -3229,56 +3229,36 @@ function mostrarErroDet(titulo, msg) {
 
 async function renderDet(){
   const id = demId;
+  const todosProf = dbGet('profiles');
+  const todosDept = dbGet('departamentos');
+  const todasCat  = dbGet('categorias');
+  const todosTipo = dbGet('tipos_demanda');
+  const todasCli  = dbGet('clientes');
 
-  // ── Leitura direta do localStorage — sem depender do motor de query ──────
-  const todasDem   = dbGet('demandas');
-  const todasCli   = dbGet('clientes');
-  const todosProf  = dbGet('profiles');
-  const todosDept  = dbGet('departamentos');
-  const todasCat   = dbGet('categorias');
-  const todosTipo  = dbGet('tipos_demanda');
-  const todosTram  = dbGet('tramites');
-  const todasAcoes = dbGet('proximas_acoes');
-  const todasPend  = dbGet('pendencias');
-  const todasChat  = dbGet('chat_mensagens');
+  // Buscar demanda e dados relacionados do Supabase
+  const [{data:d}, {data:trDados}, {data:prDados}, {data:peDados}] = await Promise.all([
+    sbRest('demandas').select('*').eq('id',id).single(),
+    sbRest('tramites').select('*').eq('demanda_id',id).order('created_at',{ascending:false}),
+    sbRest('proximas_acoes').select('*').eq('demanda_id',id).eq('concluida',false).order('data_prevista',{ascending:true}),
+    sbRest('pendencias').select('*').eq('demanda_id',id).eq('resolvida',false),
+  ]);
 
-  const d = todasDem.find(x=>x.id===id);
-  if(!d){ mostrarErroDet('Demanda não encontrada','O registro pode ter sido removido.'); return; }
+  if(!d){ mostrarErroDet('Demanda nao encontrada','O registro pode ter sido removido.'); return; }
 
-  // Enriquecer com joins manuais
-  d.clientes     = todasCli.find(c=>c.id===d.cliente_id)||null;
-  d.profiles     = todosProf.find(p=>p.id===d.responsavel_atual_id)||null;
-  d.departamentos= todosDept.find(x=>x.id===(d.departamento_atual_id||d.departamento_id))||null;
-  d.categorias   = todasCat.find(c=>c.id===d.categoria_id)||null;
-  d.tipos_demanda= todosTipo.find(t=>t.id===d.tipo_demanda_id)||null;
+  // Enriquecer com cache local
+  d.clientes      = todasCli.find(c=>c.id===d.cliente_id)||null;
+  d.profiles      = todosProf.find(p=>p.id===d.responsavel_atual_id)||null;
+  d.departamentos = todosDept.find(x=>x.id===(d.departamento_atual_id||d.departamento_id))||null;
+  d.categorias    = todasCat.find(c=>c.id===d.categoria_id)||null;
+  d.tipos_demanda = todosTipo.find(t=>t.id===d.tipo_demanda_id)||null;
 
-  // Trâmites
-  const trDados = todosTram
-    .filter(t=>t.demanda_id===id)
-    .sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))
-    .map(t=>({...t, profiles: todosProf.find(p=>p.id===t.usuario_id)||null}));
+  const trEnrich = (trDados||[]).map(t=>({...t, profiles: todosProf.find(p=>p.id===t.usuario_id)||null}));
+  const prEnrich = (prDados||[]).map(t=>({...t, profiles: todosProf.find(p=>p.id===t.responsavel_id)||null}));
+  const peEnrich = (peDados||[]).map(t=>({...t, profiles: todosProf.find(p=>p.id===t.responsavel_id)||null}));
 
-  // Próximas ações (não concluídas)
-  const prDados = todasAcoes
-    .filter(t=>t.demanda_id===id && !t.concluida)
-    .sort((a,b)=>new Date(a.data_prevista)-new Date(b.data_prevista))
-    .map(t=>({...t, profiles: todosProf.find(p=>p.id===t.responsavel_id)||null}));
-
-  // Pendências (não resolvidas)
-  const peDados = todasPend
-    .filter(t=>t.demanda_id===id && !t.resolvida)
-    .map(t=>({...t, profiles: todosProf.find(p=>p.id===t.responsavel_id)||null}));
-
-  // Chat
-  const chDados = todasChat
-    .filter(t=>t.demanda_id===id)
-    .sort((a,b)=>new Date(a.created_at)-new Date(b.created_at))
-    .map(t=>({...t, profiles: todosProf.find(p=>p.id===t.usuario_id)||null}));
-
-  const tr = { data: trDados };
-  const pr = { data: prDados };
-  const pe = { data: peDados };
-  const ch = { data: chDados };
+  const tr = { data: trEnrich };
+  const pr = { data: prEnrich };
+  const pe = { data: peEnrich };
 
   const hj = new Date().toISOString().split('T')[0];
   const pE = d.responsavel_atual_id===U.id || U.perfil==='gestor' || U.perfil==='supervisor';
