@@ -3127,6 +3127,9 @@ function updPref(){
 }
 
 async function salvarDem(){
+  const btnAbrir = document.querySelector('#mNovaDem .btn-p[onclick="salvarDem()"]');
+  if(btnAbrir && btnAbrir.disabled) return;
+  if(btnAbrir){ btnAbrir.disabled=true; btnAbrir.textContent='Abrindo...'; }
   const ci=document.getElementById('ndCli').value;
   const di=document.getElementById('ndDep').value;
   const cai=document.getElementById('ndCat').value;
@@ -3190,6 +3193,8 @@ async function salvarDem(){
     await loadDem();
   }catch(e){
     toast('Erro ao salvar: '+String(e.message),'err');
+    const btnAbrir2 = document.querySelector('#mNovaDem .btn-p[onclick="salvarDem()"]');
+    if(btnAbrir2){ btnAbrir2.disabled=false; btnAbrir2.textContent='Abrir Demanda'; }
     console.error('salvarDem error:',e);
   }
 }
