@@ -1,7 +1,3 @@
-// ═══════════════════════════════════════════
-// Lista demandas + Kanban
-// ═══════════════════════════════════════════
-
 // loadDem — lê TUDO do localStorage, faz joins manuais, conta abas
 async function loadDem() {
   const todas = dbGet('demandas');
