@@ -2397,22 +2397,40 @@ function sbRest(table) {
 
     insert(data) {
       const rows = Array.isArray(data) ? data : [data];
-      return fetch(base, {
+      let _single = false;
+      const promise = fetch(base, {
         method: 'POST',
         headers,
         body: JSON.stringify(rows)
       }).then(async r => {
         const text = await r.text();
         if (!r.ok) return { data: null, error: { message: text } };
-        try { const d = JSON.parse(text); return { data: Array.isArray(d) ? d : [d], error: null }; }
-        catch { return { data: [], error: null }; }
+        try { 
+          const d = JSON.parse(text); 
+          const result = Array.isArray(d) ? d : [d];
+          return { data: _single ? (result[0]||null) : result, error: null }; 
+        }
+        catch { return { data: _single ? null : [], error: null }; }
       }).catch(e => ({ data: null, error: { message: e.message } }));
+      // Support .select().single() chaining
+      promise.select = () => ({ 
+        single: () => { _single = true; return promise; },
+        then: promise.then.bind(promise)
+      });
+      promise.single = () => { _single = true; return promise; };
+      return promise;
     },
 
     update(data) {
-      return {
-        eq(col, val) {
-          return fetch(`${base}?${col}=eq.${val}`, {
+      let _filters = [];
+      const obj = {
+        eq(col, val) { _filters.push(`${col}=eq.${val}`); return obj; },
+        neq(col, val) { _filters.push(`${col}=neq.${val}`); return obj; },
+        is(col, val) { _filters.push(`${col}=is.${val}`); return obj; },
+        not(col, op, val) { _filters.push(`${col}=not.${op}.${val}`); return obj; },
+        then(resolve, reject) {
+          const qs = _filters.join('&');
+          return fetch(`${base}?${qs}`, {
             method: 'PATCH',
             headers,
             body: JSON.stringify(data)
@@ -2421,9 +2439,11 @@ function sbRest(table) {
             if (!r.ok) return { data: null, error: { message: text } };
             try { return { data: JSON.parse(text), error: null }; }
             catch { return { data: [], error: null }; }
-          }).catch(e => ({ data: null, error: { message: e.message } }));
+          }).catch(e => ({ data: null, error: { message: e.message } }))
+          .then(resolve, reject);
         }
       };
+      return obj;
     },
 
     upsert(data, opts) {
