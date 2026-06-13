@@ -2344,189 +2344,203 @@ const _rpc={
 const SUPABASE_URL = 'https://nambhrizjnhebqgfztux.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hbWJocml6am5oZWJxZ2Z6dHV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNDUzMDIsImV4cCI6MjA5NjkyMTMwMn0.AeBCJetQQugrpDAaOPrEYgHor9irmosN8EWogCtPzSo';
 
-// Cliente REST direto — substitui o SDK do Supabase
+// ================================================================
+// SUPABASE REST CLIENT — wrapper robusto via fetch direto
+// ================================================================
+const SB_URL = 'https://nambhrizjnhebqgfztux.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hbWJocml6am5oZWJxZ2Z6dHV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNDUzMDIsImV4cCI6MjA5NjkyMTMwMn0.AeBCJetQQugrpDAaOPrEYgHor9irmosN8EWogCtPzSo';
+const SB_HEADERS = {
+  'apikey': SB_KEY,
+  'Authorization': 'Bearer ' + SB_KEY,
+  'Content-Type': 'application/json',
+  'Prefer': 'return=representation'
+};
+
 function sbRest(table) {
-  const base = `${SUPABASE_URL}/rest/v1/${table}`;
-  const headers = {
-    'apikey': SUPABASE_ANON_KEY,
-    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-    'Content-Type': 'application/json',
-    'Prefer': 'return=representation'
-  };
+  const base = SB_URL + '/rest/v1/' + table;
+  
+  // State
+  let _filters = [];
+  let _select = '*';
+  let _order = null;
+  let _limit = null;
+  let _single = false;
+  let _count = false;
+  let _head = false;
 
-  let _select = '*', _filters = [], _order = null, _limit = null, _single = false, _count = false, _head = false;
+  function buildQS() {
+    const p = new URLSearchParams();
+    p.set('select', _select);
+    _filters.forEach(([k, v]) => p.append(k, v));
+    if (_order) p.set('order', _order);
+    if (_limit !== null) p.set('limit', String(_limit));
+    return p.toString();
+  }
 
-  function buildUrl() {
-    const params = new URLSearchParams();
-    params.set('select', _select);
-    _filters.forEach(f => {
-      const [k, v] = f;
-      params.append(k, v);
-    });
-    if (_order) params.set('order', _order);
-    if (_limit) params.set('limit', _limit);
-    return `${base}?${params.toString()}`;
+  function doFetch() {
+    const h = {...SB_HEADERS};
+    if (_count || _head) h['Prefer'] = 'count=exact';
+    const method = _head ? 'HEAD' : 'GET';
+    return fetch(base + '?' + buildQS(), {method, headers: h}).then(async r => {
+      if (_head) {
+        const count = parseInt((r.headers.get('content-range') || '0/0').split('/')[1] || '0');
+        return {data: null, error: null, count};
+      }
+      const text = await r.text();
+      if (!r.ok) return {data: null, error: {message: text}, count: 0};
+      let data = [];
+      try { data = JSON.parse(text); } catch(e) {}
+      if (!Array.isArray(data)) data = data ? [data] : [];
+      const count = _count ? parseInt((r.headers.get('content-range') || '0/' + data.length).split('/')[1]) : undefined;
+      if (_single) return {data: data[0] || null, error: null};
+      return {data, error: null, count};
+    }).catch(e => ({data: null, error: {message: e.message}, count: 0}));
   }
 
   const q = {
     select(s, opts) {
       _select = s || '*';
-      if (opts?.count === 'exact') _count = true;
-      if (opts?.head) _head = true;
+      if (opts && opts.count === 'exact') _count = true;
+      if (opts && opts.head) _head = true;
       return q;
     },
-    eq(col, val) { _filters.push([col, `eq.${val}`]); return q; },
-    neq(col, val) { _filters.push([col, `neq.${val}`]); return q; },
-    gt(col, val) { _filters.push([col, `gt.${val}`]); return q; },
-    gte(col, val) { _filters.push([col, `gte.${val}`]); return q; },
-    lt(col, val) { _filters.push([col, `lt.${val}`]); return q; },
-    lte(col, val) { _filters.push([col, `lte.${val}`]); return q; },
-    in(col, vals) { _filters.push([col, `in.(${vals.join(',')})`]); return q; },
+    eq(col, val)   { _filters.push([col, 'eq.' + val]); return q; },
+    neq(col, val)  { _filters.push([col, 'neq.' + val]); return q; },
+    gt(col, val)   { _filters.push([col, 'gt.' + val]); return q; },
+    gte(col, val)  { _filters.push([col, 'gte.' + val]); return q; },
+    lt(col, val)   { _filters.push([col, 'lt.' + val]); return q; },
+    lte(col, val)  { _filters.push([col, 'lte.' + val]); return q; },
+    is(col, val)   { _filters.push([col, 'is.' + val]); return q; },
+    ilike(col, val){ _filters.push([col, 'ilike.' + val]); return q; },
+    in(col, vals)  { _filters.push([col, 'in.(' + vals.join(',') + ')']); return q; },
     not(col, op, val) {
-      if (op === 'in') _filters.push([col, `not.in.(${val})`]);
-      else _filters.push([col, `not.${op}.${val}`]);
+      if (op === 'in') _filters.push([col, 'not.in.(' + val + ')']);
+      else _filters.push([col, 'not.' + op + '.' + val]);
       return q;
     },
-    is(col, val) { _filters.push([col, `is.${val}`]); return q; },
-    ilike(col, val) { _filters.push([col, `ilike.${val}`]); return q; },
-    order(col, opts) { _order = `${col}.${opts?.ascending === false ? 'desc' : 'asc'}`; return q; },
-    limit(n) { _limit = n; return q; },
-    single() { _single = true; return q; },
+    order(col, opts) {
+      _order = col + '.' + (opts && opts.ascending === false ? 'desc' : 'asc');
+      return q;
+    },
+    limit(n)      { _limit = n; return q; },
+    range(a, b)   { _limit = b - a + 1; return q; },
+    single()      { _single = true; return q; },
     maybeSingle() { _single = true; return q; },
-    range(from, to) { _limit = to - from + 1; return q; },
 
+    // INSERT
     insert(data) {
       const rows = Array.isArray(data) ? data : [data];
-      let _single = false;
-      const promise = fetch(base, {
+      let _iSingle = false;
+      
+      const doInsert = () => fetch(base, {
         method: 'POST',
-        headers,
+        headers: SB_HEADERS,
         body: JSON.stringify(rows)
       }).then(async r => {
         const text = await r.text();
-        if (!r.ok) return { data: null, error: { message: text } };
-        try { 
-          const d = JSON.parse(text); 
-          const result = Array.isArray(d) ? d : [d];
-          return { data: _single ? (result[0]||null) : result, error: null }; 
-        }
-        catch { return { data: _single ? null : [], error: null }; }
-      }).catch(e => ({ data: null, error: { message: e.message } }));
-      // Support .select().single() chaining
-      promise.select = () => ({ 
-        single: () => { _single = true; return promise; },
-        then: promise.then.bind(promise)
-      });
-      promise.single = () => { _single = true; return promise; };
-      return promise;
+        if (!r.ok) return {data: null, error: {message: text}};
+        let d = [];
+        try { d = JSON.parse(text); if (!Array.isArray(d)) d = [d]; } catch(e) {}
+        return {data: _iSingle ? (d[0] || null) : d, error: null};
+      }).catch(e => ({data: null, error: {message: e.message}}));
+
+      const p = doInsert();
+      p.select = () => {
+        const inner = {
+          single() { _iSingle = true; return p; },
+          then: (res, rej) => p.then(res, rej)
+        };
+        return inner;
+      };
+      p.single = () => { _iSingle = true; return p; };
+      return p;
     },
 
+    // UPDATE — suporta encadeamento de eq/is/not
     update(data) {
-      let _filters = [];
-      const obj = {
-        eq(col, val) { _filters.push(`${col}=eq.${val}`); return obj; },
-        neq(col, val) { _filters.push(`${col}=neq.${val}`); return obj; },
-        is(col, val) { _filters.push(`${col}=is.${val}`); return obj; },
-        not(col, op, val) { _filters.push(`${col}=not.${op}.${val}`); return obj; },
-        then(resolve, reject) {
-          const qs = _filters.join('&');
-          return fetch(`${base}?${qs}`, {
+      let _uFilters = [];
+      const u = {
+        eq(col, val)  { _uFilters.push(col + '=eq.' + val); return u; },
+        neq(col, val) { _uFilters.push(col + '=neq.' + val); return u; },
+        is(col, val)  { _uFilters.push(col + '=is.' + val); return u; },
+        not(col, op, val) { _uFilters.push(col + '=not.' + op + '.' + val); return u; },
+        in(col, vals) { _uFilters.push(col + '=in.(' + vals.join(',') + ')'); return u; },
+        then(res, rej) {
+          const qs = _uFilters.join('&');
+          return fetch(base + '?' + qs, {
             method: 'PATCH',
-            headers,
+            headers: SB_HEADERS,
             body: JSON.stringify(data)
           }).then(async r => {
             const text = await r.text();
-            if (!r.ok) return { data: null, error: { message: text } };
-            try { return { data: JSON.parse(text), error: null }; }
-            catch { return { data: [], error: null }; }
-          }).catch(e => ({ data: null, error: { message: e.message } }))
-          .then(resolve, reject);
+            if (!r.ok) return {data: null, error: {message: text}};
+            let d = [];
+            try { d = JSON.parse(text); } catch(e) {}
+            return {data: d, error: null};
+          }).catch(e => ({data: null, error: {message: e.message}}))
+          .then(res, rej);
         }
       };
-      return obj;
+      return u;
     },
 
+    // UPSERT
     upsert(data, opts) {
       const rows = Array.isArray(data) ? data : [data];
-      const onConflict = opts?.onConflict || 'id';
-      return fetch(`${base}?on_conflict=${onConflict}`, {
+      const onConflict = (opts && opts.onConflict) || 'id';
+      return fetch(base + '?on_conflict=' + onConflict, {
         method: 'POST',
-        headers: { ...headers, 'Prefer': 'return=representation,resolution=merge-duplicates' },
+        headers: {...SB_HEADERS, 'Prefer': 'return=representation,resolution=merge-duplicates'},
         body: JSON.stringify(rows)
       }).then(async r => {
         const text = await r.text();
-        if (!r.ok) return { data: null, error: { message: text } };
-        try { return { data: JSON.parse(text), error: null }; }
-        catch { return { data: [], error: null }; }
-      }).catch(e => ({ data: null, error: { message: e.message } }));
+        if (!r.ok) return {data: null, error: {message: text}};
+        let d = [];
+        try { d = JSON.parse(text); if (!Array.isArray(d)) d = [d]; } catch(e) {}
+        return {data: d, error: null};
+      }).catch(e => ({data: null, error: {message: e.message}}));
     },
 
+    // DELETE — suporta eq/in encadeados
     delete() {
-      return {
-        eq(col, val) {
-          return fetch(`${base}?${col}=eq.${val}`, {
-            method: 'DELETE', headers
-          }).then(async r => {
-            if (!r.ok) { const t = await r.text(); return { data: null, error: { message: t } }; }
-            return { data: [], error: null };
-          }).catch(e => ({ data: null, error: { message: e.message } }));
-        },
-        in(col, vals) {
-          return fetch(`${base}?${col}=in.(${vals.join(',')})`, {
-            method: 'DELETE', headers
-          }).then(async r => {
-            if (!r.ok) { const t = await r.text(); return { data: null, error: { message: t } }; }
-            return { data: [], error: null };
-          }).catch(e => ({ data: null, error: { message: e.message } }));
+      let _dFilters = [];
+      const d = {
+        eq(col, val)  { _dFilters.push(col + '=eq.' + val); return d; },
+        in(col, vals) { _dFilters.push(col + '=in.(' + vals.join(',') + ')'); return d; },
+        not(col, op, val) { _dFilters.push(col + '=not.' + op + '.' + val); return d; },
+        then(res, rej) {
+          const qs = _dFilters.join('&');
+          return fetch(base + '?' + qs, {method: 'DELETE', headers: SB_HEADERS})
+          .then(async r => {
+            if (!r.ok) { const t = await r.text(); return {data: null, error: {message: t}}; }
+            return {data: [], error: null};
+          }).catch(e => ({data: null, error: {message: e.message}}))
+          .then(res, rej);
         }
       };
+      return d;
     },
 
-    then(resolve, reject) {
-      const h = _head ? { ...headers, 'Prefer': 'count=exact' } : 
-                _count ? { ...headers, 'Prefer': 'count=exact' } : headers;
-      const method = _head ? 'HEAD' : 'GET';
-      return fetch(buildUrl(), { method, headers: h })
-        .then(async r => {
-          if (!r.ok) { const t = await r.text(); return { data: null, error: { message: t }, count: 0 }; }
-          if (_head) {
-            const count = parseInt(r.headers.get('content-range')?.split('/')[1] || '0');
-            return { data: null, error: null, count };
-          }
-          const text = await r.text();
-          let data = [];
-          try { data = JSON.parse(text); } catch {}
-          const count = _count ? parseInt(r.headers.get('content-range')?.split('/')[1] || data.length) : undefined;
-          if (_single) return { data: Array.isArray(data) ? (data[0] || null) : data, error: null };
-          return { data, error: null, count };
-        })
-        .catch(e => ({ data: null, error: { message: e.message }, count: 0 }))
-        .then(resolve, reject);
-    }
+    then(res, rej) { return doFetch().then(res, rej); }
   };
   return q;
 }
 
-// Wrapper RPC via REST
+// RPC via REST
 function sbRpc(fn, params) {
   if (_rpc[fn]) return Promise.resolve().then(() => _rpc[fn](params));
-  return fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+  return fetch(SB_URL + '/rest/v1/rpc/' + fn, {
     method: 'POST',
-    headers: {
-      'apikey': SUPABASE_ANON_KEY,
-      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(params)
+    headers: SB_HEADERS,
+    body: JSON.stringify(params || {})
   }).then(async r => {
     const text = await r.text();
-    if (!r.ok) return { data: null, error: { message: text } };
-    try { return { data: JSON.parse(text), error: null }; }
-    catch { return { data: text, error: null }; }
-  }).catch(e => ({ data: null, error: { message: e.message } }));
+    if (!r.ok) return {data: null, error: {message: text}};
+    try { return {data: JSON.parse(text), error: null}; }
+    catch(e) { return {data: text, error: null}; }
+  }).catch(e => ({data: null, error: {message: e.message}}));
 }
 
-// _sb aponta para o wrapper REST
 const _sb = { from: sbRest, rpc: sbRpc, storage: { from: () => ({ upload: () => Promise.resolve({}) }) } };
 
 // sb = interface principal
