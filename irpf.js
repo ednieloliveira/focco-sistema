@@ -1,7 +1,3 @@
-// ═══════════════════════════════════════════
-// IRPF + sidebar
-// ═══════════════════════════════════════════
-
 // ══════════════════════════════════════════
 async function loadIRPF() {
   const prefIRPF = ['IRF','IRP','CRL','IRR','MFI','CSF','GCI','GCA','GCH','PLF','OTF'];
@@ -64,4 +60,3 @@ let dashCalMesAtual = new Date().getMonth();
 const FERIADOS_NACIONAIS = [
   '01-01','04-21','05-01','09-07','10-12','11-02','11-15','11-20','12-25'
 ];
-
