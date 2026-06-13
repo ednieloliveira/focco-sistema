@@ -1,7 +1,3 @@
-// ═══════════════════════════════════════════
-// Backup e histórico
-// ═══════════════════════════════════════════
-
 // ══════════════════════════════════════════
 // PRAZOS LEGAIS NO DETALHE DA DEMANDA
 // ══════════════════════════════════════════
@@ -176,4 +172,3 @@ function downloadCSV(cols, rows, nome) {
   const a = document.createElement('a');
   a.href = url; a.download = nome; a.click();
 }
-
