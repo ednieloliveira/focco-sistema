@@ -2997,26 +2997,25 @@ async function loadCaixa(){
 
 // ── ABRIR MODAL DE NOVA DEMANDA ───────────────────────────────────────────────
 // Icones modernos por departamento
-const DEP_ICONS = {
-  'Escrita Fiscal':                       '📊',
-  'Departamento Pessoal':                 '👥',
-  'Contabilidade':                        '📒',
-  'Rural':                                '🌿',
-  'Legalizacao e Societario':             '⚖️',
-  'Abertura de Empresas':                 '🏢',
-  'Despachante Imobiliario':              '🏠',
-  'IRPF':                                 '🧾',
-  'Parcelamentos e Regularizacao Fiscal': '💳',
-  'Prefeitura e Alvaras':                 '🏛️',
-  'Certidoes e Documentacoes':            '📜',
-  'Atendimento ao Cliente':               '🤝',
-};
+const DEP_ICONS = [
+  ['Escrita Fiscal',        '📊'],
+  ['Departamento Pessoal',  '👥'],
+  ['Contabilidade',         '📒'],
+  ['Rural',                 '🌿'],
+  ['Legaliza',              '⚖️'],
+  ['Abertura',              '🏢'],
+  ['Imobili',               '🏠'],
+  ['IRPF',                  '🧾'],
+  ['Parcelamento',          '💳'],
+  ['Prefeitura',            '🏛️'],
+  ['Certid',                '📜'],
+  ['Atendimento',           '🤝'],
+];
 
 function getDepIcon(dep) {
-  if (dep.icone && dep.icone.trim()) return dep.icone;
-  // Busca pelo nome sem acento
-  for (const [k, v] of Object.entries(DEP_ICONS)) {
-    if (dep.nome && dep.nome.toLowerCase().includes(k.toLowerCase().split(' ')[0])) return v;
+  const nome = (dep.nome || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+  for (const [k, v] of DEP_ICONS) {
+    if (nome.includes(k.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''))) return v;
   }
   return '📋';
 }
@@ -3112,8 +3111,16 @@ async function salvarDem(){
   if(!ri){toast('Selecione o responsável','err');return;}
 
   try{
-    const {data:num,error:eN}=await sb.rpc('fn_proximo_numero_demanda',{p_tipo_id:ti});
-    if(eN)throw eN;
+    // Gerar número via Supabase direto
+    const tipos=dbGet('tipos_demanda');
+    const tipo=tipos.find(t=>t.id===ti);
+    const pref=tipo?.prefixo_numeracao||'DEM';
+    const ano=new Date().getFullYear();
+    const {data:demsExist}=await sbRest('demandas').select('numero').ilike('numero',pref+'-'+ano+'-%');
+    const nums=(demsExist||[]).map(d=>parseInt((d.numero||'').split('-')[2]||'0')).filter(n=>!isNaN(n));
+    const next=(nums.length?Math.max(...nums):0)+1;
+    const num=pref+'-'+ano+'-'+String(next).padStart(4,'0');
+    const eN=null;
 
     const {data:dem,error:eD}=await sb.from('demandas').insert({
       numero:num,
@@ -3134,7 +3141,7 @@ async function salvarDem(){
     if(eD)throw eD;
 
     await Promise.all([
-      sb.from('tramites').insert({demanda_id:dem.id,usuario_id:U.id,tipo:'abertura',descricao:'Demanda aberta por '+U.nome+'.'}),
+      sb.from('tramites').insert({demanda_id:dem.id,usuario_id:U.id,tipo:'abertura',descricao:'Demanda aberta por '+U.nome+'. '+desc}),
       sb.from('demanda_responsaveis').insert({demanda_id:dem.id,responsavel_id:ri,departamento_id:di,aceite_status:ri===U.id?'aceito':'pendente'})
     ]);
 
@@ -3281,12 +3288,20 @@ async function renderDet(){
         </div>
       </div>
       <div class="card">
-        <div class="ch"><div class="ct">💬 Chat Interno</div></div>
+        <div class="ch"><div class="ct">✏️ Registrar Tramite</div></div>
         <div class="cb">
-          <div id="chatBox" style="max-height:250px;overflow-y:auto;background:var(--surface2);border-radius:8px;padding:12px;margin-bottom:10px;display:flex;flex-direction:column">
-            ${ch.data?.length?ch.data.map(m=>{const own=m.usuario_id===U.id,ini=m.profiles?.nome?.split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase()||'?';return`<div class="chat-msg ${own?'own':''}"><div class="chat-av" style="background:${own?'var(--sky)':'var(--navy)'}">${ini}</div><div><div class="chat-bub">${m.mensagem}</div><div class="chat-time">${m.profiles?.nome} · ${new Date(m.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</div></div></div>`}).join(''):'<div class="vazio" style="padding:1rem">Nenhuma mensagem.</div>'}
+          <div class="fg" style="margin-bottom:8px">
+            <select class="fi" id="tTipoInline" style="margin-bottom:8px">
+              <option value="movimentacao_geral">Movimentacao geral</option>
+              <option value="documento_recebido">Documento recebido</option>
+              <option value="documento_solicitado">Documento solicitado</option>
+              <option value="protocolo">Protocolo realizado</option>
+              <option value="exigencia_recebida">Exigencia recebida</option>
+              <option value="exigencia_respondida">Exigencia respondida</option>
+            </select>
+            <textarea class="fi" id="tramiteInline" rows="3" placeholder="Descreva a movimentacao..." style="resize:vertical;margin-bottom:8px"></textarea>
+            <button class="btn btn-p" style="width:100%;justify-content:center" onclick="salvarTramiteInline()">📝 Registrar Tramite</button>
           </div>
-          <div style="display:flex;gap:8px"><input type="text" class="fi" id="chatIn" placeholder="Mensagem..." onkeydown="if(event.key==='Enter')envChat()"><button class="btn btn-p" onclick="envChat()">Enviar</button></div>
         </div>
       </div>
     </div>
@@ -3300,7 +3315,20 @@ async function renderDet(){
           <hr class="hr">
           <div style="margin-bottom:12px"><div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px">Aberta em</div><div style="font-size:13px;font-weight:500">${dataAbertura ? new Date(dataAbertura).toLocaleDateString('pt-BR') : '—'}</div></div>
           <hr class="hr">
-          <div><div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px">Descrição</div><div style="font-size:13px;line-height:1.5">${d.descricao}</div></div>
+          <div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+              <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em">Descricao</div>
+              ${iG?`<button onclick="editarDescricao('${d.id}')" style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--accent);font-weight:600">✏️ Editar</button>`:''}
+            </div>
+            <div id="descTexto_${d.id}" style="font-size:13px;line-height:1.5;white-space:pre-line">${d.descricao}</div>
+            <div id="descEdit_${d.id}" style="display:none">
+              <textarea class="fi" id="descEditTxt_${d.id}" rows="4" style="resize:vertical">${d.descricao}</textarea>
+              <div style="display:flex;gap:6px;margin-top:6px">
+                <button class="btn btn-p" style="flex:1;justify-content:center" onclick="salvarDescricao('${d.id}')">Salvar</button>
+                <button class="btn btn-s" onclick="cancelarEditDesc('${d.id}')">Cancelar</button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       <div class="card">
@@ -3373,7 +3401,34 @@ async function salvarConc(){
   await renderDet();
 }
 async function aprovarConc(){if(!confirm('Aprovar conclusão desta demanda?'))return;await sb.from('demandas').update({status:'concluida',data_conclusao:new Date().toISOString()}).eq('id',demId);await sb.from('aprovacoes').update({status:'aprovada',aprovado_por:U.id,respondido_em:new Date().toISOString()}).eq('demanda_id',demId).eq('status','pendente');await sb.from('tramites').insert({demanda_id:demId,usuario_id:U.id,tipo:'aprovacao_concedida',descricao:'Conclusão aprovada. Demanda encerrada.'});toast('Demanda concluída!','ok');await renderDet();}
-async function envChat(){const input=document.getElementById('chatIn'),msg=input?.value.trim();if(!msg)return;input.value='';await sb.from('chat_mensagens').insert({demanda_id:demId,usuario_id:U.id,mensagem:msg});await renderDet();}
+// Tramite inline
+async function salvarTramiteInline(){
+  const desc=document.getElementById('tramiteInline')?.value.trim();
+  const tipo=document.getElementById('tTipoInline')?.value||'movimentacao_geral';
+  if(!desc){toast('Informe a descricao do tramite','err');return;}
+  await sb.from('tramites').insert({demanda_id:demId,usuario_id:U.id,tipo,descricao:desc});
+  document.getElementById('tramiteInline').value='';
+  toast('Tramite registrado!','ok');
+  await renderDet();
+}
+
+// Editar descricao (gestor)
+function editarDescricao(id){
+  document.getElementById('descTexto_'+id).style.display='none';
+  document.getElementById('descEdit_'+id).style.display='block';
+}
+function cancelarEditDesc(id){
+  document.getElementById('descTexto_'+id).style.display='block';
+  document.getElementById('descEdit_'+id).style.display='none';
+}
+async function salvarDescricao(id){
+  const txt=document.getElementById('descEditTxt_'+id)?.value.trim();
+  if(!txt){toast('Descricao nao pode ser vazia','err');return;}
+  await sb.from('demandas').update({descricao:txt}).eq('id',id);
+  await sb.from('tramites').insert({demanda_id:id,usuario_id:U.id,tipo:'movimentacao_geral',descricao:'Descricao atualizada pelo gestor.'});
+  toast('Descricao atualizada!','ok');
+  await renderDet();
+}
 
 async function loadCli(){const {data}=await sb.from('clientes').select('*').eq('ativo',true).order('nome');allCli=data||[];document.getElementById('cliTotal').textContent=`${allCli.length} cliente(s)`;filtCli();}
 
