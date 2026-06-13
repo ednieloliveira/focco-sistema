@@ -3002,25 +3002,116 @@ async function loadDash(){
 }
 
 async function loadCaixa(){
-  const hj=new Date().toISOString().split('T')[0];
-  const [{count:t},{count:ac},{count:ur},vc]=await Promise.all([
-    sb.from('demandas').select('*',{count:'exact',head:true}).eq('responsavel_atual_id',U.id).not('status','in','(concluida,cancelada)'),
-    sb.from('demanda_responsaveis').select('*',{count:'exact',head:true}).eq('responsavel_id',U.id).eq('aceite_status','pendente'),
-    sb.from('demandas').select('*',{count:'exact',head:true}).eq('responsavel_atual_id',U.id).eq('prioridade','urgente').not('status','in','(concluida,cancelada)'),
-    sb.from('proximas_acoes').select('id').eq('responsavel_id',U.id).eq('concluida',false).lt('data_prevista',hj)
+  const hj = new Date().toISOString().split('T')[0];
+  const todasCli = dbGet('clientes');
+
+  // Buscar dados em paralelo
+  const [demRes, aceRes, urgRes, vcRes, mnRes] = await Promise.all([
+    sbRest('demandas').select('id,numero,status,prioridade,ultima_movimentacao,cliente_id').eq('responsavel_atual_id',U.id).not('status','in','(concluida,cancelada)'),
+    sbRest('demanda_responsaveis').select('id,demanda_id,observacao').eq('responsavel_id',U.id).eq('aceite_status','pendente'),
+    sbRest('demandas').select('id,numero,cliente_id,ultima_movimentacao').eq('responsavel_atual_id',U.id).eq('prioridade','urgente').not('status','in','(concluida,cancelada)'),
+    sbRest('proximas_acoes').select('id').eq('responsavel_id',U.id).eq('concluida',false).lt('data_prevista',hj),
+    sbRest('demandas').select('id,numero,status,prioridade,ultima_movimentacao,cliente_id').eq('responsavel_atual_id',U.id).not('status','in','(concluida,cancelada)').order('ultima_movimentacao',{ascending:true}),
   ]);
-  document.getElementById('cT').textContent=t||0;document.getElementById('cA').textContent=ac||0;
-  document.getElementById('cU').textContent=ur||0;document.getElementById('cV').textContent=vc.data?.length||0;
-  const badge=document.getElementById('badgeAceite');if(ac>0){badge.textContent=ac;badge.style.display='inline';}else badge.style.display='none';
 
-  const {data:aces}=await sb.from('demanda_responsaveis').select('*,demandas(id,numero,clientes(nome))').eq('responsavel_id',U.id).eq('aceite_status','pendente');
-  document.getElementById('cAList').innerHTML=aces?.length?aces.map(a=>`<div class="ui" onclick="abrirDet('${a.demandas?.id}')"><div class="uc" style="background:var(--amber)"></div><div class="uinfo"><div class="utit">${a.demandas?.numero}</div><div class="umeta">${a.demandas?.clientes?.nome}</div></div><span class="ud ta">Aceitar</span></div>`).join(''):'<div class="vazio">Nenhum aceite pendente ✅</div>';
+  const dems = demRes.data||[];
+  const aces = aceRes.data||[];
+  const urgs = urgRes.data||[];
+  const vcs  = vcRes.data||[];
+  const mns  = mnRes.data||[];
 
-  const {data:urg}=await sb.from('demandas').select('id,numero,clientes(nome),ultima_movimentacao').eq('responsavel_atual_id',U.id).eq('prioridade','urgente').not('status','in','(concluida,cancelada)');
-  document.getElementById('cUList').innerHTML=urg?.length?urg.map(d=>{const dias=Math.floor((Date.now()-new Date(d.ultima_movimentacao))/86400000);return`<div class="ui" onclick="abrirDet('${d.id}')"><div class="uc" style="background:var(--red)"></div><div class="uinfo"><div class="utit">${d.numero}</div><div class="umeta">${d.clientes?.nome}</div></div><span class="ud tr">${dias}d</span></div>`}).join(''):'<div class="vazio">Nenhuma urgente ✅</div>';
+  // Buscar demandas dos aceites pendentes
+  let aceDemsMap = {};
+  if(aces.length){
+    const ids = aces.map(a=>a.demanda_id);
+    const {data:aceDemsData} = await sbRest('demandas').select('id,numero,cliente_id,resumo,responsavel_atual_id').in('id',ids);
+    (aceDemsData||[]).forEach(d=>{ aceDemsMap[d.id]=d; });
+  }
 
-  const {data:mn}=await sb.from('demandas').select('id,numero,status,prioridade,ultima_movimentacao,clientes(nome)').eq('responsavel_atual_id',U.id).not('status','in','(concluida,cancelada)').order('ultima_movimentacao');
-  document.getElementById('cMList').innerHTML=mn?.length?`<div style="overflow-x:auto"><table><thead><tr><th>Número</th><th>Cliente</th><th>Status</th><th>Inat.</th></tr></thead><tbody>${mn.map(d=>{const dias=Math.floor((Date.now()-new Date(d.ultima_movimentacao))/86400000),dc=dias>=5?'tr':dias>=2?'ta':'ts';return`<tr onclick="abrirDet('${d.id}')"><td><strong style="color:var(--sky)">${d.numero}</strong></td><td>${d.clientes?.nome}</td><td><span class="tag ${SC[d.status]||''}">${SL[d.status]||d.status}</span></td><td><span class="tag ${dc}">${dias}d</span></td></tr>`}).join('')}</tbody></table></div>`:'<div class="vazio">Sem demandas ativas.</div>';
+  // KPIs
+  document.getElementById('cT').textContent = dems.length;
+  document.getElementById('cA').textContent = aces.length;
+  document.getElementById('cU').textContent = urgs.length;
+  document.getElementById('cV').textContent = vcs.length;
+  const badge = document.getElementById('badgeAceite');
+  if(aces.length>0){ badge.textContent=aces.length; badge.style.display='inline'; }
+  else badge.style.display='none';
+
+  // ACEITES PENDENTES — com botoes de aceitar/recusar
+  document.getElementById('cAList').innerHTML = aces.length ? aces.map(a => {
+    const dem = aceDemsMap[a.demanda_id]||{};
+    const cli = todasCli.find(c=>c.id===dem.cliente_id);
+    return `<div style="background:var(--amber-pale);border:1px solid #FCD34D;border-radius:10px;padding:14px;margin-bottom:10px">
+      <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--amber);flex-shrink:0;margin-top:5px"></div>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:700;color:var(--navy)">${dem.numero||'—'}</div>
+          <div style="font-size:13px;color:var(--text)">${cli?.nome||'—'}</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px">${dem.resumo||''}</div>
+          ${a.observacao?`<div style="font-size:12px;color:var(--amber);margin-top:4px;font-style:italic">Obs: ${a.observacao}</div>`:''}
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="aceitarDemanda('${a.id}','${a.demanda_id}')" class="btn btn-ok" style="flex:1;justify-content:center">✅ Aceitar</button>
+        <button onclick="recusarDemanda('${a.id}','${a.demanda_id}')" class="btn btn-er" style="flex:1;justify-content:center">❌ Recusar</button>
+        <button onclick="abrirDet('${a.demanda_id}')" class="btn btn-s" style="flex:1;justify-content:center">👁 Ver</button>
+      </div>
+    </div>`;
+  }).join('') : '<div class="vazio">Nenhum aceite pendente ✅</div>';
+
+  // URGENTES
+  document.getElementById('cUList').innerHTML = urgs.length ? urgs.map(d => {
+    const cli = todasCli.find(c=>c.id===d.cliente_id);
+    const dias = Math.floor((Date.now()-new Date(d.ultima_movimentacao))/86400000);
+    return `<div class="ui" onclick="abrirDet('${d.id}')">
+      <div class="uc" style="background:var(--red)"></div>
+      <div class="uinfo"><div class="utit">${d.numero}</div><div class="umeta">${cli?.nome||'—'}</div></div>
+      <span class="ud tr">${dias}d</span>
+    </div>`;
+  }).join('') : '<div class="vazio">Nenhuma urgente ✅</div>';
+
+  // MINHAS DEMANDAS
+  document.getElementById('cMList').innerHTML = mns.length ? `
+    <div style="overflow-x:auto"><table>
+      <thead><tr><th>Número</th><th>Cliente</th><th>Status</th><th>Inat.</th></tr></thead>
+      <tbody>${mns.map(d=>{
+        const cli = todasCli.find(c=>c.id===d.cliente_id);
+        const dias=Math.floor((Date.now()-new Date(d.ultima_movimentacao))/86400000);
+        const dc=dias>=5?'tr':dias>=2?'ta':'ts';
+        return `<tr onclick="abrirDet('${d.id}')">
+          <td><strong style="color:var(--sky)">${d.numero}</strong></td>
+          <td>${cli?.nome||'—'}</td>
+          <td><span class="tag ${SC[d.status]||''}">${SL[d.status]||d.status}</span></td>
+          <td><span class="tag ${dc}">${dias}d</span></td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table></div>` : '<div class="vazio">Sem demandas ativas.</div>';
+}
+
+// Aceitar demanda transferida
+async function aceitarDemanda(responsavelId, demandaId){
+  await sbRest('demanda_responsaveis').update({aceite_status:'aceito'}).eq('id',responsavelId);
+  await sbRest('demandas').update({status:'em_andamento'}).eq('id',demandaId);
+  await sbRest('tramites').insert({demanda_id:demandaId, usuario_id:U.id, tipo:'aceite', descricao:U.nome+' aceitou a demanda.'});
+  toast('Demanda aceita!','ok');
+  await loadCaixa();
+}
+
+// Recusar demanda — devolve para quem transferiu
+async function recusarDemanda(responsavelId, demandaId){
+  const motivo = prompt('Motivo da recusa (opcional):');
+  await sbRest('demanda_responsaveis').update({aceite_status:'recusado'}).eq('id',responsavelId);
+  // Buscar responsavel anterior
+  const {data:hist} = await sbRest('demanda_responsaveis').select('responsavel_id,departamento_id').eq('demanda_id',demandaId).eq('aceite_status','aceito').order('created_at',{ascending:false}).limit(1);
+  const anterior = hist?.[0];
+  if(anterior){
+    await sbRest('demandas').update({responsavel_atual_id:anterior.responsavel_id, departamento_atual_id:anterior.departamento_id, status:'em_andamento'}).eq('id',demandaId);
+    await sbRest('demanda_responsaveis').insert({demanda_id:demandaId, responsavel_id:anterior.responsavel_id, departamento_id:anterior.departamento_id, aceite_status:'aceito'});
+    await criarNotificacao(anterior.responsavel_id,'Demanda recusada', U.nome+' recusou a demanda.'+(motivo?' Motivo: '+motivo:''), demandaId,'transferencia');
+  }
+  await sbRest('tramites').insert({demanda_id:demandaId, usuario_id:U.id, tipo:'movimentacao_geral', descricao:U.nome+' recusou a demanda.'+(motivo?' Motivo: '+motivo:'')});
+  toast('Demanda recusada e devolvida.','ok');
+  await loadCaixa();
 }
 
 // loadDem — versão ativa abaixo (sistema de abas)
@@ -3290,6 +3381,10 @@ async function renderDet(){
       ${d.prazo?`<span class="tag ${d.prazo<hj?'tr':'tgr'}">📅 ${new Date(d.prazo+'T12:00:00').toLocaleDateString('pt-BR')}</span>`:''}
     </div>
     ${pE&&d.status!=='concluida'&&d.status!=='cancelada'?`<div style="display:flex;gap:8px;flex-wrap:wrap">
+      ${d.status==='aguardando_aceite'?`
+        <button class="btn btn-ok" style="font-size:13px" onclick="aceitarDemandaDet('${d.id}')">✅ Aceitar Demanda</button>
+        <button class="btn btn-er" style="font-size:13px" onclick="recusarDemandaDet('${d.id}')">❌ Recusar</button>
+      `:`
       <button class="btn btn-s" onclick="omDet('mTram')">+ Trâmite</button>
       <button class="btn btn-s" onclick="omDet('mPend')">+ Pendência</button>
       <button class="btn btn-s" onclick="omTransf()">↔ Transferir</button>
@@ -3298,6 +3393,7 @@ async function renderDet(){
       ${iG ? `<button class="btn btn-er" onclick="excluirDemanda('${d.id}','${d.numero}')">🗑️ Excluir</button>` : ''}
       ${d.status!=='aguardando_conclusao'?`<button class="btn btn-p" onclick="om('mConc')">✓ Solicitar conclusão</button>`:''}
       ${iG&&d.status==='aguardando_conclusao'?`<button class="btn btn-ok" onclick="aprovarConc()">✓ Aprovar conclusão</button>`:''}
+      `}
     </div>`:''}
   </div>
   <div style="display:grid;grid-template-columns:1fr 340px;gap:20px">
@@ -3435,19 +3531,45 @@ async function salvarConc(){
   await renderDet();
 }
 async function aprovarConc(){if(!confirm('Aprovar conclusão desta demanda?'))return;await sb.from('demandas').update({status:'concluida',data_conclusao:new Date().toISOString()}).eq('id',demId);await sb.from('aprovacoes').update({status:'aprovada',aprovado_por:U.id,respondido_em:new Date().toISOString()}).eq('demanda_id',demId).eq('status','pendente');await sb.from('tramites').insert({demanda_id:demId,usuario_id:U.id,tipo:'aprovacao_concedida',descricao:'Conclusão aprovada. Demanda encerrada.'});toast('Demanda concluída!','ok');await renderDet();}
-// Tramite inline
+// Aceitar/Recusar direto do detalhe da demanda
+async function aceitarDemandaDet(demandaId){
+  const {data:dr} = await sbRest('demanda_responsaveis').select('id').eq('demanda_id',demandaId).eq('responsavel_id',U.id).eq('aceite_status','pendente').limit(1);
+  if(dr?.[0]) await sbRest('demanda_responsaveis').update({aceite_status:'aceito'}).eq('id',dr[0].id);
+  await sbRest('demandas').update({status:'em_andamento'}).eq('id',demandaId);
+  await sbRest('tramites').insert({demanda_id:demandaId,usuario_id:U.id,tipo:'aceite',descricao:U.nome+' aceitou a demanda.'});
+  delete _detCache[demandaId];
+  toast('Demanda aceita!','ok');
+  await renderDet();
+}
+
+async function recusarDemandaDet(demandaId){
+  const motivo = prompt('Motivo da recusa (opcional):');
+  const {data:dr} = await sbRest('demanda_responsaveis').select('id').eq('demanda_id',demandaId).eq('responsavel_id',U.id).eq('aceite_status','pendente').limit(1);
+  if(dr?.[0]) await sbRest('demanda_responsaveis').update({aceite_status:'recusado'}).eq('id',dr[0].id);
+  const {data:hist} = await sbRest('demanda_responsaveis').select('responsavel_id,departamento_id').eq('demanda_id',demandaId).eq('aceite_status','aceito').order('created_at',{ascending:false}).limit(1);
+  const anterior = hist?.[0];
+  if(anterior){
+    await sbRest('demandas').update({responsavel_atual_id:anterior.responsavel_id,departamento_atual_id:anterior.departamento_id,status:'em_andamento'}).eq('id',demandaId);
+    await criarNotificacao(anterior.responsavel_id,'Demanda recusada',U.nome+' recusou a demanda.'+(motivo?' Motivo: '+motivo:''),demandaId,'transferencia');
+  }
+  await sbRest('tramites').insert({demanda_id:demandaId,usuario_id:U.id,tipo:'movimentacao_geral',descricao:U.nome+' recusou a demanda.'+(motivo?' Motivo: '+motivo:'')});
+  delete _detCache[demandaId];
+  toast('Demanda recusada.','ok');
+  ir('dem');
+}
+
+// Tramite inline no detalhe da demanda
 async function salvarTramiteInline(){
-  delete _detCache[demId]; // invalidar cache
+  delete _detCache[demId];
   const desc=document.getElementById('tramiteInline')?.value.trim();
   const tipo=document.getElementById('tTipoInline')?.value||'movimentacao_geral';
   if(!desc){toast('Informe a descricao do tramite','err');return;}
-  await sb.from('tramites').insert({demanda_id:demId,usuario_id:U.id,tipo,descricao:desc});
+  await sbRest('tramites').insert({demanda_id:demId,usuario_id:U.id,tipo,descricao:desc});
   document.getElementById('tramiteInline').value='';
   toast('Tramite registrado!','ok');
   await renderDet();
 }
 
-// Editar descricao (gestor)
 function editarDescricao(id){
   document.getElementById('descTexto_'+id).style.display='none';
   document.getElementById('descEdit_'+id).style.display='block';
