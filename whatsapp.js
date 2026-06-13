@@ -1,8 +1,4 @@
-// ═══════════════════════════════════════════
-// Módulo WhatsApp
-// ═══════════════════════════════════════════
-
-  localStorage.setItem('focco_wa_config', JSON.stringify(config));
+localStorage.setItem('focco_wa_config', JSON.stringify(config));
   toast('Configuração WhatsApp salva!','ok');
 }
 
