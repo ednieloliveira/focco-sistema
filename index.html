@@ -7273,6 +7273,8 @@ if(localStorage.getItem('focco_version') !== DB_VERSION) {
   if(cliBackup && cliBackup !== '[]') localStorage.setItem('focco_db_clientes', cliBackup);
   if(profBackup && profBackup !== '[]') localStorage.setItem('focco_db_profiles', profBackup);
 }
+<script src="usuarios.js"></script>
+<script>
 initDB().then(()=>{ init(); });
 </script>
 </body>
