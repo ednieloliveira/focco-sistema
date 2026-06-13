@@ -1,7 +1,3 @@
-// ═══════════════════════════════════════════
-// Utilitários + importação
-// ═══════════════════════════════════════════
-
 // salvarCli — versão completa com todos os campos
 async function salvarCli() {
   const nome = document.getElementById('mcNome').value.trim();
