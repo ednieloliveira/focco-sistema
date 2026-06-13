@@ -1,7 +1,3 @@
-// ═══════════════════════════════════════════
-// Relatórios gerenciais
-// ═══════════════════════════════════════════
-
 // ═══════════════════════════════════════════════════════════════
 function getRelPeriodo() {
   const p = document.getElementById('relPeriodo')?.value || 'mes_atual';
