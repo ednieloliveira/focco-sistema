@@ -1684,65 +1684,60 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
 </div>
 
 <div class="modal-ov" id="mUser">
-  <div class="modal" style="max-width:500px">
-    <div class="mh"><div class="mt" id="mUserTit">Novo Usuário</div><button class="mc" onclick="fm('mUser')">×</button></div>
+  <div class="modal" style="max-width:480px">
+    <div class="mh"><div class="mt" id="mUserTit">Novo Colaborador</div><button class="mc" onclick="fm('mUser')">×</button></div>
     <div class="mb">
       <input type="hidden" id="muId">
 
-      <!-- Dados Pessoais -->
-      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">📋 Dados Pessoais</div>
+      <!-- Nome -->
+      <div class="fg">
+        <label class="fl">Nome completo *</label>
+        <input type="text" class="fi" id="muNome" placeholder="Ex: Kamila Oliveira">
+      </div>
+
+      <!-- Usuário de login -->
+      <div class="fg" id="fgUsuario">
+        <label class="fl">Usuário para login *</label>
+        <input type="text" class="fi" id="muUsuario" placeholder="Ex: kamila, joao.silva, maria" autocomplete="off">
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">📌 Este será o nome usado para entrar no sistema. Sem espaços, sem acento.</div>
+      </div>
+
+      <!-- Senha -->
+      <div class="fg" id="muSenhaSec">
+        <label class="fl" id="muSenhaLabel">Senha *</label>
+        <input type="password" class="fi" id="muSenha" placeholder="Mínimo 4 caracteres" autocomplete="new-password" value="">
+        <div style="font-size:11px;color:var(--text3);margin-top:4px" id="muSenhaHint">🔑 Defina a senha que o colaborador usará para entrar.</div>
+      </div>
 
       <div class="fr">
+        <!-- Nível de acesso -->
         <div class="fg">
-          <label class="fl">Código do Usuário</label>
-          <input type="text" class="fi" id="muCodigo" placeholder="USR2500" readonly style="background:var(--surface2);color:var(--text3)">
+          <label class="fl">Nível de acesso *</label>
+          <select class="fi" id="muPerfil">
+            <option value="colaborador">👤 Colaborador — acesso básico</option>
+            <option value="supervisor">👥 Supervisor — ver todos, editar os seus</option>
+            <option value="gestor">⭐ Gestor — acesso total</option>
+          </select>
         </div>
+        <!-- WhatsApp -->
         <div class="fg">
-          <label class="fl">WhatsApp</label>
+          <label class="fl">WhatsApp (opcional)</label>
           <input type="text" class="fi" id="muWa" placeholder="34 9 9999-9999">
         </div>
       </div>
 
+      <!-- Departamentos que vai atuar -->
       <div class="fg">
-        <label class="fl">Nome completo *</label>
-        <input type="text" class="fi" id="muNome" placeholder="Ex: Kamila Montadon Ladeira">
-      </div>
-
-      <div class="fg">
-        <label class="fl">E-mail Corporativo</label>
-        <input type="email" class="fi" id="muEmailCorp" placeholder="colaborador@focco.com.br">
-      </div>
-
-      <!-- Dados de Acesso -->
-      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin:16px 0 10px">🔐 Dados de Acesso</div>
-
-      <div class="fr">
-        <div class="fg">
-          <label class="fl">Login *</label>
-          <input type="text" class="fi" id="muUsuario" placeholder="Ex: kamila" autocomplete="off">
-        </div>
-        <div class="fg" id="muSenhaSec">
-          <label class="fl">Senha *</label>
-          <input type="password" class="fi" id="muSenha" placeholder="Mínimo 4 caracteres" autocomplete="new-password">
-        </div>
-      </div>
-
-      <!-- Perfil de Acesso -->
-      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin:16px 0 10px">👤 Perfil de Acesso</div>
-
-      <div class="fg">
-        <select class="fi" id="muPerfil">
-          <option value="colaborador">👤 Colaborador — acesso básico</option>
-          <option value="supervisor">👥 Supervisor — ver todos, editar os seus</option>
-          <option value="coordenador">🎯 Coordenador — gerenciar equipe</option>
-          <option value="gestor">⭐ Gestor — acesso total</option>
+        <label class="fl">Departamento principal (opcional)</label>
+        <select class="fi" id="muDept">
+          <option value="">Todos os departamentos</option>
         </select>
       </div>
 
     </div>
     <div class="mf">
       <button class="btn btn-s" onclick="fm('mUser')">Cancelar</button>
-      <button class="btn btn-p" onclick="salvarUser()">✅ Salvar Usuário</button>
+      <button class="btn btn-p" id="muBtn" onclick="salvarUser()">✅ Salvar Colaborador</button>
     </div>
   </div>
 </div>
@@ -7273,9 +7268,8 @@ if(localStorage.getItem('focco_version') !== DB_VERSION) {
   if(cliBackup && cliBackup !== '[]') localStorage.setItem('focco_db_clientes', cliBackup);
   if(profBackup && profBackup !== '[]') localStorage.setItem('focco_db_profiles', profBackup);
 }
-<script src="usuarios.js"></script>
-<script>
 initDB().then(()=>{ init(); });
 </script>
+<script src="usuarios.js"></script>
 </body>
 </html>
