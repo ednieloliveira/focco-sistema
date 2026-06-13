@@ -1,7 +1,3 @@
-// ═══════════════════════════════════════════
-// Calendário avançado + compromissos
-// ═══════════════════════════════════════════
-
 function isDiaUtil(data, feriados) {
   const d = new Date(data+'T12:00:00');
   const dow = d.getDay();
