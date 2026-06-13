@@ -2521,7 +2521,8 @@ function sbRest(table) {
       return d;
     },
 
-    then(res, rej) { return doFetch().then(res, rej); }
+    then(res, rej) { return doFetch().then(res, rej); },
+    catch(fn) { return doFetch().catch(fn); }
   };
   return q;
 }
@@ -2899,7 +2900,8 @@ async function loadDash(){
   ]);
   // Demandas sem movimentação há mais de 5 dias (substitui vw_demandas_inatividade)
   const cincodiasAtras = new Date(Date.now()-5*86400000).toISOString();
-  const {data:sm}=await _sb.from('demandas').select('id').not('status','in','(concluida,cancelada)').lt('ultima_movimentacao', cincodiasAtras).catch(()=>({data:[]}));
+  let sm = {data:[]};
+  try { sm = await sbRest('demandas').select('id').not('status','in','(concluida,cancelada)').lt('ultima_movimentacao', cincodiasAtras); } catch(e) {}
   document.getElementById('k1').textContent=a||0;document.getElementById('k2').textContent=c||0;
   document.getElementById('k3').textContent=u||0;document.getElementById('k4').textContent=conc||0;
   document.getElementById('k5').textContent=co||0;document.getElementById('k6').textContent=sm?.length||0;
@@ -3334,11 +3336,11 @@ async function salvarConc(){
   await sb.from('demandas').update({status:'aguardando_conclusao'}).eq('id',demId);
   const {data:dem}=await sb.from('demandas').select('numero,resumo').eq('id',demId).single();
   await sb.from('tramites').insert({demanda_id:demId,usuario_id:U.id,tipo:'aprovacao_solicitada',descricao:`Conclusão solicitada por ${U.nome}.${obs?' '+obs:''}`});
-  // Notificar todos os gestores
-  const gestores=dbGet('profiles').filter(p=>p.perfil==='gestor'&&p.ativo&&p.id!==U.id);
-  for(const g of gestores){
-    await criarNotificacao(g.id,'✅ Solicitação de conclusão',
-      `${U.nome} solicitou conclusão da demanda ${dem?.numero} — "${dem?.resumo||''}".${obs?' Obs: '+obs:''}`,
+  // Notificar todos os gestores via Supabase
+  const {data: gestores} = await sbRest('profiles').select('id').eq('perfil','gestor').eq('ativo',true);
+  for(const g of (gestores||[])){
+    if(g.id !== U.id) await criarNotificacao(g.id,'Solicitacao de conclusao',
+      U.nome+' solicitou conclusao da demanda '+(dem?.numero||'')+' - '+(dem?.resumo||'')+(obs?' Obs: '+obs:''),
       demId,'conclusao_solicitada');
   }
   toast('Conclusão solicitada! Gestor notificado.','ok');
@@ -4334,20 +4336,38 @@ function carregarConfigsWA() {
 // ══════════════════════════════════════════
 let notifAberto = false;
 
+let _lastNotifCount = 0;
+
 async function carregarNotificacoes() {
-  const {data} = await sb.from('notificacoes').select('*,demandas(numero)').eq('usuario_id', U.id).eq('lida', false).order('created_at', {ascending:false}).limit(20);
+  const {data} = await sbRest('notificacoes').select('id,titulo,mensagem,demanda_id,lida,created_at').eq('usuario_id', U.id).eq('lida', false).order('created_at',{ascending:false}).limit(20);
   const count = data?.length || 0;
   const badge = document.getElementById('sinoCount');
-  if (count > 0) { badge.textContent = count > 9 ? '9+' : count; badge.style.display = 'block'; document.getElementById('sinoBell').style.background = 'var(--red-pale)'; }
-  else { badge.style.display = 'none'; document.getElementById('sinoBell').style.background = ''; }
+  if (count > 0) {
+    badge.textContent = count > 9 ? '9+' : count;
+    badge.style.display = 'block';
+    document.getElementById('sinoBell').style.background = 'var(--red-pale)';
+    // Mostrar toast se chegou notificacao nova
+    if (count > _lastNotifCount && _lastNotifCount >= 0) {
+      const nova = data[0];
+      if (nova) {
+        toast('🔔 ' + nova.titulo, 'ok');
+      }
+    }
+  } else {
+    badge.style.display = 'none';
+    document.getElementById('sinoBell').style.background = '';
+  }
+  _lastNotifCount = count;
   const lista = document.getElementById('notifLista');
-  if (!data?.length) { lista.innerHTML = '<div class="vazio" style="padding:2rem">🔕 Nenhuma notificação nova</div>'; return; }
-  lista.innerHTML = data.map(n => `
-    <div onclick="clicarNotif('${n.id}','${n.demanda_id||''}')" style="padding:12px 18px;border-bottom:1px solid var(--border);cursor:pointer;background:${n.lida?'#fff':'var(--sky-pale)'}">
-      <div style="font-size:13px;font-weight:${n.lida?400:600};color:var(--text)">${n.titulo}</div>
-      <div style="font-size:12px;color:var(--text3);margin-top:2px">${n.mensagem}</div>
-      <div style="font-size:11px;color:var(--text3);margin-top:4px">${new Date(n.created_at).toLocaleString('pt-BR')}</div>
-    </div>`).join('');
+  if (!data?.length) { lista.innerHTML = '<div class="vazio" style="padding:2rem">Nenhuma notificacao nova</div>'; return; }
+  lista.innerHTML = data.map(n => {
+    const dt = new Date(n.created_at).toLocaleString('pt-BR');
+    return '<div onclick="clicarNotif(''+n.id+'',''+(n.demanda_id||'')+'')" style="padding:12px 18px;border-bottom:1px solid var(--border);cursor:pointer;background:var(--sky-pale)">' +
+      '<div style="font-size:13px;font-weight:600;color:var(--text)">'+n.titulo+'</div>' +
+      '<div style="font-size:12px;color:var(--text3);margin-top:2px">'+n.mensagem+'</div>' +
+      '<div style="font-size:11px;color:var(--text3);margin-top:4px">'+dt+'</div>' +
+    '</div>';
+  }).join('');
 }
 
 function toggleNotifs() {
@@ -4385,8 +4405,8 @@ document.addEventListener('click', e => {
   }
 });
 
-// Polling de notificações a cada 30 segundos
-setInterval(() => { if (U) carregarNotificacoes(); }, 30000);
+// Polling de notificações a cada 15 segundos
+setInterval(() => { if (U) carregarNotificacoes(); }, 15000);
 
 // ══════════════════════════════════════════
 // CALENDÁRIO FISCAL
@@ -5480,17 +5500,22 @@ function trocarAba(aba) {
 
 // loadDem — lê TUDO do localStorage, faz joins manuais, conta abas
 async function loadDem() {
-  const todas = dbGet('demandas');
+  // Gestor/Supervisor ve todas — colaborador ve so as suas
+  let q = sbRest('demandas').select('id,numero,resumo,status,prioridade,prazo,ultima_movimentacao,created_at,responsavel_atual_id,departamento_atual_id,departamento_id,cliente_id').order('created_at',{ascending:false});
+  if (U.perfil !== 'gestor' && U.perfil !== 'supervisor') {
+    q = q.eq('responsavel_atual_id', U.id);
+  }
+  const {data: dems} = await q;
+  const todas = dems || [];
   const clis  = dbGet('clientes');
   const profs = dbGet('profiles');
   const depts = dbGet('departamentos');
-  allDem = todas.map(d=>({
+  allDem = todas.map(d => ({
     ...d,
-    clientes:     clis.find(c=>c.id===d.cliente_id)||null,
-    profiles:     profs.find(p=>p.id===d.responsavel_atual_id)||null,
-    departamentos:depts.find(x=>x.id===(d.departamento_atual_id||d.departamento_id))||null,
-  })).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
-
+    clientes:      clis.find(c => c.id === d.cliente_id) || null,
+    profiles:      profs.find(p => p.id === d.responsavel_atual_id) || null,
+    departamentos: depts.find(x => x.id === (d.departamento_atual_id || d.departamento_id)) || null,
+  }));
   const aberta = allDem.filter(d=>!['aguardando_conclusao','concluida','cancelada'].includes(d.status));
   const aprov  = allDem.filter(d=>d.status==='aguardando_conclusao');
   const enc    = allDem.filter(d=>['concluida','cancelada'].includes(d.status));
