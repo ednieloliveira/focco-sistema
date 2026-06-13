@@ -3474,40 +3474,39 @@ async function confirmarImportacaoClientes() {
   btn.disabled = true; btn.textContent = 'Importando...';
 
   try {
-    const existing = dbGet('clientes');
-    const existingDocs = new Set(existing.map(c=>c.cpf_cnpj).filter(Boolean));
-    let importados = 0, ignorados = 0, atualizados = 0;
-    let lista = [...existing];
+    let importados = 0, ignorados = 0, erros = 0;
+    const LOTE = 50;
 
-    for (const cli of _importCliDados) {
-      if (cli.cpf_cnpj && existingDocs.has(cli.cpf_cnpj)) {
-        if (sobrescrever) {
-          const idx = lista.findIndex(c=>c.cpf_cnpj===cli.cpf_cnpj);
-          if(idx>=0){lista[idx]={...lista[idx],...cli,id:lista[idx].id};atualizados++;}
-        } else { ignorados++; }
+    for (let i = 0; i < _importCliDados.length; i += LOTE) {
+      const lote = _importCliDados.slice(i, i + LOTE);
+      btn.textContent = `Importando... ${Math.min(i+LOTE, _importCliDados.length)}/${_importCliDados.length}`;
+
+      if (sobrescrever) {
+        const {error} = await sbRest('clientes').upsert(lote, {onConflict:'cpf_cnpj'});
+        if (error) erros += lote.length;
+        else importados += lote.length;
       } else {
-        lista.push(cli);
-        importados++;
+        // Inserir um por um para tratar duplicatas
+        for (const cli of lote) {
+          const {error} = await sbRest('clientes').insert(cli);
+          if (error) {
+            if (error.message.includes('unique') || error.message.includes('duplicate')) ignorados++;
+            else erros++;
+          } else importados++;
+        }
       }
-    }
-
-    dbSet('clientes', lista);
-
-    // Sincronizar com Sheets
-    if (sheetsConectado) {
-      try { await sheetsPost({acao:'inserir_lote_replace',tabela:'CLIENTES',dados:lista}); }
-      catch(e) { console.warn('Sync Sheets erro:', e); }
     }
 
     await loadCli();
     document.getElementById('painelImportCli').style.display = 'none';
     _importCliDados = [];
-    toast(`✅ Importação concluída: ${importados} novos, ${atualizados} atualizados, ${ignorados} ignorados.`, 'ok');
+    toast(`Importacao concluida: ${importados} novos, ${ignorados} ignorados, ${erros} erros.`, 'ok');
   } catch(err) {
-    toast('Erro na importação: '+err.message, 'err');
+    toast('Erro na importacao: '+err.message, 'err');
   } finally {
     btn.disabled = false;
-    btn.textContent = '✅ Importar 0 clientes';
+    btn.textContent = 'Importar 0 clientes';
+
   }
 }
 
