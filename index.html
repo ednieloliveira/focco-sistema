@@ -3050,7 +3050,7 @@ function getDepIcon(dep) {
   return '📋';
 }
 
-function abrirNovaDemanda() {
+async function abrirNovaDemanda() {
   ['ndDesc','ndPrazo'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   ['ndCli','ndDep','ndCat','ndTipo','ndResp','ndPrio'].forEach(id=>{
     const el=document.getElementById(id);
@@ -3061,15 +3061,14 @@ function abrirNovaDemanda() {
   const prev=document.getElementById('ndPrevWrap');
   if(prev) prev.style.display='none';
 
-  // Popular clientes — busca do Supabase sempre
+  // Popular clientes — busca do Supabase e aguarda antes de abrir modal
   const cliSel=document.getElementById('ndCli');
   if(cliSel){
-    cliSel.innerHTML='<option value="">Carregando clientes...</option>';
-    sbRest('clientes').select('id,nome').eq('ativo',true).order('nome').then(({data:clis})=>{
-      cliSel.innerHTML='<option value="">Selecione o cliente...</option>';
-      (clis||[]).forEach(c=>cliSel.innerHTML+=`<option value="${c.id}">${c.nome}</option>`);
-      if(clis) dbSet('clientes', clis);
-    });
+    cliSel.innerHTML='<option value="">Carregando...</option>';
+    const {data:clis} = await sbRest('clientes').select('id,nome').eq('ativo',true).order('nome');
+    cliSel.innerHTML='<option value="">Selecione o cliente...</option>';
+    (clis||[]).forEach(c=>cliSel.innerHTML+=`<option value="${c.id}">${c.nome}</option>`);
+    if(clis) dbSet('clientes', clis);
   }
 
   // Popular departamentos com icones modernos
