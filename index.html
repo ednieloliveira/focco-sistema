@@ -2722,9 +2722,11 @@ async function loadUser(user){
   document.getElementById('dSauda').textContent=(h<12?'Bom dia':h<18?'Boa tarde':'Boa noite')+', '+p.nome.split(' ')[0]+' 👋';
   document.getElementById('dData').textContent=new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+' · Focco Contabilidade';
   await Promise.all([loadCols(),loadDeps()]);
-  // Sincronizar clientes e profiles no cache local para funções legadas
-  _sb.from('clientes').select('*').eq('ativo',true).then(r=>{ if(r.data) dbSet('clientes',r.data); });
-  _sb.from('profiles').select('*').eq('ativo',true).then(r=>{ if(r.data) dbSet('profiles',r.data); });
+  // Carregar clientes e profiles sincronamente ao login — fonte definitiva
+  await Promise.all([
+    sbRest('clientes').select('*').eq('ativo',true).order('nome').then(r=>{ if(r.data) dbSet('clientes',r.data); }),
+    sbRest('profiles').select('*').eq('ativo',true).then(r=>{ if(r.data) dbSet('profiles',r.data); })
+  ]);
   fillGlobSelects();
   await loadDash();
   carregarNotificacoes();
@@ -3061,14 +3063,12 @@ async function abrirNovaDemanda() {
   const prev=document.getElementById('ndPrevWrap');
   if(prev) prev.style.display='none';
 
-  // Popular clientes — busca do Supabase e aguarda antes de abrir modal
+  // Popular clientes do cache (carregado ao login)
   const cliSel=document.getElementById('ndCli');
   if(cliSel){
-    cliSel.innerHTML='<option value="">Carregando...</option>';
-    const {data:clis} = await sbRest('clientes').select('id,nome').eq('ativo',true).order('nome');
+    const clis = dbGet('clientes');
     cliSel.innerHTML='<option value="">Selecione o cliente...</option>';
-    (clis||[]).forEach(c=>cliSel.innerHTML+=`<option value="${c.id}">${c.nome}</option>`);
-    if(clis) dbSet('clientes', clis);
+    clis.forEach(c=>cliSel.innerHTML+=`<option value="${c.id}">${c.nome}</option>`);
   }
 
   // Popular departamentos com icones modernos
@@ -3467,7 +3467,7 @@ async function salvarDescricao(id){
   await renderDet();
 }
 
-async function loadCli(){const {data}=await sb.from('clientes').select('*').eq('ativo',true).order('nome');allCli=data||[];document.getElementById('cliTotal').textContent=`${allCli.length} cliente(s)`;filtCli();}
+async function loadCli(){const {data}=await sb.from('clientes').select('*').eq('ativo',true).order('nome');allCli=data||[];dbSet('clientes',allCli);document.getElementById('cliTotal').textContent=`${allCli.length} cliente(s)`;filtCli();}
 
 // ═══════════════════════════════════════════════════════════
 // IMPORTAÇÃO DE CLIENTES — Excel/CSV
