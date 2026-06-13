@@ -2,10 +2,22 @@
 // init, login, navegação, loadUser
 // ═══════════════════════════════════════════
 
-
 async function init(){
-  const {data:{session}}=await sb.auth.getSession();
-  if(session)await loadUser(session.user);else showLogin();
+  // Recupera sessão salva no localStorage
+  const sessStr = localStorage.getItem('focco_auth');
+  if(sessStr){
+    try{
+      const sess = JSON.parse(sessStr);
+      if(sess && sess.user){
+        const {data:prof} = await _sb.from('profiles').select('*').eq('id',sess.user.id).eq('ativo',true).single();
+        if(prof){
+          await loadUser(sess.user);
+          return;
+        }
+      }
+    }catch(e){}
+  }
+  showLogin();
 }
 function showLogin(){document.getElementById('pgLogin').style.display='flex';document.getElementById('pgApp').style.display='none';}
 async function fazerLogin(){
@@ -22,31 +34,20 @@ async function fazerLogin(){
     err.textContent=error.message.includes('Invalid')?'Usuário ou senha incorretos.':error.message;
     err.classList.add('show'); return;
   }
-  // Verificar se é primeiro acesso — redirecionar para troca de senha
-  const profs = dbGet('profiles');
-  const login = (email||'').toLowerCase().trim();
-  const u = profs.find(p=>(
-    (p.usuario||'').toLowerCase()===login||
-    (p.nome||'').toLowerCase()===login||
-    (p.email||'').toLowerCase()===login
-  )&&p.ativo!==false);
-  
-  if(u && u.primeiro_acesso===true) {
-    // Guardar usuário pendente e mostrar tela de troca
+  // Verificar se é primeiro acesso
+  const {data:profCheck} = await _sb.from('profiles').select('*').eq('id',data.user.id).single();
+  if(profCheck && profCheck.primeiro_acesso===true) {
     window._userPendenteTroca = data.user;
-    window._profPendenteTroca = u;
+    window._profPendenteTroca = profCheck;
     btn.disabled=false; btn.textContent='Entrar no Sistema';
     document.getElementById('telaLoginNormal').style.display='none';
     document.getElementById('telaTrocaSenha').style.display='block';
-    // Atualizar textos da tela de troca
     const msg = document.querySelector('#telaTrocaSenha .login-p');
-    if(msg) msg.textContent = 'Olá, '+u.nome.split(' ')[0]+'! Defina sua senha pessoal antes de continuar.';
+    if(msg) msg.textContent = 'Olá, '+profCheck.nome.split(' ')[0]+'! Defina sua senha pessoal antes de continuar.';
     return;
   }
-  
   await loadUser(data.user);
 }
-
 
 function cancelarTrocaSenha(){
   document.getElementById('telaTrocaSenha').style.display='none';
@@ -78,30 +79,17 @@ async function trocarSenhaObrigatoria() {
   try {
     const prof = window._profPendenteTroca;
     if(!prof) throw new Error('Sessão expirada. Faça login novamente.');
-    
-    // Atualizar senha e marcar primeiro_acesso=false no localStorage
-    const profs = dbGet('profiles');
-    const idx = profs.findIndex(p=>p.id===prof.id);
-    if(idx<0) throw new Error('Usuário não encontrado.');
-    
-    profs[idx].senha_hash = await hashPass(nova);
-    profs[idx].primeiro_acesso = false;
-    dbSet('profiles', profs);
-    
-    // Sincronizar com Sheets
-    if(sheetsConectado) {
-      try { await sheetsPost({acao:'atualizar',tabela:'PROFILES',id:prof.id,dados:profs[idx]}); }
-      catch(e) { console.warn('Sync erro:', e); }
-    }
+
+    const {error} = await sb.auth.updateUser({password: nova});
+    if(error) throw new Error(error.message);
 
     toast('Senha definida com sucesso!','ok');
     btn.disabled=false; btn.textContent='Salvar e Entrar';
-    
-    // Entrar no sistema
+
     await loadUser(window._userPendenteTroca);
     window._userPendenteTroca = null;
     window._profPendenteTroca = null;
-    
+
   } catch(e) {
     err.textContent = e.message||'Erro ao salvar senha.';
     err.classList.add('show');
@@ -132,14 +120,12 @@ async function fazerLogout(){
   if(!confirm('Deseja sair do sistema?')) return;
   await sb.auth.signOut();
   U = null;
-  // Limpar campos de login
   const lEmail=document.getElementById('lEmail');
   const lSenha=document.getElementById('lSenha');
   const lBtn=document.getElementById('lBtn');
   if(lEmail) lEmail.value='';
   if(lSenha) lSenha.value='';
   if(lBtn){ lBtn.disabled=false; lBtn.textContent='Entrar no Sistema'; }
-  // Resetar tela de troca de senha
   const telaLogin=document.getElementById('telaLoginNormal');
   const telaTroca=document.getElementById('telaTrocaSenha');
   if(telaLogin) telaLogin.style.display='block';
@@ -196,11 +182,6 @@ function ir(p,el){
   else if(p==='certs')loadCerts();
   else if(p==='atend')loadAtend();
   else if(p==='users'){loadUsers();}
-  else if(p==='fiscal')loadFiscal();
-  else if(p==='dp')loadDP();
-  else if(p==='cont')loadCont();
-  else if(p==='rural')loadRural();
-  else if(p==='irpf')loadIRPF();
   else if(p==='financeiro')loadFinanceiro();
   else if(p==='relatorios'){initRelatorios();}
   else if(p==='whatsapp')loadWAHistorico();
@@ -210,6 +191,3 @@ function ir(p,el){
   else if(p==='backup'){loadBackupResumo();registrarHistoricoBackup();}
   else if(p==='impressao')loadImpressao();
 }
-
-
-
