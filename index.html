@@ -2315,8 +2315,9 @@ const _rpc={
     const tipo=tipos.find(t=>t.id===p_tipo_id);
     const pref=tipo?.prefixo_numeracao||'DEM';
     const ano=new Date().getFullYear();
-    const dems=dbGet('demandas');
-    const nums=dems.filter(d=>d.numero?.startsWith(pref+'-'+ano+'-')).map(d=>parseInt(d.numero.split('-')[2]||'0')).filter(n=>!isNaN(n));
+    // Buscar do Supabase em vez do localStorage
+    const {data:dems} = await sbRest('demandas').select('numero').ilike('numero', pref+'-'+ano+'-%');
+    const nums=(dems||[]).map(d=>parseInt((d.numero||'').split('-')[2]||'0')).filter(n=>!isNaN(n));
     const next=(nums.length?Math.max(...nums):0)+1;
     return{data:pref+'-'+ano+'-'+String(next).padStart(4,'0'),error:null};
   },
