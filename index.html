@@ -3227,6 +3227,9 @@ function mostrarErroDet(titulo, msg) {
   el.appendChild(div);
 }
 
+// Cache de detalhe de demanda para evitar re-fetch desnecessario
+const _detCache = {};
+
 async function renderDet(){
   const id = demId;
   const todosProf = dbGet('profiles');
@@ -3235,13 +3238,23 @@ async function renderDet(){
   const todosTipo = dbGet('tipos_demanda');
   const todasCli  = dbGet('clientes');
 
-  // Buscar demanda e dados relacionados do Supabase
-  const [{data:d}, {data:trDados}, {data:prDados}, {data:peDados}] = await Promise.all([
-    sbRest('demandas').select('*').eq('id',id).single(),
-    sbRest('tramites').select('*').eq('demanda_id',id).order('created_at',{ascending:false}),
-    sbRest('proximas_acoes').select('*').eq('demanda_id',id).eq('concluida',false).order('data_prevista',{ascending:true}),
-    sbRest('pendencias').select('*').eq('demanda_id',id).eq('resolvida',false),
-  ]);
+  // Mostrar dados do cache imediatamente se disponivel
+  let d, trDados, prDados, peDados;
+  if (_detCache[id]) {
+    ({d, trDados, prDados, peDados} = _detCache[id]);
+  } else {
+    const results = await Promise.all([
+      sbRest('demandas').select('*').eq('id',id).single(),
+      sbRest('tramites').select('*').eq('demanda_id',id).order('created_at',{ascending:false}),
+      sbRest('proximas_acoes').select('*').eq('demanda_id',id).eq('concluida',false).order('data_prevista',{ascending:true}),
+      sbRest('pendencias').select('*').eq('demanda_id',id).eq('resolvida',false),
+    ]);
+    d = results[0].data;
+    trDados = results[1].data;
+    prDados = results[2].data;
+    peDados = results[3].data;
+    if (d) _detCache[id] = {d, trDados, prDados, peDados};
+  }
 
   if(!d){ mostrarErroDet('Demanda nao encontrada','O registro pode ter sido removido.'); return; }
 
@@ -3372,9 +3385,13 @@ function fillDetSelects(){
   const sd=document.getElementById('trDep');if(sd){sd.innerHTML='<option value="">Selecione...</option>';deps.forEach(d=>{sd.innerHTML+=`<option value="${d.id}">${d.nome}</option>`;});}
 }
 async function salvarTram(){const desc=document.getElementById('tDesc').value.trim(),tipo=document.getElementById('tTipo').value;if(!desc){toast('Informe a descrição','err');return;}await sb.from('tramites').insert({demanda_id:demId,usuario_id:U.id,tipo,descricao:desc});toast('Trâmite registrado!','ok');fm('mTram');document.getElementById('tDesc').value='';await renderDet();}
-async function salvarPend(){const desc=document.getElementById('pDesc').value.trim();if(!desc){toast('Informe a descrição','err');return;}const tipo=document.getElementById('pTipo').value,resp=document.getElementById('pResp').value||null,data=document.getElementById('pData').value||null;const sm={cliente:'aguardando_cliente',orgao_publico:'aguardando_orgao',gestor:'aguardando_gestor'};await sb.from('pendencias').insert({demanda_id:demId,tipo,descricao:desc,responsavel_id:resp,data_prevista:data,created_by:U.id});if(sm[tipo])await sb.from('demandas').update({status:sm[tipo]}).eq('id',demId);await sb.from('tramites').insert({demanda_id:demId,usuario_id:U.id,tipo:'pendencia_criada',descricao:`Pendência (${tipo}): ${desc}`});toast('Pendência criada!','ok');fm('mPend');document.getElementById('pDesc').value='';await renderDet();}
+async function salvarPend(){
+  delete _detCache[demId]; // invalidar cache
+  const desc=document.getElementById('pDesc').value.trim();if(!desc){toast('Informe a descrição','err');return;}const tipo=document.getElementById('pTipo').value,resp=document.getElementById('pResp').value||null,data=document.getElementById('pData').value||null;const sm={cliente:'aguardando_cliente',orgao_publico:'aguardando_orgao',gestor:'aguardando_gestor'};await sb.from('pendencias').insert({demanda_id:demId,tipo,descricao:desc,responsavel_id:resp,data_prevista:data,created_by:U.id});if(sm[tipo])await sb.from('demandas').update({status:sm[tipo]}).eq('id',demId);await sb.from('tramites').insert({demanda_id:demId,usuario_id:U.id,tipo:'pendencia_criada',descricao:`Pendência (${tipo}): ${desc}`});toast('Pendência criada!','ok');fm('mPend');document.getElementById('pDesc').value='';await renderDet();}
 async function resolPend(id){await sb.from('pendencias').update({resolvida:true,resolvida_em:new Date().toISOString(),resolvida_por:U.id}).eq('id',id);await sb.from('tramites').insert({demanda_id:demId,usuario_id:U.id,tipo:'pendencia_resolvida',descricao:'Pendência resolvida.'});toast('Resolvida!','ok');await renderDet();}
-async function salvarAcao(){const desc=document.getElementById('aDesc').value.trim(),resp=document.getElementById('aResp').value,data=document.getElementById('aData').value;if(!desc||!resp||!data){toast('Preencha todos os campos','err');return;}await sb.from('proximas_acoes').insert({demanda_id:demId,responsavel_id:resp,descricao:desc,data_prevista:data,created_by:U.id});toast('Ação salva!','ok');fm('mAcao');document.getElementById('aDesc').value='';await renderDet();}
+async function salvarAcao(){
+  delete _detCache[demId]; // invalidar cache
+  const desc=document.getElementById('aDesc').value.trim(),resp=document.getElementById('aResp').value,data=document.getElementById('aData').value;if(!desc||!resp||!data){toast('Preencha todos os campos','err');return;}await sb.from('proximas_acoes').insert({demanda_id:demId,responsavel_id:resp,descricao:desc,data_prevista:data,created_by:U.id});toast('Ação salva!','ok');fm('mAcao');document.getElementById('aDesc').value='';await renderDet();}
 async function concAcao(id){await sb.from('proximas_acoes').update({concluida:true,concluida_em:new Date().toISOString(),concluida_por:U.id}).eq('id',id);toast('Ação concluída!','ok');await renderDet();}
 async function salvarTransf(){
   const resp=document.getElementById('trResp').value;
@@ -3420,6 +3437,7 @@ async function salvarConc(){
 async function aprovarConc(){if(!confirm('Aprovar conclusão desta demanda?'))return;await sb.from('demandas').update({status:'concluida',data_conclusao:new Date().toISOString()}).eq('id',demId);await sb.from('aprovacoes').update({status:'aprovada',aprovado_por:U.id,respondido_em:new Date().toISOString()}).eq('demanda_id',demId).eq('status','pendente');await sb.from('tramites').insert({demanda_id:demId,usuario_id:U.id,tipo:'aprovacao_concedida',descricao:'Conclusão aprovada. Demanda encerrada.'});toast('Demanda concluída!','ok');await renderDet();}
 // Tramite inline
 async function salvarTramiteInline(){
+  delete _detCache[demId]; // invalidar cache
   const desc=document.getElementById('tramiteInline')?.value.trim();
   const tipo=document.getElementById('tTipoInline')?.value||'movimentacao_geral';
   if(!desc){toast('Informe a descricao do tramite','err');return;}
