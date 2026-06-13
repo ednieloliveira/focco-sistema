@@ -1,6 +1,7 @@
+
 // ══════════════════════════════════════════
 let honorarios = JSON.parse(localStorage.getItem('focco_honorarios') || '[]');
-
+ 
 async function loadFinanceiro() {
   const receber = honorarios.filter(h=>h.status==='pendente');
   const recebidos = honorarios.filter(h=>h.status==='pago' && h.venc >= new Date(new Date().setDate(1)).toISOString().split('T')[0]);
@@ -10,7 +11,7 @@ async function loadFinanceiro() {
   document.getElementById('fink3').textContent = atrasados.length;
   const {count:cliAtivos} = await sb.from('clientes').select('*',{count:'exact',head:true}).eq('ativo',true);
   document.getElementById('fink4').textContent = cliAtivos||0;
-
+ 
   const el = document.getElementById('finHonorarios');
   if (!honorarios.length) {
     el.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--text3)"><div style="font-size:36px;margin-bottom:8px">💰</div><div style="font-weight:600;margin-bottom:4px">Nenhum honorário cadastrado</div><button class="btn btn-p" style="margin-top:12px" onclick="abrirModalHonorario()">+ Lançar Honorário</button></div>`;
@@ -27,14 +28,14 @@ async function loadFinanceiro() {
       </tr>`).join('')}
     </tbody></table></div>`;
   }
-
+ 
   const hj = new Date().toISOString().split('T')[0];
   const prox7 = honorarios.filter(h=>h.status==='pendente'&&h.venc&&h.venc<=new Date(Date.now()+7*86400000).toISOString().split('T')[0]);
   document.getElementById('finVencimentos').innerHTML = prox7.length ?
     prox7.map(h=>`<div class="ui"><div class="uc" style="background:${h.venc<hj?'var(--red)':'var(--amber)'}"></div><div class="uinfo"><div class="utit">${h.cliNome}</div><div class="umeta">R$ ${(h.valor||0).toLocaleString('pt-BR',{minimumFractionDigits:2})} · ${new Date(h.venc+'T12:00:00').toLocaleDateString('pt-BR')}</div></div></div>`).join('') :
     '<div class="vazio">Nenhum vencimento nos próximos 7 dias.</div>';
 }
-
+ 
 async function abrirModalHonorario() {
   const {data:cls} = await sb.from('clientes').select('id,nome').eq('ativo',true).order('nome');
   const sel = document.getElementById('honCli');
@@ -47,7 +48,7 @@ async function abrirModalHonorario() {
   document.getElementById('honStatus').value = 'pendente';
   om('mHonorario');
 }
-
+ 
 function salvarHonorario() {
   const cliEl = document.getElementById('honCli');
   const cliId = cliEl.value;
@@ -60,7 +61,7 @@ function salvarHonorario() {
   localStorage.setItem('focco_honorarios', JSON.stringify(honorarios));
   toast('Honorário lançado!','ok'); fm('mHonorario'); loadFinanceiro();
 }
-
+ 
 function toggleHon(id) {
   const h = honorarios.find(x=>x.id===id);
   if (!h) return;
@@ -68,18 +69,18 @@ function toggleHon(id) {
   localStorage.setItem('focco_honorarios', JSON.stringify(honorarios));
   loadFinanceiro();
 }
-
+ 
 // ══════════════════════════════════════════
 // RELATÓRIOS
 // ══════════════════════════════════════════
 let relDados = [], relTituloAtual = '';
-
+ 
 async function gerarRelatorio(tipo) {
   document.getElementById('relatorioResultado').style.display = 'block';
   document.getElementById('relatorioConteudo').innerHTML = '<div class="loading">Gerando relatório...</div>';
   const hj = new Date().toISOString().split('T')[0];
   const im = new Date(); im.setDate(1);
-
+ 
   if (tipo === 'demandas_mes') {
     relTituloAtual = `Demandas — ${new Date().toLocaleDateString('pt-BR',{month:'long',year:'numeric'})}`;
     document.getElementById('relatorioTitulo').textContent = relTituloAtual;
@@ -142,12 +143,12 @@ async function gerarRelatorio(tipo) {
     renderRelatorioTabela(['Tipo de Serviço','Departamento','Total','Ativas','Concluídas'], relDados.map(d=>[d.tipo,d.dep,d.total,d.ativas,d.concluidas]));
   }
 }
-
+ 
 function renderRelatorioTabela(cabecalhos, linhas) {
   if (!linhas.length) { document.getElementById('relatorioConteudo').innerHTML='<div class="vazio">Nenhum dado encontrado.</div>'; return; }
   document.getElementById('relatorioConteudo').innerHTML = `<div style="margin-bottom:10px;font-size:13px;color:var(--text3)">${linhas.length} registro(s) encontrado(s)</div><div style="overflow-x:auto"><table><thead><tr>${cabecalhos.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>${linhas.map(l=>`<tr>${l.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
 }
-
+ 
 async function gerarExcelRelatorio(tipo) {
   await gerarRelatorio(tipo || 'demandas_mes');
   setTimeout(() => {
@@ -159,7 +160,7 @@ async function gerarExcelRelatorio(tipo) {
     }), 'focco_'+relTituloAtual.toLowerCase().replace(/\s+/g,'_'), relTituloAtual);
   }, 500);
 }
-
+ 
 function exportarExcelRel() {
   if (!relDados.length) { toast('Gere um relatório primeiro','err'); return; }
   const ths = [...document.querySelectorAll('#relatorioConteudo th')].map(t=>t.textContent);
@@ -171,7 +172,7 @@ function exportarExcelRel() {
   });
   exportarExcel(dados, 'focco_'+relTituloAtual.toLowerCase().replace(/\s+/g,'_'), relTituloAtual);
 }
-
+ 
 function exportarCSV() {
   if (!relDados.length) { toast('Gere um relatório primeiro','err'); return; }
   const el = document.getElementById('relatorioConteudo');
@@ -186,7 +187,7 @@ function exportarCSV() {
   a.click();
   toast('CSV exportado!','ok');
 }
-
+ 
 // ══════════════════════════════════════════
 // WHATSAPP
 // ══════════════════════════════════════════
