@@ -1,0 +1,1764 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Focco · Sistema Operacional</title>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..700;1,14..32,300..700&display=swap" rel="stylesheet">
+<style>
+<link rel="stylesheet" href="css/style.css">
+</head>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="pgLogin" class="login-wrap">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-icon">F</div>
+      <div class="login-wordmark">Focco <small>Contabilidade &amp; Assessoria</small></div>
+    </div>
+    <div id="telaLoginNormal">
+      <div class="login-h">Bem-vindo de volta</div>
+      <div class="login-p">Acesse com suas credenciais</div>
+      <div class="login-err" id="loginErr"></div>
+      <label class="fl">Usuário</label>
+      <input type="text" id="lEmail" class="fi" placeholder="Ex: Gerente" autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('lSenha').focus()">
+      <label class="fl">Senha</label>
+      <input type="password" id="lSenha" class="fi" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')fazerLogin()">
+      <button class="login-btn" id="lBtn" onclick="fazerLogin()">Entrar no Sistema</button>
+      <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--text3)">Focco Contabilidade · Patrocínio — MG</div>
+      <div style="text-align:center;margin-top:8px">
+        <button onclick="resetarSistema()" style="background:none;border:none;font-size:10px;color:var(--text3);cursor:pointer;text-decoration:underline">Problemas para entrar? Clique aqui para resetar</button>
+      </div>
+    </div>
+    <div id="telaTrocaSenha" style="display:none">
+      <div style="background:var(--amber-pale);border:1px solid #FCD34D;border-radius:var(--r);padding:12px;margin-bottom:16px;font-size:13px;color:var(--amber)">
+        🔐 <strong>Primeiro acesso detectado.</strong><br>
+        <span class="login-p" style="font-size:12px;color:var(--text3)">Defina sua senha pessoal antes de continuar.</span>
+      </div>
+      <div class="login-err" id="trocaErr"></div>
+      <label class="fl">Nova senha *</label>
+      <input type="password" id="tNovaSenha" class="fi" placeholder="Mínimo 4 caracteres" onkeydown="if(event.key==='Enter')document.getElementById('tConfSenha').focus()">
+      <label class="fl">Confirmar nova senha *</label>
+      <input type="password" id="tConfSenha" class="fi" placeholder="Repita a nova senha" onkeydown="if(event.key==='Enter')trocarSenhaObrigatoria()">
+      <button class="login-btn" id="tBtn" onclick="trocarSenhaObrigatoria()">🔑 Salvar senha e Entrar</button>
+      <div style="text-align:center;margin-top:10px">
+        <button onclick="cancelarTrocaSenha()" style="background:none;border:none;font-size:12px;color:var(--text3);cursor:pointer;text-decoration:underline">← Voltar ao login</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="pgApp" style="display:none">
+<div class="sb-overlay" id="sbOverlay" onclick="toggleSidebar()"></div>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-icon">F</div>
+    <div><div class="sb-name">Focco</div><div class="sb-sub">Sistema Operacional</div></div>
+  </div>
+  <div class="sb-section">Principal</div>
+  <div class="nav active" id="nav-dash" onclick="ir('dash',this)"><span class="ni">⊞</span> Dashboard</div>
+  <div class="nav" id="nav-caixa" onclick="ir('caixa',this)"><span class="ni">📥</span> Minha Caixa <span class="nb" id="badgeAceite" style="display:none">0</span></div>
+  <div class="nav" id="nav-kanban" onclick="ir('kanban',this)"><span class="ni">⬛</span> Kanban</div>
+  <div class="nav" id="nav-dem" onclick="ir('dem',this)"><span class="ni">☰</span> Demandas</div>
+  <div class="nav" id="nav-cal" onclick="ir('cal',this)"><span class="ni">📅</span> Calendário Fiscal</div>
+  <div class="sb-section">Cadastros</div>
+  <div class="nav" id="nav-cli" onclick="ir('cli',this)"><span class="ni">👥</span> Clientes</div>
+  <div class="nav" id="nav-depts" onclick="ir('depts',this)"><span class="ni">🏢</span> Departamentos</div>
+  <div class="sb-sec" id="secGestor" style="display:none">
+    <div class="sb-section">Gestão</div>
+    <div class="nav" id="nav-relatorios" onclick="ir('relatorios',this)"><span class="ni">📊</span> Relatórios</div>
+    <div class="nav" id="nav-param" onclick="ir('param',this)"><span class="ni">⚙</span> Parâmetros</div>
+    <div class="nav" id="nav-users" onclick="ir('users',this)"><span class="ni">👤</span> Usuários</div>
+    <div class="nav" id="nav-whatsapp" onclick="ir('whatsapp',this)"><span class="ni">💬</span> WhatsApp</div>
+    <div class="nav" id="nav-utilitarios" onclick="ir('utilitarios',this)"><span class="ni">🔧</span> Utilitários</div>
+    <div class="nav" id="nav-backup" onclick="ir('backup',this)"><span class="ni">💾</span> Backup</div>
+    <div class="nav" id="nav-impressao" onclick="ir('impressao',this)"><span class="ni">🖨</span> Impressão PDF</div>
+  </div>
+  <div class="sb-foot">
+    <div class="user-card" onclick="fazerLogout()">
+      <div class="u-av" id="sbAv">--</div>
+      <div style="flex:1;min-width:0"><div class="u-name" id="sbNome">...</div><div class="u-role" id="sbPerfil">...</div></div>
+      <span style="color:var(--text3);font-size:12px">↩</span>
+    </div>
+  </div>
+</nav>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="ham-btn" id="hamBtn" onclick="toggleSidebar()">☰</div>
+  <div class="topbar-title" id="pgTitle">Dashboard</div>
+  <div class="search"><span style="color:var(--text3);font-size:13px">🔍</span><input type="text" id="busca" placeholder="Buscar demandas, clientes..." oninput="buscaRapida()"></div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <button class="btn btn-p" onclick="abrirNovaDemanda()" title="Nova demanda" style="padding:7px 12px;font-size:12px">+ Nova</button>
+    <div style="position:relative">
+      <div class="icon-btn" onclick="toggleNotifs()" title="Notificações" id="sinoBell">🔔</div>
+      <span id="sinoCount" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:10px;min-width:16px;text-align:center">0</span>
+    </div>
+    <div class="icon-btn" id="topAv" style="font-size:11px;font-weight:700;color:var(--accent);cursor:pointer" onclick="fazerLogout()" title="Sair do sistema">--</div>
+  </div>
+  <!-- NOTIF PANEL -->
+  <div id="notifPanel" style="display:none;position:fixed;top:60px;right:14px;width:340px;background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);box-shadow:var(--sh-lg);z-index:300;max-height:460px;overflow-y:auto">
+    <div style="padding:13px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+      <div style="font-size:13px;font-weight:600;color:var(--text)">🔔 Notificações</div>
+      <button onclick="marcarTodasLidas()" style="background:none;border:none;font-size:12px;color:var(--accent);cursor:pointer;font-weight:600">Marcar lidas</button>
+    </div>
+    <div id="notifLista"><div class="loading">Carregando...</div></div>
+  </div>
+</header>
+
+<main class="main">
+
+<!-- DASHBOARD -->
+<div class="pg on" id="pg-dash">
+
+  <!-- HEADER -->
+  <div class="ph">
+    <div><h1 id="dSauda">...</h1><p id="dData"></p></div>
+    <button class="btn btn-p" onclick="abrirNovaDemanda()">+ Nova Demanda</button>
+  </div>
+
+  <!-- URGENTE -->
+  <div id="dashUrgente" style="display:none;margin-bottom:20px">
+    <div class="urgente-panel">
+      <div class="up-title">🚨 Urgente Hoje</div>
+      <div id="dashUrgenteList"></div>
+    </div>
+  </div>
+
+  <!-- KPIs compactos -->
+  <div style="display:grid;grid-template-columns:repeat(8,1fr);gap:8px;margin-bottom:16px">
+    <div onclick="ir('dem')" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 10px;cursor:pointer;text-align:center;transition:all .15s;border-top:2px solid var(--accent)" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''"><div style="font-size:20px;font-weight:800;color:var(--text);line-height:1" id="k1">—</div><div style="font-size:10px;color:var(--text3);margin-top:3px;font-weight:500">Abertas</div></div>
+    <div onclick="ir('dem')" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 10px;cursor:pointer;text-align:center;transition:all .15s;border-top:2px solid var(--green)" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''"><div style="font-size:20px;font-weight:800;color:var(--text);line-height:1" id="k4">—</div><div style="font-size:10px;color:var(--text3);margin-top:3px;font-weight:500">Concluídas</div></div>
+    <div onclick="ir('dem')" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 10px;cursor:pointer;text-align:center;transition:all .15s;border-top:2px solid var(--red)" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''"><div style="font-size:20px;font-weight:800;color:var(--red);line-height:1" id="k3">—</div><div style="font-size:10px;color:var(--text3);margin-top:3px;font-weight:500">Urgentes</div></div>
+    <div onclick="ir('dem')" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 10px;cursor:pointer;text-align:center;transition:all .15s;border-top:2px solid var(--red)" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''"><div style="font-size:20px;font-weight:800;color:var(--red);line-height:1" id="k6">—</div><div style="font-size:10px;color:var(--text3);margin-top:3px;font-weight:500">Sem mov.</div></div>
+    <div onclick="ir('dem')" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 10px;cursor:pointer;text-align:center;transition:all .15s;border-top:2px solid var(--amber)" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''"><div style="font-size:20px;font-weight:800;color:var(--text);line-height:1" id="k2">—</div><div style="font-size:10px;color:var(--text3);margin-top:3px;font-weight:500">Ag. cliente</div></div>
+    <div onclick="ir('dem')" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 10px;cursor:pointer;text-align:center;transition:all .15s;border-top:2px solid var(--purple)" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''"><div style="font-size:20px;font-weight:800;color:var(--text);line-height:1" id="k5">—</div><div style="font-size:10px;color:var(--text3);margin-top:3px;font-weight:500">Ag. aprova.</div></div>
+    <div onclick="ir('dem')" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 10px;cursor:pointer;text-align:center;transition:all .15s;border-top:2px solid var(--sky)" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''"><div style="font-size:20px;font-weight:800;color:var(--text);line-height:1" id="k7">—</div><div style="font-size:10px;color:var(--text3);margin-top:3px;font-weight:500">Ag. órgão</div></div>
+    <div onclick="ir('dem')" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 10px;cursor:pointer;text-align:center;transition:all .15s;border-top:2px solid var(--navy)" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''"><div style="font-size:20px;font-weight:800;color:var(--text);line-height:1" id="k8">—</div><div style="font-size:10px;color:var(--text3);margin-top:3px;font-weight:500">Pendências</div></div>
+  </div>
+
+  <!-- LAYOUT DIVIDIDO: Esquerda operacional | Direita calendário -->
+  <div style="display:grid;grid-template-columns:1fr 400px;gap:16px;align-items:start">
+
+    <!-- COLUNA ESQUERDA -->
+    <div>
+      <!-- Atalhos -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
+        <div class="atalho-card" onclick="abrirNovaDemanda()"><span class="at-icon">➕</span><div class="at-label">Nova Demanda</div><div class="at-sub">Abrir processo</div></div>
+        <div class="atalho-card" onclick="ir('dem')"><span class="at-icon">☰</span><div class="at-label">Demandas</div><div class="at-sub">Central de processos</div></div>
+        <div class="atalho-card" onclick="ir('depts')"><span class="at-icon">🏢</span><div class="at-label">Departamentos</div><div class="at-sub">Ver por setor</div></div>
+      </div>
+
+      <!-- KANBAN VISÃO RÁPIDA -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="ch">
+          <div class="ct">⬛ Kanban — Visão Rápida</div>
+          <button class="btn btn-s" style="padding:4px 10px;font-size:12px" onclick="ir('kanban')">Ver completo →</button>
+        </div>
+        <div style="padding:10px;overflow-x:auto">
+          <div class="kb-board-6" id="dashKbBoard"><div class="loading">Carregando...</div></div>
+        </div>
+      </div>
+
+      <!-- Central de atenção + Carga -->
+      <div class="g2" style="margin-bottom:16px">
+        <div class="card"><div class="ch"><div class="ct">⚠️ Central de Atenção</div><button class="btn btn-s" style="padding:4px 10px;font-size:12px" onclick="ir('dem')">Ver todas</button></div><div class="cb" id="dAtenc"><div class="loading">Carregando...</div></div></div>
+        <div class="card"><div class="ch"><div class="ct">👥 Carga da Equipe</div></div><div class="cb" id="dCarga"><div class="loading">Carregando...</div></div></div>
+      </div>
+      <div class="g2" style="margin-bottom:0">
+        <div class="card"><div class="ch"><div class="ct">✅ Aprovações Pendentes</div></div><div class="cb" id="dAprov"><div class="loading">Carregando...</div></div></div>
+        <div class="card"><div class="ch"><div class="ct">📌 Próximas Ações Vencidas</div></div><div class="cb" id="dProx"><div class="loading">Carregando...</div></div></div>
+      </div>
+    </div>
+
+    <!-- COLUNA DIREITA: CALENDÁRIO TRIBUTÁRIO + COMPROMISSOS -->
+    <div>
+      <div class="card" style="margin-bottom:0">
+        <div class="ch" style="padding:12px 14px">
+          <div class="ct">📅 Agenda</div>
+          <div style="display:flex;gap:4px;align-items:center">
+            <button onclick="dashCalMes(-1)" style="background:none;border:1px solid var(--border);border-radius:5px;width:24px;height:24px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center">‹</button>
+            <button onclick="dashCalMes(1)"  style="background:none;border:1px solid var(--border);border-radius:5px;width:24px;height:24px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center">›</button>
+            <button onclick="abrirNovoCompromisso()" style="background:var(--accent);color:#fff;border:none;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:11px;font-weight:600;margin-left:4px">+ Compromisso</button>
+            <button onclick="abrirGestaoCalendario()" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:5px;padding:3px 8px;cursor:pointer;font-size:11px;font-weight:600;margin-left:4px" title="Gerenciar obrigações e feriados">⚙</button>
+          </div>
+        </div>
+
+        <!-- Cabeçalho do mês -->
+        <div style="padding:0 14px 8px;border-bottom:1px solid var(--border)">
+          <div id="dashCalTitulo" style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px;text-align:center"></div>
+          <!-- Dias da semana -->
+          <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center">
+            <div style="font-size:10px;font-weight:600;color:var(--text3);padding:4px 0">D</div>
+            <div style="font-size:10px;font-weight:600;color:var(--text3);padding:4px 0">S</div>
+            <div style="font-size:10px;font-weight:600;color:var(--text3);padding:4px 0">T</div>
+            <div style="font-size:10px;font-weight:600;color:var(--text3);padding:4px 0">Q</div>
+            <div style="font-size:10px;font-weight:600;color:var(--text3);padding:4px 0">Q</div>
+            <div style="font-size:10px;font-weight:600;color:var(--text3);padding:4px 0">S</div>
+            <div style="font-size:10px;font-weight:600;color:var(--text3);padding:4px 0">S</div>
+          </div>
+          <!-- Grade do calendário -->
+          <div id="dashCalGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-top:4px"></div>
+        </div>
+
+        <!-- Legenda -->
+        <div style="display:flex;gap:12px;padding:8px 14px;border-bottom:1px solid var(--border);flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)"><span style="width:8px;height:8px;border-radius:50%;background:#DC2626;display:inline-block"></span>Vencimento</div>
+          <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)"><span style="width:8px;height:8px;border-radius:50%;background:#2563EB;display:inline-block"></span>Obrigação</div>
+          <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)"><span style="width:8px;height:8px;border-radius:50%;background:#059669;display:inline-block"></span>Entregue</div>
+        </div>
+
+        <!-- Compromissos do dia selecionado -->
+        <div id="dashCompromissosDia" style="display:none;border-bottom:1px solid var(--border)">
+          <div style="padding:8px 14px;background:var(--accent-pale);display:flex;align-items:center;justify-content:space-between">
+            <div style="font-size:12px;font-weight:600;color:var(--accent)" id="dashCompDiaTit">Compromissos</div>
+            <button onclick="document.getElementById('dashCompromissosDia').style.display='none'" style="background:none;border:none;cursor:pointer;color:var(--text3)">×</button>
+          </div>
+          <div id="dashCompDiaList" style="max-height:140px;overflow-y:auto"></div>
+        </div>
+
+        <!-- Lista combinada: compromissos + obrigações -->
+        <div id="dashObrigLista" style="max-height:none;overflow-y:visible"></div>
+
+        <!-- Rodapé com link -->
+        <div style="padding:10px 14px;border-top:1px solid var(--border);text-align:center">
+          <a href="https://www.gov.br/receitafederal/pt-br/assuntos/meu-imposto-de-renda/agenda" target="_blank" style="font-size:11px;color:var(--accent);text-decoration:none;font-weight:500">Agenda Receita Federal ↗</a>
+          <span style="color:var(--border2);margin:0 6px">·</span>
+          <a href="https://www.sped.fazenda.gov.br/" target="_blank" style="font-size:11px;color:var(--accent);text-decoration:none;font-weight:500">SPED ↗</a>
+          <span style="color:var(--border2);margin:0 6px">·</span>
+          <a href="https://www8.receita.fazenda.gov.br/SimplesNacional/Servicos/Grupo.aspx?grp=9" target="_blank" style="font-size:11px;color:var(--accent);text-decoration:none;font-weight:500">Simples ↗</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CAIXA -->
+<div class="pg" id="pg-caixa">
+  <div class="ph"><div><h1>Minha Caixa</h1><p>Suas demandas e tarefas ativas</p></div></div>
+  <div class="kpi-grid">
+    <div class="kcard ks"><div class="ki ks">📋</div><div class="kv" id="cT">—</div><div class="kl">Minhas demandas</div></div>
+    <div class="kcard ka"><div class="ki ka">🔔</div><div class="kv" id="cA">—</div><div class="kl">Ag. aceite</div></div>
+    <div class="kcard kr"><div class="ki kr">⚡</div><div class="kv" id="cU">—</div><div class="kl">Urgentes</div></div>
+    <div class="kcard kr"><div class="ki kr">⏰</div><div class="kv" id="cV">—</div><div class="kl">Ações vencidas</div></div>
+  </div>
+  <div class="g2" style="margin-bottom:16px">
+    <div class="card"><div class="ch"><div class="ct">🔔 Aguardando Meu Aceite</div></div><div class="cb" id="cAList"><div class="loading">Carregando...</div></div></div>
+    <div class="card"><div class="ch"><div class="ct">⚡ Urgentes</div></div><div class="cb" id="cUList"><div class="loading">Carregando...</div></div></div>
+  </div>
+  <div class="card"><div class="ch"><div class="ct">📋 Minhas Demandas Ativas</div></div><div class="cb" id="cMList"><div class="loading">Carregando...</div></div></div>
+</div>
+
+<!-- DEMANDAS -->
+<div class="pg" id="pg-dem">
+  <div class="ph"><div><h1>Central de Processos</h1><p id="demTotal">...</p></div><button class="btn btn-p" onclick="abrirNovaDemanda()">+ Nova Demanda</button></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+    <input class="fi" id="fBusca" placeholder="Buscar número, cliente, resumo..." style="min-width:200px;flex:1" oninput="filtDem()">
+    <select class="fi" id="fStatus" style="width:155px" onchange="loadDem()">
+  <option value="">Todos os status</option>
+  <option value="todas">📋 Todas</option>
+  <option value="aberta">🔵 Aberta</option>
+  <option value="em_andamento">🟢 Em andamento</option>
+  <option value="aguardando_cliente">🟡 Ag. cliente</option>
+  <option value="aguardando_orgao">🟣 Ag. órgão</option>
+  <option value="aguardando_conclusao">🟠 Ag. conclusão</option>
+  <option value="concluida">✅ Concluída</option>
+  <option value="cancelada">❌ Cancelada</option>
+</select>
+    <select class="fi" id="fPrio" style="width:120px" onchange="filtDem()"><option value="">Todas</option><option value="urgente">Urgente</option><option value="alta">Alta</option><option value="normal">Normal</option></select>
+    <select class="fi" id="fDep" style="width:155px" onchange="filtDem()"><option value="">Todos depto.</option></select>
+  </div>
+  <div class="card" style="margin-bottom:0"><div style="overflow-x:auto"><table><thead><tr><th>Número</th><th>Cliente</th><th>Resumo</th><th>Status</th><th>Prioridade</th><th>Responsável</th><th>Situação</th><th>Prazo</th></tr></thead><tbody id="demTabela"><tr><td colspan="8" class="loading">Carregando...</td></tr></tbody></table></div></div>
+</div>
+
+<!-- DETALHE DEMANDA -->
+<div class="pg" id="pg-det">
+  <div style="margin-bottom:16px"><button class="btn btn-s" onclick="ir('dem')">← Voltar</button></div>
+  <div id="detConteudo"><div class="loading">Carregando...</div></div>
+</div>
+
+<!-- CLIENTES -->
+<div class="pg" id="pg-cli">
+  <div class="ph">
+    <div><h1>Clientes</h1><p id="cliTotal">...</p></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-s" onclick="baixarTemplateClientes()" title="Baixar planilha modelo para preenchimento">📥 Template Excel</button>
+      <button class="btn btn-s" onclick="document.getElementById('importCliFile').click()" title="Importar clientes de planilha Excel">📤 Importar Excel</button>
+      <input type="file" id="importCliFile" accept=".xlsx,.xls,.csv" style="display:none" onchange="importarClientesExcel(this)">
+      <button class="btn btn-s" onclick="exportarExcelClientes()">📊 Exportar</button>
+      <button class="btn btn-s btn-er" onclick="limparTodosClientes()" title="Apaga todos os clientes do sistema">🗑️ Limpar base</button>
+      <button class="btn btn-p" onclick="abrirModalCliente()">+ Novo Cliente</button>
+    </div>
+  </div>
+
+  <!-- Painel de importação -->
+  <div id="painelImportCli" style="display:none;margin-bottom:16px">
+    <div class="card" style="border:2px solid var(--accent);margin-bottom:0">
+      <div class="ch" style="background:var(--accent-pale)">
+        <div class="ct" style="color:var(--accent)">📤 Importação de Clientes</div>
+        <button onclick="document.getElementById('painelImportCli').style.display='none'" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:18px">×</button>
+      </div>
+      <div class="cb">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:14px">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px">Prévia dos dados</div>
+            <div id="importCliPrevia" style="font-size:12px;color:var(--text3)">Carregando...</div>
+          </div>
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px">Resumo</div>
+            <div id="importCliResumo" style="font-size:12px;color:var(--text3)">—</div>
+          </div>
+        </div>
+        <div style="overflow-x:auto;max-height:260px;border:1px solid var(--border);border-radius:8px;margin-bottom:14px">
+          <table style="font-size:12px">
+            <thead><tr id="importCliHead"></tr></thead>
+            <tbody id="importCliBody"></tbody>
+          </table>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+            <input type="checkbox" id="importCliSobrescrever" style="width:16px;height:16px">
+            Sobrescrever clientes com mesmo CPF/CNPJ
+          </label>
+          <div style="flex:1"></div>
+          <button class="btn btn-s" onclick="document.getElementById('painelImportCli').style.display='none'">Cancelar</button>
+          <button class="btn btn-p" id="btnConfirmarImport" onclick="confirmarImportacaoClientes()">✅ Importar <span id="importCliCount">0</span> clientes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+    <input class="fi" id="cliBusca" placeholder="🔍 Buscar por nome, CPF/CNPJ, regime..." style="flex:1;min-width:200px;margin-bottom:0" oninput="filtCli()">
+    <select class="fi" id="cliTipo" style="width:155px;margin-bottom:0" onchange="filtCli()">
+      <option value="">Todos os tipos</option>
+      <option value="juridica">Pessoa Jurídica</option>
+      <option value="fisica">Pessoa Física</option>
+    </select>
+    <select class="fi" id="cliRegime" style="width:175px;margin-bottom:0" onchange="filtCli()">
+      <option value="">Todos os regimes</option>
+      <option value="mei">MEI</option>
+      <option value="simples_nacional">Simples Nacional</option>
+      <option value="lucro_presumido">Lucro Presumido</option>
+      <option value="lucro_real">Lucro Real</option>
+      <option value="produtor_rural">Produtor Rural</option>
+      <option value="isento">Isento</option>
+    </select>
+  </div>
+
+  <div class="card" style="margin-bottom:0">
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>Nome / Razão Social</th>
+            <th>CPF / CNPJ</th>
+            <th>Tipo</th>
+            <th>Regime</th>
+            <th>WhatsApp</th>
+            <th>E-mail</th>
+            <th style="width:80px"></th>
+          </tr>
+        </thead>
+        <tbody id="cliTabela">
+          <tr><td colspan="7" class="loading">Carregando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- PARÂMETROS -->
+<div class="pg" id="pg-param">
+  <div class="ph"><div><h1>Parâmetros do Sistema</h1><p>Departamentos, categorias e tipos de demanda — clique em + para adicionar</p></div></div>
+  <div class="g3">
+    <!-- DEPARTAMENTOS -->
+    <div class="card">
+      <div class="ch">
+        <div class="ct">📁 Departamentos</div>
+        <button class="btn btn-s btn-sm" onclick="toggleFormDep()">+ Novo</button>
+      </div>
+      <div id="formDep" style="display:none;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface2)">
+        <div class="fg"><input type="text" class="fi" id="newDepNome" placeholder="Nome do departamento" style="margin-bottom:8px">
+        <div style="display:flex;gap:8px;align-items:center">
+          <label style="font-size:12px;color:var(--text3)">Cor:</label>
+          <input type="color" id="newDepCor" value="#2563EB" style="width:36px;height:28px;border:1px solid var(--border);border-radius:5px;cursor:pointer;padding:2px">
+          <label style="font-size:12px;color:var(--text3)">Ícone:</label>
+          <input type="text" id="newDepIcone" placeholder="📋" style="width:50px;font-size:18px;border:1px solid var(--border);border-radius:5px;padding:3px 6px;text-align:center">
+          <button class="btn btn-primary btn-sm" onclick="salvarNovoDep()" style="margin-left:auto">Salvar</button>
+          <button class="btn btn-ghost btn-sm" onclick="toggleFormDep()">×</button>
+        </div></div>
+      </div>
+      <div class="cb" id="pDeps"><div class="loading">Carregando...</div></div>
+    </div>
+
+    <!-- CATEGORIAS -->
+    <div class="card">
+      <div class="ch">
+        <div class="ct">📂 Categorias</div>
+        <button class="btn btn-s btn-sm" id="btnNovaCat" onclick="toggleFormCat()" style="display:none">+ Nova</button>
+      </div>
+      <div id="formCat" style="display:none;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface2)">
+        <div class="fg">
+          <input type="text" class="fi" id="newCatNome" placeholder="Nome da categoria" style="margin-bottom:8px">
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-primary btn-sm" onclick="salvarNovaCat()">Salvar</button>
+            <button class="btn btn-ghost btn-sm" onclick="toggleFormCat()">×</button>
+          </div>
+        </div>
+      </div>
+      <div class="cb" id="pCats"><div class="vazio" style="padding:20px;font-size:12px">← Selecione um departamento</div></div>
+    </div>
+
+    <!-- TIPOS DE DEMANDA -->
+    <div class="card">
+      <div class="ch">
+        <div class="ct">🏷️ Tipos de Demanda</div>
+        <button class="btn btn-s btn-sm" id="btnNovoTipo" onclick="toggleFormTipo()" style="display:none">+ Novo</button>
+      </div>
+      <div id="formTipo" style="display:none;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface2)">
+        <div class="fg">
+          <input type="text" class="fi" id="newTipoNome" placeholder="Nome do tipo" style="margin-bottom:8px">
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+            <label style="font-size:12px;color:var(--text3);white-space:nowrap">Prefixo:</label>
+            <input type="text" class="fi" id="newTipoPref" placeholder="ABE" maxlength="6" style="width:80px;margin-bottom:0;text-transform:uppercase">
+            <label style="font-size:12px;color:var(--text3);white-space:nowrap">Prioridade:</label>
+            <select class="fi" id="newTipoPrio" style="margin-bottom:0;flex:1">
+              <option value="normal">Normal</option>
+              <option value="alta">Alta</option>
+              <option value="urgente">Urgente</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-primary btn-sm" onclick="salvarNovoTipo()">Salvar</button>
+            <button class="btn btn-ghost btn-sm" onclick="toggleFormTipo()">×</button>
+          </div>
+        </div>
+      </div>
+      <div class="cb" id="pTipos"><div class="vazio" style="padding:20px;font-size:12px">← Selecione uma categoria</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- USUÁRIOS -->
+<div class="pg" id="pg-users">
+  <div class="ph"><div><h1>Usuários</h1><p>Gerenciar colaboradores do sistema</p></div><button class="btn btn-p" onclick="abrirModalUser()">+ Novo Usuário</button></div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px" id="usersGrid"><div class="loading">Carregando...</div></div>
+</div>
+
+
+<!-- FISCAL -->
+<!-- SELEÇÃO DE DEPARTAMENTOS -->
+<div class="pg" id="pg-depts">
+  <div class="ph"><div><h1>Departamentos</h1><p>Selecione um departamento para ver as demandas</p></div></div>
+  <div id="depts-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px"></div>
+</div>
+
+<div class="pg" id="pg-fiscal">
+  <div class="ph"><div><h1>Escrita Fiscal</h1><p id="fiscalTotal">Obrigações fiscais e apurações</p></div><button class="btn btn-p" onclick="abrirNovaDemanda()">+ Nova Demanda</button></div>
+  <div class="kpi-grid">
+    <div class="kcard ks"><div class="ki ks">📋</div><div class="kv" id="fk1">—</div><div class="kl">DAS pendentes</div></div>
+    <div class="kcard ka"><div class="ki ka">⏰</div><div class="kv" id="fk2">—</div><div class="kl">Vencendo em 7d</div></div>
+    <div class="kcard kr"><div class="ki kr">⚡</div><div class="kv" id="fk3">—</div><div class="kl">Urgentes</div></div>
+    <div class="kcard kg"><div class="ki kg">✅</div><div class="kv" id="fk4">—</div><div class="kl">Concluídas no mês</div></div>
+  </div>
+  <div class="g2" style="margin-bottom:16px">
+    <div class="card"><div class="ch"><div class="ct">💰 Simples Nacional — DAS</div><button class="btn btn-s" style="padding:4px 10px;font-size:12px" onclick="filtFiscal('DAS')">Filtrar</button></div><div class="cb" id="fiscalDAS"><div class="loading">Carregando...</div></div></div>
+    <div class="card"><div class="ch"><div class="ct">🏛️ ICMS / ISS / PIS/COFINS</div><button class="btn btn-s" style="padding:4px 10px;font-size:12px" onclick="filtFiscal('ICM')">Filtrar</button></div><div class="cb" id="fiscalICMS"><div class="loading">Carregando...</div></div></div>
+  </div>
+  <div class="card"><div class="ch"><div class="ct">📋 Todas as demandas fiscais</div></div><div class="cb" id="fiscalTabela"><div class="loading">Carregando...</div></div></div>
+</div>
+
+<!-- DEPARTAMENTO PESSOAL -->
+<div class="pg" id="pg-dp">
+  <div class="ph"><div><h1>Departamento Pessoal</h1><p>Folha, admissões, rescisões e eSocial</p></div><button class="btn btn-p" onclick="abrirNovaDemanda()">+ Nova Demanda</button></div>
+  <div class="kpi-grid">
+    <div class="kcard ks"><div class="ki ks">👷</div><div class="kv" id="dpk1">—</div><div class="kl">Demandas ativas</div></div>
+    <div class="kcard kr"><div class="ki kr">⚡</div><div class="kv" id="dpk2">—</div><div class="kl">Admissões urgentes</div></div>
+    <div class="kcard ka"><div class="ki ka">📄</div><div class="kv" id="dpk3">—</div><div class="kl">Rescisões pendentes</div></div>
+    <div class="kcard kg"><div class="ki kg">✅</div><div class="kv" id="dpk4">—</div><div class="kl">Concluídas no mês</div></div>
+  </div>
+  <div class="g3" style="margin-bottom:16px">
+    <div class="card"><div class="ch"><div class="ct">➕ Admissões</div></div><div class="cb" id="dpAdm"><div class="loading">Carregando...</div></div></div>
+    <div class="card"><div class="ch"><div class="ct">➖ Rescisões</div></div><div class="cb" id="dpResc"><div class="loading">Carregando...</div></div></div>
+    <div class="card"><div class="ch"><div class="ct">🏖️ Férias</div></div><div class="cb" id="dpFerias"><div class="loading">Carregando...</div></div></div>
+  </div>
+  <div class="card"><div class="ch"><div class="ct">📋 Todas as demandas de DP</div></div><div class="cb" id="dpTabela"><div class="loading">Carregando...</div></div></div>
+</div>
+
+<!-- CONTABILIDADE -->
+<div class="pg" id="pg-cont">
+  <div class="ph"><div><h1>Contabilidade</h1><p>ECD, ECF, IRPF, balanços e fechamentos</p></div><button class="btn btn-p" onclick="abrirNovaDemanda()">+ Nova Demanda</button></div>
+  <div class="kpi-grid">
+    <div class="kcard ks"><div class="ki ks">📒</div><div class="kv" id="ck1">—</div><div class="kl">Demandas ativas</div></div>
+    <div class="kcard kr"><div class="ki kr">⚡</div><div class="kv" id="ck2">—</div><div class="kl">ECD/ECF urgentes</div></div>
+    <div class="kcard ka"><div class="ki ka">📋</div><div class="kv" id="ck3">—</div><div class="kl">IRPF em andamento</div></div>
+    <div class="kcard kg"><div class="ki kg">✅</div><div class="kv" id="ck4">—</div><div class="kl">Concluídas no mês</div></div>
+  </div>
+  <div class="g2" style="margin-bottom:16px">
+    <div class="card"><div class="ch"><div class="ct">📊 ECD / ECF</div></div><div class="cb" id="contECD"><div class="loading">Carregando...</div></div></div>
+    <div class="card"><div class="ch"><div class="ct">🧾 IRPF / Carnê-Leão</div></div><div class="cb" id="contIRPF"><div class="loading">Carregando...</div></div></div>
+  </div>
+  <div class="card"><div class="ch"><div class="ct">📋 Todas as demandas contábeis</div></div><div class="cb" id="contTabela"><div class="loading">Carregando...</div></div></div>
+</div>
+
+<!-- RURAL -->
+<div class="pg" id="pg-rural">
+  <div class="ph"><div><h1>Rural</h1><p>ITR, CCIR, Produtor Rural, arrendamentos</p></div><button class="btn btn-p" onclick="abrirNovaDemanda()">+ Nova Demanda</button></div>
+  <div class="kpi-grid">
+    <div class="kcard kg"><div class="ki kg">🌾</div><div class="kv" id="rk1">—</div><div class="kl">Clientes rurais</div></div>
+    <div class="kcard ka"><div class="ki ka">📄</div><div class="kv" id="rk2">—</div><div class="kl">ITR em andamento</div></div>
+    <div class="kcard ks"><div class="ki ks">🏛️</div><div class="kv" id="rk3">—</div><div class="kl">CCIR pendentes</div></div>
+    <div class="kcard kg"><div class="ki kg">✅</div><div class="kv" id="rk4">—</div><div class="kl">Concluídas no mês</div></div>
+  </div>
+  <div class="g2" style="margin-bottom:16px">
+    <div class="card"><div class="ch"><div class="ct">🏛️ CCIR / ITR</div></div><div class="cb" id="ruralCCIR"><div class="loading">Carregando...</div></div></div>
+    <div class="card"><div class="ch"><div class="ct">🌿 Produtor Rural / Arrendamentos</div></div><div class="cb" id="ruralProd"><div class="loading">Carregando...</div></div></div>
+  </div>
+  <div class="card"><div class="ch"><div class="ct">📋 Todas as demandas rurais</div></div><div class="cb" id="ruralTabela"><div class="loading">Carregando...</div></div></div>
+</div>
+
+<!-- FINANCEIRO -->
+<div class="pg" id="pg-financeiro">
+  <div class="ph"><div><h1>Financeiro</h1><p>Honorários, contratos e faturamento</p></div><button class="btn btn-p" onclick="abrirModalHonorario()">+ Lançar Honorário</button></div>
+  <div class="kpi-grid">
+    <div class="kcard ks"><div class="ki ks">💰</div><div class="kv" id="fink1">—</div><div class="kl">A receber no mês</div></div>
+    <div class="kcard kg"><div class="ki kg">✅</div><div class="kv" id="fink2">—</div><div class="kl">Recebidos no mês</div></div>
+    <div class="kcard kr"><div class="ki kr">⚠️</div><div class="kv" id="fink3">—</div><div class="kl">Em atraso</div></div>
+    <div class="kcard ka"><div class="ki ka">📊</div><div class="kv" id="fink4">—</div><div class="kl">Clientes ativos</div></div>
+  </div>
+  <div class="g2" style="margin-bottom:16px">
+    <div class="card"><div class="ch"><div class="ct">💸 Honorários em Aberto</div></div>
+      <div class="cb" id="finHonorarios">
+        <div style="text-align:center;padding:2rem;color:var(--text3)">
+          <div style="font-size:36px;margin-bottom:8px">💰</div>
+          <div style="font-weight:600;margin-bottom:4px">Módulo Financeiro</div>
+          <div style="font-size:13px">Configure os honorários dos clientes para ver o controle aqui.</div>
+          <button class="btn btn-p" style="margin-top:12px" onclick="abrirModalHonorario()">Configurar Honorários</button>
+        </div>
+      </div>
+    </div>
+    <div class="card"><div class="ch"><div class="ct">📅 Vencimentos do Mês</div></div>
+      <div class="cb" id="finVencimentos">
+        <div class="vazio">Nenhum vencimento cadastrado.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RELATÓRIOS -->
+<div class="pg" id="pg-relatorios">
+  <div class="ph">
+    <div><h1>📊 Relatórios Gerenciais</h1><p>Análises completas do escritório</p></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-s" onclick="exportarCSV()">⬇️ CSV</button>
+      <button class="btn btn-p" onclick="exportarExcelRel()">📊 Exportar Excel</button>
+    </div>
+  </div>
+
+  <!-- Filtros globais -->
+  <div class="card" style="margin-bottom:16px">
+    <div class="cb" style="padding:14px">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+        <div class="fg" style="margin:0;flex:0 0 160px">
+          <label class="fl">Período</label>
+          <select class="fi" id="relPeriodo" style="margin:0">
+            <option value="mes_atual">Mês atual</option>
+            <option value="mes_anterior">Mês anterior</option>
+            <option value="trimestre">Último trimestre</option>
+            <option value="semestre">Último semestre</option>
+            <option value="ano">Ano atual</option>
+            <option value="custom">Personalizado</option>
+          </select>
+        </div>
+        <div class="fg" style="margin:0;flex:0 0 130px" id="relDataIniWrap">
+          <label class="fl">De</label>
+          <input type="date" class="fi" id="relDataIni" style="margin:0">
+        </div>
+        <div class="fg" style="margin:0;flex:0 0 130px" id="relDataFimWrap">
+          <label class="fl">Até</label>
+          <input type="date" class="fi" id="relDataFim" style="margin:0">
+        </div>
+        <div class="fg" style="margin:0;flex:0 0 170px">
+          <label class="fl">Departamento</label>
+          <select class="fi" id="relDept" style="margin:0">
+            <option value="">Todos</option>
+          </select>
+        </div>
+        <div class="fg" style="margin:0;flex:0 0 160px">
+          <label class="fl">Colaborador</label>
+          <select class="fi" id="relUser" style="margin:0">
+            <option value="">Todos</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cards de relatórios -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
+
+    <div class="card" style="cursor:pointer;margin-bottom:0" onclick="gerarRelGerencial('por_departamento')">
+      <div class="cb" style="text-align:center;padding:20px 14px">
+        <div style="font-size:36px;margin-bottom:8px">🏢</div>
+        <div style="font-weight:700;font-size:14px;color:var(--text);margin-bottom:4px">Por Departamento</div>
+        <div style="font-size:12px;color:var(--text3)">Total, abertas, concluídas por depto.</div>
+        <button class="btn btn-p" style="width:100%;margin-top:12px;justify-content:center">Gerar</button>
+      </div>
+    </div>
+
+    <div class="card" style="cursor:pointer;margin-bottom:0" onclick="gerarRelGerencial('por_usuario')">
+      <div class="cb" style="text-align:center;padding:20px 14px">
+        <div style="font-size:36px;margin-bottom:8px">👤</div>
+        <div style="font-weight:700;font-size:14px;color:var(--text);margin-bottom:4px">Por Colaborador</div>
+        <div style="font-size:12px;color:var(--text3)">Produtividade, taxa de conclusão</div>
+        <button class="btn btn-p" style="width:100%;margin-top:12px;justify-content:center">Gerar</button>
+      </div>
+    </div>
+
+    <div class="card" style="cursor:pointer;margin-bottom:0" onclick="gerarRelGerencial('por_mes')">
+      <div class="cb" style="text-align:center;padding:20px 14px">
+        <div style="font-size:36px;margin-bottom:8px">📅</div>
+        <div style="font-weight:700;font-size:14px;color:var(--text);margin-bottom:4px">Por Mês</div>
+        <div style="font-size:12px;color:var(--text3)">Evolução mensal de demandas</div>
+        <button class="btn btn-p" style="width:100%;margin-top:12px;justify-content:center">Gerar</button>
+      </div>
+    </div>
+
+    <div class="card" style="cursor:pointer;margin-bottom:0" onclick="gerarRelGerencial('por_tipo')">
+      <div class="cb" style="text-align:center;padding:20px 14px">
+        <div style="font-size:36px;margin-bottom:8px">🏷️</div>
+        <div style="font-weight:700;font-size:14px;color:var(--text);margin-bottom:4px">Por Tipo</div>
+        <div style="font-size:12px;color:var(--text3)">Serviços mais demandados</div>
+        <button class="btn btn-p" style="width:100%;margin-top:12px;justify-content:center">Gerar</button>
+      </div>
+    </div>
+
+    <div class="card" style="cursor:pointer;margin-bottom:0" onclick="gerarRelGerencial('por_cliente')">
+      <div class="cb" style="text-align:center;padding:20px 14px">
+        <div style="font-size:36px;margin-bottom:8px">👥</div>
+        <div style="font-weight:700;font-size:14px;color:var(--text);margin-bottom:4px">Por Cliente</div>
+        <div style="font-size:12px;color:var(--text3)">Clientes com mais demandas</div>
+        <button class="btn btn-p" style="width:100%;margin-top:12px;justify-content:center">Gerar</button>
+      </div>
+    </div>
+
+    <div class="card" style="cursor:pointer;margin-bottom:0" onclick="gerarRelGerencial('demandas_mes')">
+      <div class="cb" style="text-align:center;padding:20px 14px">
+        <div style="font-size:36px;margin-bottom:8px">📋</div>
+        <div style="font-weight:700;font-size:14px;color:var(--text);margin-bottom:4px">Demandas Detalhadas</div>
+        <div style="font-size:12px;color:var(--text3)">Lista completa com todos os campos</div>
+        <button class="btn btn-p" style="width:100%;margin-top:12px;justify-content:center">Gerar</button>
+      </div>
+    </div>
+
+    <div class="card" style="cursor:pointer;margin-bottom:0" onclick="gerarRelGerencial('pendencias')">
+      <div class="cb" style="text-align:center;padding:20px 14px">
+        <div style="font-size:36px;margin-bottom:8px">⏳</div>
+        <div style="font-weight:700;font-size:14px;color:var(--text);margin-bottom:4px">Pendências</div>
+        <div style="font-size:12px;color:var(--text3)">Pendências abertas por tipo</div>
+        <button class="btn btn-p" style="width:100%;margin-top:12px;justify-content:center">Gerar</button>
+      </div>
+    </div>
+
+    <div class="card" style="cursor:pointer;margin-bottom:0" onclick="gerarRelGerencial('sla')">
+      <div class="cb" style="text-align:center;padding:20px 14px">
+        <div style="font-size:36px;margin-bottom:8px">⚡</div>
+        <div style="font-weight:700;font-size:14px;color:var(--text);margin-bottom:4px">SLA / Tempo Médio</div>
+        <div style="font-size:12px;color:var(--text3)">Tempo médio de resolução</div>
+        <button class="btn btn-p" style="width:100%;margin-top:12px;justify-content:center">Gerar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Resultado -->
+  <div class="card" id="relatorioResultado" style="display:none">
+    <div class="ch">
+      <div class="ct" id="relatorioTitulo">Relatório</div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-s btn-sm" onclick="exportarCSV()">⬇️ CSV</button>
+        <button class="btn btn-p btn-sm" onclick="exportarExcelRel()">📊 Excel</button>
+      </div>
+    </div>
+    <div class="cb" id="relatorioConteudo"></div>
+  </div>
+</div>
+
+<!-- WHATSAPP -->
+<div class="pg" id="pg-whatsapp">
+  <div class="ph"><div><h1>WhatsApp</h1><p>Configuração e histórico de mensagens automáticas</p></div></div>
+  <div class="g2" style="margin-bottom:16px">
+    <div class="card">
+      <div class="ch"><div class="ct">⚙️ Configuração da API</div></div>
+      <div class="cb">
+        <div class="fg"><label class="fl">Provedor</label>
+          <select class="fi" id="waProv" onchange="salvarWAConfig()">
+            <option value="evolution">Evolution API</option>
+            <option value="zapi">Z-API</option>
+            <option value="wapi">W-API</option>
+          </select>
+        </div>
+        <div class="fg"><label class="fl">URL da API</label><input type="text" class="fi" id="waUrl" placeholder="https://sua-api.com" onblur="salvarWAConfig()"></div>
+        <div class="fg"><label class="fl">Token / API Key</label><input type="password" class="fi" id="waToken" placeholder="seu-token-aqui" onblur="salvarWAConfig()"></div>
+        <div class="fg"><label class="fl">Instância (Evolution)</label><input type="text" class="fi" id="waInst" placeholder="nome-da-instancia" onblur="salvarWAConfig()"></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-p" style="flex:1;justify-content:center" onclick="testarWA()">📱 Testar Conexão</button>
+          <button class="btn btn-s" style="flex:1;justify-content:center" onclick="salvarWAConfig()">💾 Salvar</button>
+        </div>
+        <div id="waTeste" style="margin-top:10px;font-size:13px"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ch"><div class="ct">📝 Templates de Mensagem</div></div>
+      <div class="cb">
+        <div style="margin-bottom:14px">
+          <div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Abertura de demanda</div>
+          <textarea class="fi" id="tmplAbertura" rows="3" style="resize:none;font-size:12px">Olá, *{NOME}*! 👋 Seu serviço de *{SERVICO}* foi iniciado em nosso escritório. Nossa equipe acompanhará o processo e avisará você sobre cada etapa. Atenciosamente, Focco Contabilidade.</textarea>
+        </div>
+        <div style="margin-bottom:14px">
+          <div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Aguardando documentos</div>
+          <textarea class="fi" id="tmplAguardando" rows="3" style="resize:none;font-size:12px">Olá, *{NOME}*! Para continuarmos o serviço de *{SERVICO}*, precisamos dos seguintes documentos: {PENDENCIAS}. Por favor, envie assim que possível. Obrigado!</textarea>
+        </div>
+        <div style="margin-bottom:14px">
+          <div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Conclusão do serviço</div>
+          <textarea class="fi" id="tmplConclusao" rows="3" style="resize:none;font-size:12px">Olá, *{NOME}*! 🎉 O serviço de *{SERVICO}* foi concluído com sucesso! Em caso de dúvidas, entre em contato. Atenciosamente, Focco Contabilidade.</textarea>
+        </div>
+        <button class="btn btn-p" style="width:100%;justify-content:center" onclick="salvarTemplates()">💾 Salvar Templates</button>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ch">
+      <div class="ct">📊 Histórico de Mensagens</div>
+      <div style="display:flex;gap:8px">
+        <select class="fi" id="waFiltroStatus" style="width:140px;margin:0" onchange="loadWAHistorico()">
+          <option value="">Todos</option>
+          <option value="enviada">Enviadas</option>
+          <option value="erro">Com erro</option>
+          <option value="pendente">Pendentes</option>
+        </select>
+      </div>
+    </div>
+    <div class="cb" id="waHistorico"><div class="loading">Carregando...</div></div>
+  </div>
+</div>
+
+
+<!-- CALENDÁRIO FISCAL -->
+<div class="pg" id="pg-cal">
+  <div class="ph"><div><h1>📅 Calendário Fiscal</h1><p id="calMesAno">Obrigações e vencimentos do mês</p></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-s" onclick="mesAnterior()">← Anterior</button>
+      <button class="btn btn-s" onclick="mesAtual()">Hoje</button>
+      <button class="btn btn-p" onclick="mesProximo()">Próximo →</button>
+      <button class="btn btn-s" onclick="exportarExcelCalendario()">📊 Excel</button>
+      <button class="btn btn-s" onclick="abrirFeriados()">🗓️ Feriados</button>
+      <button class="btn btn-s" onclick="document.getElementById('importObrigFile').click()" title="Importar obrigações de planilha Excel">📤 Importar</button>
+      <input type="file" id="importObrigFile" accept=".xlsx,.xls,.csv" style="display:none" onchange="importarObrigacoes(this)">
+      <button class="btn btn-s" onclick="baixarTemplateObrigacoes()" title="Baixar planilha modelo para preencher">📥 Template</button>
+      <button class="btn btn-p" onclick="abrirNovaObrigacaoCal()">+ Nova Obrigação</button>
+      <button class="btn btn-er" onclick="limparObrigacoes()" title="Apagar todas as obrigações">🗑️</button>
+    </div>
+  </div>
+  <!-- RESUMO DO MÊS -->
+  <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
+    <div class="kcard kr"><div class="ki kr">⚠️</div><div class="kv" id="calVencidos">—</div><div class="kl">Vencidos</div></div>
+    <div class="kcard ka"><div class="ki ka">⏰</div><div class="kv" id="calHoje">—</div><div class="kl">Vencem hoje</div></div>
+    <div class="kcard ks"><div class="ki ks">📋</div><div class="kv" id="calSemana">—</div><div class="kl">Esta semana</div></div>
+    <div class="kcard kg"><div class="ki kg">✅</div><div class="kv" id="calConcluidos">—</div><div class="kl">Concluídos</div></div>
+  </div>
+  <div class="g2" style="margin-bottom:16px">
+    <!-- GRADE DO CALENDÁRIO -->
+    <div class="card" style="grid-column:1/2">
+      <div class="ch"><div class="ct">Calendário do Mês</div></div>
+      <div class="cb" id="calGrade"></div>
+    </div>
+    <!-- OBRIGAÇÕES DO DIA SELECIONADO -->
+    <div class="card">
+      <div class="ch"><div class="ct" id="calDiaTitulo">Obrigações do mês</div>
+        <button class="btn btn-s" style="padding:4px 10px;font-size:12px" onclick="abrirModalObrigacao()">+ Adicionar</button>
+      </div>
+      <div class="cb" id="calDiaObrig"><div class="vazio">Selecione um dia no calendário</div></div>
+    </div>
+  </div>
+  <!-- LISTA COMPLETA DE OBRIGAÇÕES -->
+  <div class="card">
+    <div class="ch"><div class="ct">📋 Todas as Obrigações do Mês</div>
+      <select class="fi" id="calFiltroTipo" style="width:160px;margin:0" onchange="renderCalObrig()">
+        <option value="">Todos os tipos</option>
+        <option value="federal">Federal</option>
+        <option value="estadual">Estadual</option>
+        <option value="municipal">Municipal</option>
+        <option value="trabalhista">Trabalhista</option>
+        <option value="contabil">Contábil</option>
+      </select>
+    </div>
+    <div class="cb" id="calListaCompleta"><div class="loading">Carregando...</div></div>
+  </div>
+</div>
+
+<!-- BACKUP -->
+<div class="pg" id="pg-backup">
+  <div class="ph"><div><h1>💾 Backup do Sistema</h1><p>Exportar e restaurar dados do sistema</p></div></div>
+  <div class="g2" style="margin-bottom:16px">
+    <div class="card">
+      <div class="ch"><div class="ct">⬇️ Exportar Dados</div></div>
+      <div class="cb">
+        <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Exporte todos os dados do sistema em formato JSON. Guarde o arquivo em local seguro.</p>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <button class="btn btn-navy" style="justify-content:center" onclick="exportarRelatorioCompleto()">📊 Relatório Completo Excel</button>
+          <button class="btn btn-p" style="justify-content:center" onclick="backupCompleto()">⬇️ Backup Completo (JSON)</button>
+          <button class="btn btn-n" style="justify-content:center" onclick="sincronizarParaSheets()">☁️ Sincronizar com Google Sheets</button>
+          <button class="btn btn-s" style="justify-content:center" onclick="importarDoSheets()">↓ Importar do Sheets</button>
+          <button class="btn btn-s" style="justify-content:center" onclick="backupClientes()">👥 Exportar Clientes (CSV)</button>
+          <button class="btn btn-s" style="justify-content:center" onclick="backupDemandas()">📋 Demandas (CSV)</button>
+          <button class="btn btn-s" style="justify-content:center" onclick="exportarExcelDemandas('')">📊 Demandas (Excel)</button>
+          <button class="btn btn-s" style="justify-content:center" onclick="backupColaboradores()">👤 Colaboradores (CSV)</button>
+          <button class="btn btn-s" style="justify-content:center" onclick="exportarExcelPendencias()">⏳ Pendências (Excel)</button>
+        </div>
+        <div id="backupStatus" style="margin-top:14px;font-size:13px;color:var(--text3)"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ch"><div class="ct">📊 Resumo dos Dados</div></div>
+      <div class="cb" id="backupResumo"><div class="loading">Carregando...</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ch"><div class="ct">📅 Histórico de Backups</div></div>
+    <div class="cb" id="backupHistorico">
+      <div class="vazio">Nenhum backup registrado ainda.</div>
+    </div>
+  </div>
+</div>
+
+<!-- IMPRESSÃO PDF POR COLABORADOR -->
+<div class="pg" id="pg-impressao">
+  <div class="ph"><div><h1>🖨️ Impressão e PDF</h1><p>Relatórios para impressão por colaborador</p></div></div>
+  <div class="card" style="margin-bottom:16px">
+    <div class="ch"><div class="ct">⚙️ Filtros de Impressão</div></div>
+    <div class="cb">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:14px">
+        <div class="fg" style="margin:0">
+          <label class="fl">Colaborador</label>
+          <select class="fi" id="impColaborador">
+            <option value="">Todos</option>
+          </select>
+        </div>
+        <div class="fg" style="margin:0">
+          <label class="fl">Status</label>
+          <select class="fi" id="impStatus">
+            <option value="">Todos</option>
+            <option value="aberta">Aberta</option>
+            <option value="em_andamento">Em andamento</option>
+            <option value="aguardando_cliente">Ag. cliente</option>
+            <option value="aguardando_conclusao">Ag. conclusão</option>
+            <option value="concluida">Concluída</option>
+          </select>
+        </div>
+        <div class="fg" style="margin:0">
+          <label class="fl">Período inicial</label>
+          <input type="date" class="fi" id="impDtInicio">
+        </div>
+        <div class="fg" style="margin:0">
+          <label class="fl">Período final</label>
+          <input type="date" class="fi" id="impDtFim">
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-p" style="flex:1;justify-content:center" onclick="gerarImpressao()">🔍 Gerar Preview</button>
+        <button class="btn btn-s" style="flex:1;justify-content:center" onclick="exportarExcelColaborador()">📊 Excel</button>
+        <button class="btn btn-navy" style="flex:1;justify-content:center" onclick="imprimirPDF()">🖨️ Imprimir / Salvar PDF</button>
+      </div>
+    </div>
+  </div>
+  <!-- PREVIEW DE IMPRESSÃO -->
+  <div class="card" id="impPreview" style="display:none">
+    <div class="ch">
+      <div class="ct" id="impPreviewTitulo">Preview</div>
+      <button class="btn btn-navy" onclick="imprimirPDF()">🖨️ Imprimir</button>
+    </div>
+    <div class="cb" id="impPreviewConteudo"></div>
+  </div>
+</div>
+
+<!-- KANBAN -->
+<div class="pg" id="pg-kanban">
+  <div class="ph">
+    <div><h1>🗂️ Kanban</h1><p>Visão por etapas de todas as demandas</p></div>
+    <div style="display:flex;gap:8px">
+      <select class="fi" id="kbResp" style="width:180px;margin:0" onchange="loadKanban()"><option value="">Todos os responsáveis</option></select>
+      <button class="btn btn-s" onclick="exportarExcelKanban()">📊 Excel</button>
+      <button class="btn btn-p" onclick="abrirNovaDemanda()">+ Nova Demanda</button>
+    </div>
+  </div>
+  <div class="kb-board-6" id="kbBoard">
+    <div class="loading">Carregando Kanban...</div>
+  </div>
+</div>
+
+<!-- UTILITÁRIOS -->
+<div class="pg" id="pg-utilitarios">
+  <div class="ph"><div><h1>🔧 Utilitários</h1><p>Importação do Domínio Sistemas e ferramentas auxiliares</p></div></div>
+
+  <!-- ABAS UTILITÁRIOS -->
+  <div style="display:flex;gap:4px;margin-bottom:20px;border-bottom:2px solid var(--border)">
+    <button class="ub-tab active" id="utab-clientes" onclick="trocarUtab('clientes')" style="padding:10px 18px;border:none;background:none;cursor:pointer;font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;color:var(--sky);border-bottom:2px solid var(--sky);margin-bottom:-2px">👥 Clientes</button>
+    <button class="ub-tab" id="utab-fiscal" onclick="trocarUtab('fiscal')" style="padding:10px 18px;border:none;background:none;cursor:pointer;font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;color:var(--text3);border-bottom:2px solid transparent;margin-bottom:-2px">💰 Fiscal</button>
+    <button class="ub-tab" id="utab-dp" onclick="trocarUtab('dp')" style="padding:10px 18px;border:none;background:none;cursor:pointer;font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;color:var(--text3);border-bottom:2px solid transparent;margin-bottom:-2px">👷 Dep. Pessoal</button>
+    <button class="ub-tab" id="utab-contabil" onclick="trocarUtab('contabil')" style="padding:10px 18px;border:none;background:none;cursor:pointer;font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;color:var(--text3);border-bottom:2px solid transparent;margin-bottom:-2px">📒 Contábil</button>
+    <button class="ub-tab" id="utab-xml" onclick="trocarUtab('xml')" style="padding:10px 18px;border:none;background:none;cursor:pointer;font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;color:var(--text3);border-bottom:2px solid transparent;margin-bottom:-2px">📄 XML / SPED</button>
+    <button class="ub-tab" id="utab-hist" onclick="trocarUtab('hist')" style="padding:10px 18px;border:none;background:none;cursor:pointer;font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;color:var(--text3);border-bottom:2px solid transparent;margin-bottom:-2px">📊 Histórico</button>
+  </div>
+
+  <!-- ABA: CLIENTES -->
+  <div id="utab-clientes-body">
+    <div class="g2" style="margin-bottom:16px">
+      <div class="card">
+        <div class="ch"><div class="ct">📥 Importar Clientes do Domínio</div></div>
+        <div class="cb">
+          <div style="background:var(--sky-pale);border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:13px;color:var(--sky)">
+            <strong>Como exportar do Domínio:</strong><br>
+            Domínio Contábil → Cadastros → Clientes → Relatórios → Exportar → Selecione Excel ou CSV
+          </div>
+          <div class="fg"><label class="fl">Formato do arquivo</label>
+            <select class="fi" id="impCliFormato">
+              <option value="csv">CSV (separado por vírgula ou ponto e vírgula)</option>
+              <option value="excel">Excel (.xlsx ou .xls)</option>
+              <option value="txt">TXT (layout fixo do Domínio)</option>
+            </select>
+          </div>
+          <div style="border:2px dashed var(--border);border-radius:10px;padding:2rem;text-align:center;cursor:pointer;transition:all .15s;margin-bottom:14px" id="dropCli"
+            onclick="document.getElementById('fileCli').click()"
+            ondragover="event.preventDefault();this.style.borderColor='var(--sky)'"
+            ondragleave="this.style.borderColor='var(--border)'"
+            ondrop="handleDropUtil(event,'cli')">
+            <div style="font-size:36px;margin-bottom:8px">📂</div>
+            <div style="font-weight:600;color:var(--navy);margin-bottom:4px">Arraste o arquivo aqui ou clique para selecionar</div>
+            <div style="font-size:12px;color:var(--text3)">CSV, Excel (.xlsx), TXT</div>
+          </div>
+          <input type="file" id="fileCli" style="display:none" accept=".csv,.xlsx,.xls,.txt" onchange="lerArquivoClientes(this.files[0])">
+          <div id="impCliStatus"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch"><div class="ct">📋 Mapeamento de Colunas</div></div>
+        <div class="cb" id="impCliMapa">
+          <div class="vazio">Carregue um arquivo para ver o mapeamento</div>
+        </div>
+      </div>
+    </div>
+    <!-- PREVIEW IMPORTAÇÃO CLIENTES -->
+    <div class="card" id="impCliPreviewCard" style="display:none">
+      <div class="ch">
+        <div class="ct" id="impCliPreviewTit">Preview — 0 registros</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-s" onclick="document.getElementById('impCliPreviewCard').style.display='none'">Cancelar</button>
+          <button class="btn btn-p" id="btnImportarCli" onclick="importarClientesDominio()">⬆️ Importar para o Sistema</button>
+        </div>
+      </div>
+      <div class="cb" id="impCliPreview"></div>
+    </div>
+  </div>
+
+  <!-- ABA: FISCAL -->
+  <div id="utab-fiscal-body" style="display:none">
+    <div class="g2" style="margin-bottom:16px">
+      <div class="card">
+        <div class="ch"><div class="ct">📥 Importar Movimentações Fiscais</div></div>
+        <div class="cb">
+          <div style="background:var(--amber-pale);border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:13px;color:#d97706">
+            <strong>Como exportar do Domínio:</strong><br>
+            Domínio Fiscal → Relatórios → Livros Fiscais → Exportar CSV<br>
+            Ou: Domínio Fiscal → SPED → Gerar arquivo EFD
+          </div>
+          <div class="fg"><label class="fl">Tipo de importação</label>
+            <select class="fi" id="impFiscalTipo" onchange="atualizarInstrucoesFiscal()">
+              <option value="apuracao">Apuração (DAS, ICMS, ISS)</option>
+              <option value="nfe">NF-e emitidas (XML)</option>
+              <option value="sped">SPED Fiscal (TXT)</option>
+              <option value="pgdas">PGDAS-D (CSV)</option>
+            </select>
+          </div>
+          <div style="border:2px dashed var(--border);border-radius:10px;padding:2rem;text-align:center;cursor:pointer;transition:all .15s;margin-bottom:14px" id="dropFiscal"
+            onclick="document.getElementById('fileFiscal').click()"
+            ondragover="event.preventDefault();this.style.borderColor='var(--sky)'"
+            ondragleave="this.style.borderColor='var(--border)'"
+            ondrop="handleDropUtil(event,'fiscal')">
+            <div style="font-size:36px;margin-bottom:8px">📂</div>
+            <div style="font-weight:600;color:var(--navy);margin-bottom:4px">Arraste o arquivo aqui ou clique</div>
+            <div style="font-size:12px;color:var(--text3)" id="impFiscalHint">CSV, XML, TXT (SPED)</div>
+          </div>
+          <input type="file" id="fileFiscal" style="display:none" accept=".csv,.xml,.txt,.xlsx" onchange="lerArquivoFiscal(this.files[0])">
+          <div id="impFiscalStatus"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch"><div class="ct">📊 Resultado da Análise</div></div>
+        <div class="cb" id="impFiscalResultado">
+          <div class="vazio">Carregue um arquivo para ver a análise</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ABA: DEP. PESSOAL -->
+  <div id="utab-dp-body" style="display:none">
+    <div class="g2" style="margin-bottom:16px">
+      <div class="card">
+        <div class="ch"><div class="ct">📥 Importar Dados de DP</div></div>
+        <div class="cb">
+          <div style="background:var(--purple-pale);border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:13px;color:var(--purple)">
+            <strong>Como exportar do Domínio:</strong><br>
+            Domínio DP → Relatórios → Funcionários → Exportar Excel<br>
+            Domínio DP → Folha → Relatórios → Holerites → Exportar
+          </div>
+          <div class="fg"><label class="fl">Tipo de importação</label>
+            <select class="fi" id="impDPTipo">
+              <option value="funcionarios">Funcionários ativos</option>
+              <option value="folha">Folha de pagamento</option>
+              <option value="ferias">Controle de férias</option>
+              <option value="afastamentos">Afastamentos</option>
+            </select>
+          </div>
+          <div style="border:2px dashed var(--border);border-radius:10px;padding:2rem;text-align:center;cursor:pointer;transition:all .15s;margin-bottom:14px"
+            onclick="document.getElementById('fileDP').click()"
+            ondragover="event.preventDefault();this.style.borderColor='var(--sky)'"
+            ondragleave="this.style.borderColor='var(--border)'"
+            ondrop="handleDropUtil(event,'dp')">
+            <div style="font-size:36px;margin-bottom:8px">📂</div>
+            <div style="font-weight:600;color:var(--navy);margin-bottom:4px">Arraste o arquivo aqui ou clique</div>
+            <div style="font-size:12px;color:var(--text3)">Excel (.xlsx), CSV</div>
+          </div>
+          <input type="file" id="fileDP" style="display:none" accept=".csv,.xlsx,.xls" onchange="lerArquivoDP(this.files[0])">
+          <div id="impDPStatus"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch"><div class="ct">📊 Resultado</div></div>
+        <div class="cb" id="impDPResultado">
+          <div class="vazio">Carregue um arquivo para ver o resultado</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ABA: CONTÁBIL -->
+  <div id="utab-contabil-body" style="display:none">
+    <div class="g2" style="margin-bottom:16px">
+      <div class="card">
+        <div class="ch"><div class="ct">📥 Importar Dados Contábeis</div></div>
+        <div class="cb">
+          <div style="background:var(--green-pale);border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:13px;color:#00956a">
+            <strong>Como exportar do Domínio:</strong><br>
+            Domínio Contábil → Relatórios → Balancetes → Exportar<br>
+            Domínio Contábil → ECD → Gerar arquivo
+          </div>
+          <div class="fg"><label class="fl">Tipo de importação</label>
+            <select class="fi" id="impContTipo">
+              <option value="balancete">Balancete mensal</option>
+              <option value="ecd">ECD (arquivo SPED)</option>
+              <option value="lancamentos">Lançamentos contábeis</option>
+              <option value="plano_contas">Plano de contas</option>
+            </select>
+          </div>
+          <div style="border:2px dashed var(--border);border-radius:10px;padding:2rem;text-align:center;cursor:pointer;transition:all .15s;margin-bottom:14px"
+            onclick="document.getElementById('fileCont').click()"
+            ondragover="event.preventDefault();this.style.borderColor='var(--sky)'"
+            ondragleave="this.style.borderColor='var(--border)'"
+            ondrop="handleDropUtil(event,'cont')">
+            <div style="font-size:36px;margin-bottom:8px">📂</div>
+            <div style="font-weight:600;color:var(--navy);margin-bottom:4px">Arraste o arquivo aqui ou clique</div>
+            <div style="font-size:12px;color:var(--text3)">Excel, CSV, TXT (SPED ECD)</div>
+          </div>
+          <input type="file" id="fileCont" style="display:none" accept=".csv,.xlsx,.xls,.txt" onchange="lerArquivoCont(this.files[0])">
+          <div id="impContStatus"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch"><div class="ct">📊 Resultado</div></div>
+        <div class="cb" id="impContResultado">
+          <div class="vazio">Carregue um arquivo para ver o resultado</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ABA: XML / SPED -->
+  <div id="utab-xml-body" style="display:none">
+    <div class="card" style="margin-bottom:16px">
+      <div class="ch"><div class="ct">📄 Leitor de XML / SPED</div></div>
+      <div class="cb">
+        <div style="background:var(--red-pale);border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:13px;color:var(--red)">
+          <strong>Arquivos suportados:</strong> NF-e (XML), NFS-e, CT-e, EFD ICMS/IPI, EFD Contribuições, ECD, ECF, eSocial
+        </div>
+        <div style="border:2px dashed var(--border);border-radius:10px;padding:2.5rem;text-align:center;cursor:pointer;transition:all .15s;margin-bottom:14px"
+          onclick="document.getElementById('fileXML').click()"
+          ondragover="event.preventDefault();this.style.borderColor='var(--sky)'"
+          ondragleave="this.style.borderColor='var(--border)'"
+          ondrop="handleDropUtil(event,'xml')">
+          <div style="font-size:48px;margin-bottom:10px">📄</div>
+          <div style="font-weight:600;color:var(--navy);margin-bottom:4px;font-size:15px">Arraste XML ou arquivo SPED aqui</div>
+          <div style="font-size:12px;color:var(--text3)">XML (NF-e, NFS-e, CT-e) · TXT (SPED EFD, ECD, ECF, eSocial)</div>
+        </div>
+        <input type="file" id="fileXML" style="display:none" accept=".xml,.txt" onchange="lerArquivoXML(this.files[0])">
+        <div id="impXMLStatus"></div>
+      </div>
+    </div>
+    <div class="card" id="xmlResultadoCard" style="display:none">
+      <div class="ch"><div class="ct" id="xmlResultadoTit">Resultado da Análise</div>
+        <button class="btn btn-s" style="padding:4px 10px;font-size:12px" onclick="exportarXMLResultado()">⬇️ Exportar CSV</button>
+      </div>
+      <div class="cb" id="xmlResultado"></div>
+    </div>
+  </div>
+
+  <!-- ABA: HISTÓRICO -->
+  <div id="utab-hist-body" style="display:none">
+    <div class="card">
+      <div class="ch">
+        <div class="ct">📊 Histórico de Importações</div>
+        <button class="btn btn-er" style="padding:4px 10px;font-size:12px" onclick="limparHistoricoImp()">🗑️ Limpar</button>
+      </div>
+      <div class="cb" id="impHistorico"><div class="loading">Carregando...</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- LEGALIZAÇÃO -->
+<div class="pg" id="pg-leg">
+  <div class="ph"><div><h1>🏢 Legalização</h1><p>Abertura de empresa, alterações, regularizações e alvarás</p></div><button class="btn btn-p" onclick="abrirNovaDemanda()">+ Nova Demanda</button></div>
+  <div class="kpi-grid">
+    <div class="kcard ks"><div class="ki ks">📋</div><div class="kv" id="legk1">—</div><div class="kl">Em andamento</div></div>
+    <div class="kcard kr"><div class="ki kr">⚡</div><div class="kv" id="legk2">—</div><div class="kl">Urgentes</div></div>
+    <div class="kcard kg"><div class="ki kg">✅</div><div class="kv" id="legk3">—</div><div class="kl">Concluídas no mês</div></div>
+    <div class="kcard ka"><div class="ki ka">⏳</div><div class="kv" id="legk4">—</div><div class="kl">Aguardando cliente</div></div>
+  </div>
+  <div class="g2" style="margin-bottom:16px">
+    <div class="card"><div class="ch"><div class="ct">🏗️ Aberturas e Alterações</div></div><div class="cb" id="legAbert"><div class="loading">Carregando...</div></div></div>
+    <div class="card"><div class="ch"><div class="ct">✅ Regularizações e Alvarás</div></div><div class="cb" id="legReg"><div class="loading">Carregando...</div></div></div>
+  </div>
+  <div class="card"><div class="ch"><div class="ct">📋 Todas as demandas de Legalização</div></div><div class="cb" id="legTabela"><div class="loading">Carregando...</div></div></div>
+</div>
+
+<!-- DESPACHANTE IMOBILIÁRIO -->
+<div class="pg" id="pg-imob">
+  <div class="ph"><div><h1>🏠 Despachante Imobiliário</h1><p>ITBI, escrituras, regularização de obras, registro de imóveis</p></div><button class="btn btn-p" onclick="abrirNovaDemanda()">+ Nova Demanda</button></div>
+  <div class="kpi-grid">
+    <div class="kcard ks"><div class="ki ks">📋</div><div class="kv" id="imobk1">—</div><div class="kl">Em andamento</div></div>
+    <div class="kcard kr"><div class="ki kr">⚡</div><div class="kv" id="imobk2">—</div><div class="kl">Urgentes</div></div>
+    <div class="kcard kg"><div class="ki kg">✅</div><div class="kv" id="imobk3">—</div><div class="kl">Concluídas no mês</div></div>
+    <div class="kcard kp"><div class="ki kp">🏛️</div><div class="kv" id="imobk4">—</div><div class="kl">Ag. cartório/órgão</div></div>
+  </div>
+  <div class="g2" style="margin-bottom:16px">
+    <div class="card"><div class="ch"><div class="ct">🏠 ITBI e Escrituras</div></div><div class="cb" id="imobItbi"><div class="loading">Carregando...</div></div></div>
+    <div class="card"><div class="ch"><div class="ct">🔨 Regularização de Obras</div></div><div class="cb" id="imobObra"><div class="loading">Carregando...</div></div></div>
+  </div>
+  <div class="card"><div class="ch"><div class="ct">📋 Todas as demandas Imobiliárias</div></div><div class="cb" id="imobTabela"><div class="loading">Carregando...</div></div></div>
+</div>
+
+<!-- ABERTURA DE EMPRESAS -->
+<div class="pg" id="pg-abertura">
+  <div class="ph"><div><h1>🏗️ Abertura de Empresas</h1><p>Planejamento, registro, CNPJ, alvarás e pós-abertura</p></div><button class="btn btn-p" onclick="abrirNovaDemanda()">+ Nova Demanda</button></div>
+  <div class="kpi-grid">
+    <div class="kcard ks"><div class="ki ks">📋</div><div class="kv" id="abk1">—</div><div class="kl">Em andamento</div></div>
+    <div class="kcard kr"><div class="ki kr">⚡</div><div class="kv" id="abk2">—</div><div class="kl">Urgentes</div></div>
+    <div class="kcard kg"><div class="ki kg">✅</div><div class="kv" id="abk3">—</div><div class="kl">Concluídas no mês</div></div>
+    <div class="kcard ka"><div class="ki ka">⏳</div><div class="kv" id="abk4">—</div><div class="kl">Ag. cliente</div></div>
+  </div>
+  <div class="card"><div class="ch"><div class="ct">📋 Todas as demandas de Abertura</div></div><div class="cb" id="abTabela"><div class="loading">Carregando...</div></div></div>
+</div>
+
+<!-- PARCELAMENTOS -->
+<div class="pg" id="pg-parc">
+  <div class="ph"><div><h1>📑 Parcelamentos e Regularização Fiscal</h1><p>Receita Federal, PGFN, dívida ativa, certidões</p></div><button class="btn btn-p" onclick="abrirNovaDemanda()">+ Nova Demanda</button></div>
+  <div class="kpi-grid">
+    <div class="kcard ks"><div class="ki ks">📋</div><div class="kv" id="prk1">—</div><div class="kl">Em andamento</div></div>
+    <div class="kcard kr"><div class="ki kr">⚡</div><div class="kv" id="prk2">—</div><div class="kl">Urgentes</div></div>
+    <div class="kcard kg"><div class="ki kg">✅</div><div class="kv" id="prk3">—</div><div class="kl">Concluídas no mês</div></div>
+    <div class="kcard kp"><div class="ki kp">🏛️</div><div class="kv" id="prk4">—</div><div class="kl">Ag. órgão</div></div>
+  </div>
+  <div class="card"><div class="ch"><div class="ct">📋 Todas as demandas</div></div><div class="cb" id="prTabela"><div class="loading">Carregando...</div></div></div>
+</div>
+
+<!-- PREFEITURA E ALVARÁS -->
+<div class="pg" id="pg-pref">
+  <div class="ph"><div><h1>🏛️ Prefeitura e Alvarás</h1><p>Inscrições municipais, alvarás, ISS</p></div><button class="btn btn-p" onclick="abrirNovaDemanda()">+ Nova Demanda</button></div>
+  <div class="kpi-grid">
+    <div class="kcard ks"><div class="ki ks">📋</div><div class="kv" id="pfk1">—</div><div class="kl">Em andamento</div></div>
+    <div class="kcard kr"><div class="ki kr">⚡</div><div class="kv" id="pfk2">—</div><div class="kl">Urgentes</div></div>
+    <div class="kcard kg"><div class="ki kg">✅</div><div class="kv" id="pfk3">—</div><div class="kl">Concluídas no mês</div></div>
+    <div class="kcard kp"><div class="ki kp">🏛️</div><div class="kv" id="pfk4">—</div><div class="kl">Ag. prefeitura</div></div>
+  </div>
+  <div class="card"><div class="ch"><div class="ct">📋 Todas as demandas</div></div><div class="cb" id="pfTabela"><div class="loading">Carregando...</div></div></div>
+</div>
+
+<!-- CERTIDÕES E DOCUMENTAÇÕES -->
+<div class="pg" id="pg-certs">
+  <div class="ph"><div><h1>📜 Certidões e Documentações</h1><p>Certidões federais, estaduais, municipais, procurações</p></div><button class="btn btn-p" onclick="abrirNovaDemanda()">+ Nova Demanda</button></div>
+  <div class="kpi-grid">
+    <div class="kcard ks"><div class="ki ks">📋</div><div class="kv" id="cdk1">—</div><div class="kl">Em andamento</div></div>
+    <div class="kcard kr"><div class="ki kr">⚡</div><div class="kv" id="cdk2">—</div><div class="kl">Urgentes</div></div>
+    <div class="kcard kg"><div class="ki kg">✅</div><div class="kv" id="cdk3">—</div><div class="kl">Concluídas no mês</div></div>
+    <div class="kcard ka"><div class="ki ka">⏳</div><div class="kv" id="cdk4">—</div><div class="kl">Ag. órgão/cartório</div></div>
+  </div>
+  <div class="card"><div class="ch"><div class="ct">📋 Todas as demandas</div></div><div class="cb" id="cdTabela"><div class="loading">Carregando...</div></div></div>
+</div>
+
+<!-- ATENDIMENTO AO CLIENTE -->
+<div class="pg" id="pg-atend">
+  <div class="ph"><div><h1>🤝 Atendimento ao Cliente</h1><p>Solicitações, financeiro, comercial, ouvidoria</p></div><button class="btn btn-p" onclick="abrirNovaDemanda()">+ Nova Demanda</button></div>
+  <div class="kpi-grid">
+    <div class="kcard ks"><div class="ki ks">📋</div><div class="kv" id="atk1">—</div><div class="kl">Em andamento</div></div>
+    <div class="kcard kr"><div class="ki kr">⚡</div><div class="kv" id="atk2">—</div><div class="kl">Urgentes</div></div>
+    <div class="kcard kg"><div class="ki kg">✅</div><div class="kv" id="atk3">—</div><div class="kl">Concluídas no mês</div></div>
+    <div class="kcard ka"><div class="ki ka">🤝</div><div class="kv" id="atk4">—</div><div class="kl">Reclamações</div></div>
+  </div>
+  <div class="card"><div class="ch"><div class="ct">📋 Todas as demandas</div></div><div class="cb" id="atTabela"><div class="loading">Carregando...</div></div></div>
+</div>
+
+<!-- IRPF -->
+<div class="pg" id="pg-irpf">
+  <div class="ph"><div><h1>🧾 IRPF</h1><p>Imposto de Renda Pessoa Física — Declarações e planejamento</p></div><button class="btn btn-p" onclick="abrirNovaDemanda()">+ Nova Demanda</button></div>
+  <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">
+    <div class="kcard kr"><div class="ki kr">⚡</div><div class="kv" id="irpfk1">—</div><div class="kl">Declarações urgentes</div></div>
+    <div class="kcard ks"><div class="ki ks">📋</div><div class="kv" id="irpfk2">—</div><div class="kl">Em andamento</div></div>
+    <div class="kcard ka"><div class="ki ka">⚠️</div><div class="kv" id="irpfk3">—</div><div class="kl">Malha fina</div></div>
+    <div class="kcard kg"><div class="ki kg">✅</div><div class="kv" id="irpfk4">—</div><div class="kl">Concluídas no mês</div></div>
+  </div>
+  <div class="g2" style="margin-bottom:16px">
+    <div class="card"><div class="ch"><div class="ct">🧾 Declarações IRPF</div></div><div class="cb" id="irpfDecl"><div class="loading">Carregando...</div></div></div>
+    <div class="card"><div class="ch"><div class="ct">⚠️ Malha Fina / Urgentes</div></div><div class="cb" id="irpfMalha"><div class="loading">Carregando...</div></div></div>
+  </div>
+  <div class="card"><div class="ch"><div class="ct">📋 Todas as demandas IRPF</div><button class="btn btn-s" style="padding:4px 10px;font-size:12px" onclick="exportarExcelIRPF()">📊 Excel</button></div><div class="cb" id="irpfTabela"><div class="loading">Carregando...</div></div></div>
+</div>
+</main>
+</div>
+</div><!-- /pgApp -->
+
+<!-- MODAIS -->
+<div class="modal-ov" id="mNovaDem">
+  <div class="modal" style="max-width:620px">
+    <div class="mh"><div class="mt">Nova Demanda</div><button class="mc" onclick="fm('mNovaDem')">×</button></div>
+    <div class="mb">
+      <div class="fg"><label class="fl">Cliente *</label><div style="display:flex;gap:8px"><select class="fi" id="ndCli" style="flex:1"><option value="">Selecione...</option></select><button class="btn btn-s" style="white-space:nowrap" onclick="om('mCliRap')">+ Novo</button></div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <div class="fg"><label class="fl">Departamento *</label><select class="fi" id="ndDep" onchange="loadCatsND()"><option value="">Selecione...</option></select></div>
+        <div class="fg"><label class="fl">Categoria *</label><select class="fi" id="ndCat" onchange="loadTiposND()"><option value="">Selecione...</option></select></div>
+        <div class="fg"><label class="fl">Tipo *</label><select class="fi" id="ndTipo" onchange="updPref()"><option value="">Selecione...</option></select></div>
+      </div>
+      <div id="ndPrevWrap" style="display:none;margin-bottom:12px"><span style="font-size:13px;font-weight:700;color:var(--sky);background:var(--sky-pale);padding:4px 12px;border-radius:6px" id="ndPrev"></span></div>
+      <div class="fg"><label class="fl">Descrição *</label><textarea class="fi" id="ndDesc" rows="6" placeholder="Descreva detalhadamente a demanda..." style="resize:vertical;min-height:130px"></textarea></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <div class="fg"><label class="fl">Prioridade</label><select class="fi" id="ndPrio"><option value="normal">Normal</option><option value="baixa">Baixa</option><option value="alta">Alta</option><option value="urgente">Urgente</option></select></div>
+        <div class="fg"><label class="fl">Prazo</label><input type="date" class="fi" id="ndPrazo"></div>
+        <div class="fg"><label class="fl">Responsável *</label><select class="fi" id="ndResp"><option value="">Selecione...</option></select></div>
+      </div>
+
+    </div>
+    <div class="mf"><button class="btn btn-s" onclick="fm('mNovaDem')">Cancelar</button><button class="btn btn-p" onclick="salvarDem()">Abrir Demanda</button></div>
+  </div>
+</div>
+
+<div class="modal-ov" id="mCliRap">
+  <div class="modal" style="max-width:420px">
+    <div class="mh"><div class="mt">Cadastrar Cliente Rápido</div><button class="mc" onclick="fm('mCliRap')">×</button></div>
+    <div class="mb">
+      <div class="fg"><label class="fl">Nome *</label><input type="text" class="fi" id="crNome"></div>
+      <div class="fg"><label class="fl">Tipo de Pessoa</label><select class="fi" id="crTipo"><option value="juridica">Pessoa Jurídica</option><option value="fisica">Pessoa Física</option></select></div>
+      <div class="fr">
+        <div class="fg"><label class="fl">CPF/CNPJ</label><input type="text" class="fi" id="crDoc"></div>
+        <div class="fg"><label class="fl">WhatsApp</label><input type="text" class="fi" id="crWa"></div>
+      </div>
+    </div>
+    <div class="mf"><button class="btn btn-s" onclick="fm('mCliRap')">Cancelar</button><button class="btn btn-p" onclick="salvarCliRap()">Cadastrar e Selecionar</button></div>
+  </div>
+</div>
+
+<div class="modal-ov" id="mCli">
+  <div class="modal wide">
+    <div class="mh"><div class="mt" id="mCliTit">Novo Cliente</div><button class="mc" onclick="fm('mCli')">×</button></div>
+    <div class="mb">
+      <input type="hidden" id="mcId">
+      <div class="fr">
+        <div class="fg"><label class="fl">Nome / Razão Social *</label><input type="text" class="fi" id="mcNome" placeholder="Nome completo ou razão social"></div>
+        <div class="fg"><label class="fl">Tipo de Pessoa</label>
+          <select class="fi" id="mcTP">
+            <option value="juridica">Pessoa Jurídica (CNPJ)</option>
+            <option value="fisica">Pessoa Física (CPF)</option>
+          </select>
+        </div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label class="fl">CPF / CNPJ</label><input type="text" class="fi" id="mcDoc" placeholder="000.000.000-00 ou 00.000.000/0001-00"></div>
+        <div class="fg"><label class="fl">Regime Tributário</label>
+          <select class="fi" id="mcReg">
+            <option value="">Não informado</option>
+            <option value="mei">MEI</option>
+            <option value="simples_nacional">Simples Nacional</option>
+            <option value="lucro_presumido">Lucro Presumido</option>
+            <option value="lucro_real">Lucro Real</option>
+            <option value="isento">Isento / Não contribuinte</option>
+            <option value="produtor_rural">Produtor Rural</option>
+          </select>
+        </div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label class="fl">WhatsApp (com DDD)</label><input type="text" class="fi" id="mcWa" placeholder="34 9 9999-9999"></div>
+        <div class="fg"><label class="fl">Telefone</label><input type="text" class="fi" id="mcTel" placeholder="34 3333-3333"></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label class="fl">E-mail</label><input type="email" class="fi" id="mcEmail" placeholder="email@cliente.com.br"></div>
+        <div class="fg"><label class="fl">Tipo de Cliente</label>
+          <select class="fi" id="mcTC">
+            <option value="urbano">Urbano</option>
+            <option value="rural">Produtor Rural</option>
+            <option value="pf">Pessoa Física</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg"><label class="fl">Endereço</label><input type="text" class="fi" id="mcEnd" placeholder="Rua, número, bairro, cidade — MG"></div>
+      <div class="fg"><label class="fl">Observações</label><textarea class="fi" id="mcObs" rows="3" style="resize:vertical" placeholder="Informações adicionais sobre o cliente..."></textarea></div>
+    </div>
+    <div class="mf"><button class="btn btn-s" onclick="fm('mCli')">Cancelar</button><button class="btn btn-p" onclick="salvarCli()">💾 Salvar Cliente</button></div>
+  </div>
+</div>
+
+<div class="modal-ov" id="mTram">
+  <div class="modal" style="max-width:460px">
+    <div class="mh"><div class="mt">Registrar Trâmite</div><button class="mc" onclick="fm('mTram')">×</button></div>
+    <div class="mb">
+      <div class="fg"><label class="fl">Tipo</label><select class="fi" id="tTipo"><option value="movimentacao_geral">Movimentação geral</option><option value="documento_recebido">Documento recebido</option><option value="documento_solicitado">Documento solicitado</option><option value="protocolo">Protocolo realizado</option><option value="exigencia_recebida">Exigência recebida</option><option value="exigencia_respondida">Exigência respondida</option></select></div>
+      <div class="fg"><label class="fl">Descrição *</label><textarea class="fi" id="tDesc" rows="4" style="resize:none" placeholder="Descreva a movimentação..."></textarea></div>
+    </div>
+    <div class="mf"><button class="btn btn-s" onclick="fm('mTram')">Cancelar</button><button class="btn btn-p" onclick="salvarTram()">Registrar</button></div>
+  </div>
+</div>
+
+<div class="modal-ov" id="mPend">
+  <div class="modal" style="max-width:460px">
+    <div class="mh"><div class="mt">Nova Pendência</div><button class="mc" onclick="fm('mPend')">×</button></div>
+    <div class="mb">
+      <div class="fg"><label class="fl">Tipo *</label><select class="fi" id="pTipo"><option value="cliente">Aguardando Cliente</option><option value="colaborador">Aguardando Colaborador</option><option value="gestor">Aguardando Gestor</option><option value="orgao_publico">Aguardando Órgão Público</option></select></div>
+      <div class="fg"><label class="fl">Descrição *</label><textarea class="fi" id="pDesc" rows="3" style="resize:none"></textarea></div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Responsável</label><select class="fi" id="pResp"><option value="">Ninguém</option></select></div>
+        <div class="fg"><label class="fl">Data prevista</label><input type="date" class="fi" id="pData"></div>
+      </div>
+    </div>
+    <div class="mf"><button class="btn btn-s" onclick="fm('mPend')">Cancelar</button><button class="btn btn-p" onclick="salvarPend()">Criar</button></div>
+  </div>
+</div>
+
+<div class="modal-ov" id="mAcao">
+  <div class="modal" style="max-width:460px">
+    <div class="mh"><div class="mt">Nova Próxima Ação</div><button class="mc" onclick="fm('mAcao')">×</button></div>
+    <div class="mb">
+      <div class="fg"><label class="fl">Descrição *</label><input type="text" class="fi" id="aDesc"></div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Responsável *</label><select class="fi" id="aResp"><option value="">Selecione...</option></select></div>
+        <div class="fg"><label class="fl">Data *</label><input type="date" class="fi" id="aData"></div>
+      </div>
+    </div>
+    <div class="mf"><button class="btn btn-s" onclick="fm('mAcao')">Cancelar</button><button class="btn btn-p" onclick="salvarAcao()">Salvar</button></div>
+  </div>
+</div>
+
+<div class="modal-ov" id="mTransf">
+  <div class="modal" style="max-width:460px">
+    <div class="mh"><div class="mt">Transferir Demanda</div><button class="mc" onclick="fm('mTransf')">×</button></div>
+    <div class="mb">
+      <div class="fg"><label class="fl">Novo Responsável *</label><select class="fi" id="trResp"><option value="">Selecione...</option></select></div>
+      <div class="fg"><label class="fl">Novo Departamento *</label><select class="fi" id="trDep"><option value="">Selecione...</option></select></div>
+      <div class="fg"><label class="fl">Motivo *</label><select class="fi" id="trMot"><option value="etapa_concluida">Etapa concluída</option><option value="redistribuicao">Redistribuição</option><option value="ferias">Férias</option><option value="afastamento">Afastamento</option><option value="erro_encaminhamento">Erro de encaminhamento</option><option value="outros">Outros</option></select></div>
+      <div class="fg"><label class="fl">Observação</label><textarea class="fi" id="trObs" rows="2" style="resize:none"></textarea></div>
+    </div>
+    <div class="mf"><button class="btn btn-s" onclick="fm('mTransf')">Cancelar</button><button class="btn btn-n" onclick="salvarTransf()">Transferir</button></div>
+  </div>
+</div>
+
+<div class="modal-ov" id="mConc">
+  <div class="modal" style="max-width:460px">
+    <div class="mh"><div class="mt">Solicitar Conclusão</div><button class="mc" onclick="fm('mConc')">×</button></div>
+    <div class="mb"><div class="fg"><label class="fl">Observações para o gestor</label><textarea class="fi" id="cObs" rows="4" style="resize:none" placeholder="Descreva o que foi realizado..."></textarea></div></div>
+    <div class="mf"><button class="btn btn-s" onclick="fm('mConc')">Cancelar</button><button class="btn btn-p" onclick="salvarConc()">Solicitar</button></div>
+  </div>
+</div>
+
+<div class="modal-ov" id="mUser">
+  <div class="modal" style="max-width:480px">
+    <div class="mh"><div class="mt" id="mUserTit">Novo Colaborador</div><button class="mc" onclick="fm('mUser')">×</button></div>
+    <div class="mb">
+      <input type="hidden" id="muId">
+
+      <!-- Nome -->
+      <div class="fg">
+        <label class="fl">Nome completo *</label>
+        <input type="text" class="fi" id="muNome" placeholder="Ex: Kamila Oliveira">
+      </div>
+
+      <!-- Usuário de login -->
+      <div class="fg" id="fgUsuario">
+        <label class="fl">Usuário para login *</label>
+        <input type="text" class="fi" id="muUsuario" placeholder="Ex: kamila, joao.silva, maria" autocomplete="off">
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">📌 Este será o nome usado para entrar no sistema. Sem espaços, sem acento.</div>
+      </div>
+
+      <!-- Senha -->
+      <div class="fg" id="muSenhaSec">
+        <label class="fl" id="muSenhaLabel">Senha *</label>
+        <input type="password" class="fi" id="muSenha" placeholder="Mínimo 4 caracteres" autocomplete="new-password" value="">
+        <div style="font-size:11px;color:var(--text3);margin-top:4px" id="muSenhaHint">🔑 Defina a senha que o colaborador usará para entrar.</div>
+      </div>
+
+      <div class="fr">
+        <!-- Nível de acesso -->
+        <div class="fg">
+          <label class="fl">Nível de acesso *</label>
+          <select class="fi" id="muPerfil">
+            <option value="colaborador">👤 Colaborador — acesso básico</option>
+            <option value="supervisor">👥 Supervisor — ver todos, editar os seus</option>
+            <option value="gestor">⭐ Gestor — acesso total</option>
+          </select>
+        </div>
+        <!-- WhatsApp -->
+        <div class="fg">
+          <label class="fl">WhatsApp (opcional)</label>
+          <input type="text" class="fi" id="muWa" placeholder="34 9 9999-9999">
+        </div>
+      </div>
+
+      <!-- Departamentos que vai atuar -->
+      <div class="fg">
+        <label class="fl">Departamento principal (opcional)</label>
+        <select class="fi" id="muDept">
+          <option value="">Todos os departamentos</option>
+        </select>
+      </div>
+
+    </div>
+    <div class="mf">
+      <button class="btn btn-s" onclick="fm('mUser')">Cancelar</button>
+      <button class="btn btn-p" id="muBtn" onclick="salvarUser()">✅ Salvar Colaborador</button>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- MODAL NOVA OBRIGAÇÃO TRIBUTÁRIA -->
+<div class="modal-ov" id="mObrigacao">
+  <div class="modal" style="max-width:520px">
+    <div class="mh">
+      <div class="mt" id="mObrigTit">📋 Nova Obrigação</div>
+      <button class="mc" onclick="fm('mObrigacao')">×</button>
+    </div>
+    <div class="mb">
+      <div class="fr">
+        <div class="fg">
+          <label class="fl">Nome da obrigação *</label>
+          <input type="text" class="fi" id="obNome" placeholder="Ex: DAS — Simples Nacional">
+        </div>
+        <div class="fg">
+          <label class="fl">Sigla *</label>
+          <input type="text" class="fi" id="obSigla" placeholder="DAS" maxlength="10" style="text-transform:uppercase">
+        </div>
+      </div>
+      <div class="fr">
+        <div class="fg">
+          <label class="fl">Dia base *</label>
+          <input type="number" class="fi" id="obDia" min="1" max="31" placeholder="Ex: 20">
+        </div>
+        <div class="fg">
+          <label class="fl">Cor</label>
+          <input type="color" class="fi" id="obCor" value="#DC2626" style="height:38px;padding:4px">
+        </div>
+      </div>
+
+      <div class="fg">
+        <label class="fl">Regra de cálculo de data *</label>
+        <select class="fi" id="obRegra">
+          <option value="fixo">📌 Fixo — data exata sem ajuste</option>
+          <option value="postergar">➡️ Postergar — se cair em não útil, vai para o próximo dia útil (ex: DAS)</option>
+          <option value="antecipar">⬅️ Antecipar — se cair em não útil, volta para o dia útil anterior (ex: INSS, IRRF)</option>
+          <option value="dias_uteis">📅 Dias Úteis — conta apenas dias úteis a partir do dia 1</option>
+          <option value="ultimo_util">🔚 Último Dia Útil do mês</option>
+        </select>
+      </div>
+
+      <div class="fg">
+        <label class="fl">Tipo</label>
+        <select class="fi" id="obTipo">
+          <option value="federal">🇧🇷 Federal</option>
+          <option value="estadual">🏛️ Estadual</option>
+          <option value="municipal">🏙️ Municipal</option>
+          <option value="trabalhista">👷 Trabalhista</option>
+          <option value="contabil">📒 Contábil</option>
+        </select>
+      </div>
+
+      <div class="fg">
+        <label class="fl">Recorrência</label>
+        <select class="fi" id="obRecorrencia" onchange="toggleMesBase()">
+          <option value="mensal">📆 Mensal — todos os meses</option>
+          <option value="anual">📅 Anual — um mês específico</option>
+          <option value="meses_especificos">✅ Meses específicos</option>
+        </select>
+      </div>
+
+      <div class="fg" id="fgMesBase" style="display:none">
+        <label class="fl">Mês de vencimento</label>
+        <select class="fi" id="obMesBase">
+          <option value="0">Janeiro</option><option value="1">Fevereiro</option>
+          <option value="2">Março</option><option value="3">Abril</option>
+          <option value="4">Maio</option><option value="5">Junho</option>
+          <option value="6">Julho</option><option value="7">Agosto</option>
+          <option value="8">Setembro</option><option value="9">Outubro</option>
+          <option value="10">Novembro</option><option value="11">Dezembro</option>
+        </select>
+      </div>
+
+      <div class="fg" id="fgMesesEsp" style="display:none">
+        <label class="fl">Selecione os meses (marque os que se aplicam)</label>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px">
+          ${['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'].map((m,i)=>
+            `<label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;background:var(--surface2);padding:4px 8px;border-radius:6px;border:1px solid var(--border)"><input type="checkbox" class="obMesEsp" value="${i}"> ${m}</label>`
+          ).join('')}
+        </div>
+      </div>
+
+      <div class="fg">
+        <label class="fl">Observação</label>
+        <input type="text" class="fi" id="obObs" placeholder="Ex: Apenas Lucro Presumido e Real">
+      </div>
+
+      <input type="hidden" id="obId">
+    </div>
+    <div class="mf">
+      <button class="btn btn-s" onclick="fm('mObrigacao')">Cancelar</button>
+      <button class="btn btn-p" onclick="salvarObrigacao()">💾 Salvar Obrigação</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL FERIADOS -->
+<div class="modal-ov" id="mFeriados">
+  <div class="modal" style="max-width:460px">
+    <div class="mh"><div class="mt">📅 Feriados Municipais</div><button class="mc" onclick="fm('mFeriados')">×</button></div>
+    <div class="mb">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:12px">Os feriados nacionais já estão incluídos automaticamente. Cadastre aqui os feriados municipais de Patrocínio — MG.</div>
+      <div class="fr">
+        <div class="fg">
+          <label class="fl">Data do feriado *</label>
+          <input type="date" class="fi" id="ferData">
+        </div>
+        <div class="fg">
+          <label class="fl">Nome *</label>
+          <input type="text" class="fi" id="ferNome" placeholder="Ex: Aniversário de Patrocínio">
+        </div>
+      </div>
+      <div class="fg">
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+          <input type="checkbox" id="ferRecorrente" style="width:16px;height:16px">
+          Feriado recorrente (todo ano nesta data)
+        </label>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
+        <button class="btn btn-p btn-sm" onclick="adicionarFeriado()">+ Adicionar</button>
+        <button class="btn btn-s btn-sm" onclick="document.getElementById('importFerFile').click()">📤 Importar Excel</button>
+        <input type="file" id="importFerFile" accept=".xlsx,.xls,.csv" style="display:none" onchange="importarFeriados(this)">
+        <button class="btn btn-s btn-sm" onclick="baixarTemplateFeriados()">📥 Template</button>
+        <button class="btn btn-er btn-sm" onclick="limparFeriados()" style="margin-left:auto">🗑️ Limpar todos</button>
+      </div>
+      <div id="ferLista" style="max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:8px"></div>
+    </div>
+    <div class="mf"><button class="btn btn-s" onclick="fm('mFeriados')">Fechar</button></div>
+  </div>
+</div>
+
+<!-- MODAL NOVO COMPROMISSO -->
+<div class="modal-ov" id="mCompromisso">
+  <div class="modal" style="max-width:440px">
+    <div class="mh"><div class="mt">📅 Novo Compromisso</div><button class="mc" onclick="fm('mCompromisso')">×</button></div>
+    <div class="mb">
+      <div class="fg">
+        <label class="fl">Título *</label>
+        <input type="text" class="fi" id="compTitulo" placeholder="Ex: Reunião com Daniel">
+      </div>
+      <div class="fr">
+        <div class="fg">
+          <label class="fl">Data *</label>
+          <input type="date" class="fi" id="compData">
+        </div>
+        <div class="fg">
+          <label class="fl">Horário</label>
+          <input type="time" class="fi" id="compHora" value="09:00">
+        </div>
+      </div>
+      <div class="fg">
+        <label class="fl">Tipo</label>
+        <select class="fi" id="compTipo">
+          <option value="reuniao">🤝 Reunião</option>
+          <option value="prazo">⏰ Prazo / Entrega</option>
+          <option value="visita">🏢 Visita a cliente</option>
+          <option value="ligacao">📞 Ligação</option>
+          <option value="treinamento">📚 Treinamento</option>
+          <option value="interno">📋 Interno</option>
+          <option value="outro">📌 Outro</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label class="fl">Participantes / Com quem</label>
+        <input type="text" class="fi" id="compPart" placeholder="Ex: Daniel, Kamila, Cliente ABC">
+      </div>
+      <div class="fg">
+        <label class="fl">Descrição / Local</label>
+        <textarea class="fi" id="compDesc" rows="3" style="resize:none" placeholder="Detalhes, local, pauta..."></textarea>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-s" onclick="fm('mCompromisso')">Cancelar</button>
+      <button class="btn btn-p" onclick="salvarCompromisso()">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal WhatsApp Manual -->
+<div class="modal-ov" id="mWA">
+  <div class="modal" style="max-width:460px">
+    <div class="mh"><div class="mt">Enviar WhatsApp</div><button class="mc" onclick="fm('mWA')">×</button></div>
+    <div class="mb">
+      <div class="fg"><label class="fl">Para (número com DDD)</label><input type="text" class="fi" id="waNum" placeholder="34999999999"></div>
+      <div class="fg"><label class="fl">Mensagem *</label><textarea class="fi" id="waMsgManual" rows="5" style="resize:none"></textarea></div>
+    </div>
+    <div class="mf"><button class="btn btn-s" onclick="fm('mWA')">Cancelar</button><button class="btn btn-p" onclick="enviarWAManual()">📱 Enviar</button></div>
+  </div>
+</div>
+
+<!-- Modal Upload de Arquivo -->
+<div class="modal-ov" id="mUpload">
+  <div class="modal" style="max-width:500px">
+    <div class="mh"><div class="mt">Anexar Documento</div><button class="mc" onclick="fm('mUpload')">×</button></div>
+    <div class="mb">
+      <div style="border:2px dashed var(--border);border-radius:12px;padding:2rem;text-align:center;margin-bottom:14px;cursor:pointer;transition:all .15s" id="dropZone" onclick="document.getElementById('fileInput').click()" ondragover="event.preventDefault();this.style.borderColor='var(--sky)'" ondragleave="this.style.borderColor='var(--border)'" ondrop="handleDrop(event)">
+        <div style="font-size:36px;margin-bottom:8px">📎</div>
+        <div style="font-weight:600;color:var(--navy);margin-bottom:4px">Clique ou arraste o arquivo aqui</div>
+        <div style="font-size:12px;color:var(--text3)">PDF, imagens, Word, Excel — até 10MB</div>
+      </div>
+      <input type="file" id="fileInput" style="display:none" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx" onchange="handleFiles(this.files)">
+      <div id="arquivosSelecionados"></div>
+      <div class="fg"><label class="fl">Descrição (opcional)</label><input type="text" class="fi" id="uploadDesc" placeholder="Ex: Contrato social, Comprovante, RG..."></div>
+    </div>
+    <div class="mf"><button class="btn btn-s" onclick="fm('mUpload')">Cancelar</button><button class="btn btn-p" id="btnEnviarUpload" onclick="fazerUpload()">⬆️ Enviar Arquivo</button></div>
+  </div>
+</div>
+
+<!-- Modal Honorário -->
+<div class="modal-ov" id="mHonorario">
+  <div class="modal" style="max-width:460px">
+    <div class="mh"><div class="mt">Lançar Honorário</div><button class="mc" onclick="fm('mHonorario')">×</button></div>
+    <div class="mb">
+      <div class="fg"><label class="fl">Cliente *</label><select class="fi" id="honCli"><option value="">Selecione...</option></select></div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Valor (R$) *</label><input type="number" class="fi" id="honValor" placeholder="0,00" step="0.01"></div>
+        <div class="fg"><label class="fl">Vencimento *</label><input type="date" class="fi" id="honVenc"></div>
+      </div>
+      <div class="fg"><label class="fl">Referência</label><input type="text" class="fi" id="honRef" placeholder="Ex: Honorários Junho/2026"></div>
+      <div class="fg"><label class="fl">Status</label>
+        <select class="fi" id="honStatus">
+          <option value="pendente">Pendente</option>
+          <option value="pago">Pago</option>
+          <option value="atrasado">Atrasado</option>
+        </select>
+      </div>
+    </div>
+    <div class="mf"><button class="btn btn-s" onclick="fm('mHonorario')">Cancelar</button><button class="btn btn-p" onclick="salvarHonorario()">Salvar</button></div>
+  </div>
+</div>
+
+
+<!-- Modal Obrigação Fiscal -->
+<div class="modal-ov" id="mObrig">
+  <div class="modal" style="max-width:480px">
+    <div class="mh"><div class="mt">Nova Obrigação</div><button class="mc" onclick="fm('mObrig')">×</button></div>
+    <div class="mb">
+      <div class="fg"><label class="fl">Nome da Obrigação *</label><input type="text" class="fi" id="obNome" placeholder="Ex: Apuração DAS, FGTS, IRPF..."></div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Tipo</label>
+          <select class="fi" id="obTipo">
+            <option value="federal">Federal</option>
+            <option value="estadual">Estadual</option>
+            <option value="municipal">Municipal</option>
+            <option value="trabalhista">Trabalhista</option>
+            <option value="contabil">Contábil</option>
+          </select>
+        </div>
+        <div class="fg"><label class="fl">Vencimento *</label><input type="date" class="fi" id="obVenc"></div>
+      </div>
+      <div class="fg"><label class="fl">Recorrência</label>
+        <select class="fi" id="obRecorr">
+          <option value="unica">Única</option>
+          <option value="mensal">Mensal (todo mês)</option>
+          <option value="trimestral">Trimestral</option>
+          <option value="anual">Anual</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">Clientes Afetados</label>
+        <select class="fi" id="obAbrangencia">
+          <option value="todos">Todos os clientes</option>
+          <option value="juridica">Apenas Pessoa Jurídica</option>
+          <option value="fisica">Apenas Pessoa Física</option>
+          <option value="simples">Simples Nacional</option>
+          <option value="rural">Produtores Rurais</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">Observação</label><textarea class="fi" id="obObs" rows="2" style="resize:none" placeholder="Detalhes, alíquotas, base de cálculo..."></textarea></div>
+    </div>
+    <div class="mf"><button class="btn btn-s" onclick="fm('mObrig')">Cancelar</button><button class="btn btn-p" onclick="salvarObrigacao()">Salvar</button></div>
+  </div>
+</div>
+
+<!-- Modal Checklist Demanda -->
+<div class="modal-ov" id="mChecklist">
+  <div class="modal" style="max-width:480px">
+    <div class="mh"><div class="mt" id="mChecklistTit">Checklist da Demanda</div><button class="mc" onclick="fm('mChecklist')">×</button></div>
+    <div class="mb" id="mChecklistBody"><div class="loading">Carregando...</div></div>
+    <div class="mf"><button class="btn btn-s" onclick="fm('mChecklist')">Fechar</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/config.js"></script>
+<script src="js/db.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<script src="js/departamentos.js"></script>
+<script src="js/demandas_det.js"></script>
+<script src="js/clientes.js"></script>
+<script src="js/honorarios.js"></script>
+<script src="js/whatsapp.js"></script>
+<script src="js/calendario.js"></script>
+<script src="js/backup.js"></script>
+<script src="js/impressao.js"></script>
+<script src="js/demandas.js"></script>
+<script src="js/utilitarios.js"></script>
+<script src="js/exportar.js"></script>
+<script src="js/irpf.js"></script>
+<script src="js/calendario2.js"></script>
+<script src="js/relatorios.js"></script>
+</body>
+</html>
