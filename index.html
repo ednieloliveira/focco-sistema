@@ -540,23 +540,53 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
 <!-- DEMANDAS -->
 <div class="pg" id="pg-dem">
   <div class="ph"><div><h1>Central de Processos</h1><p id="demTotal">...</p></div><button class="btn btn-p" onclick="abrirNovaDemanda()">+ Nova Demanda</button></div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
-    <input class="fi" id="fBusca" placeholder="Buscar número, cliente, resumo..." style="min-width:200px;flex:1" oninput="filtDem()">
-    <select class="fi" id="fStatus" style="width:155px" onchange="loadDem()">
-  <option value="">Todos os status</option>
-  <option value="todas">📋 Todas</option>
-  <option value="aberta">🔵 Aberta</option>
-  <option value="em_andamento">🟢 Em andamento</option>
-  <option value="aguardando_cliente">🟡 Ag. cliente</option>
-  <option value="aguardando_orgao">🟣 Ag. órgão</option>
-  <option value="aguardando_conclusao">🟠 Ag. conclusão</option>
-  <option value="concluida">✅ Concluída</option>
-  <option value="cancelada">❌ Cancelada</option>
-</select>
-    <select class="fi" id="fPrio" style="width:120px" onchange="filtDem()"><option value="">Todas</option><option value="urgente">Urgente</option><option value="alta">Alta</option><option value="normal">Normal</option></select>
-    <select class="fi" id="fDep" style="width:155px" onchange="filtDem()"><option value="">Todos depto.</option></select>
+
+  <!-- ABAS -->
+  <div style="display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid var(--border)">
+    <button id="abaAberta" onclick="trocarAba('aberta')" style="padding:10px 20px;border:none;background:none;cursor:pointer;font-family:Inter,sans-serif;font-size:13px;font-weight:600;color:var(--accent);border-bottom:2px solid var(--accent);margin-bottom:-2px">
+      Ativas <span id="cntAberta" style="background:var(--accent);color:#fff;font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;margin-left:4px">0</span>
+    </button>
+    <button id="abaAprovacao" onclick="trocarAba('aprovacao')" style="padding:10px 20px;border:none;background:none;cursor:pointer;font-family:Inter,sans-serif;font-size:13px;font-weight:600;color:var(--text3);border-bottom:2px solid transparent;margin-bottom:-2px">
+      Ag. Aprovação <span id="cntAprovacao" style="background:var(--text3);color:#fff;font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;margin-left:4px">0</span>
+    </button>
+    <button id="abaEncerrada" onclick="trocarAba('encerrada')" style="padding:10px 20px;border:none;background:none;cursor:pointer;font-family:Inter,sans-serif;font-size:13px;font-weight:600;color:var(--text3);border-bottom:2px solid transparent;margin-bottom:-2px">
+      Concluídas <span id="cntEncerrada" style="background:var(--text3);color:#fff;font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;margin-left:4px">0</span>
+    </button>
+    <button id="abaTodas" onclick="trocarAba('todas')" style="padding:10px 20px;border:none;background:none;cursor:pointer;font-family:Inter,sans-serif;font-size:13px;font-weight:600;color:var(--text3);border-bottom:2px solid transparent;margin-bottom:-2px">
+      Todas
+    </button>
   </div>
-  <div class="card" style="margin-bottom:0"><div style="overflow-x:auto"><table><thead><tr><th>Número</th><th>Cliente</th><th>Resumo</th><th>Status</th><th>Prioridade</th><th>Responsável</th><th>Situação</th><th>Prazo</th></tr></thead><tbody id="demTabela"><tr><td colspan="8" class="loading">Carregando...</td></tr></tbody></table></div></div>
+
+  <!-- FILTROS -->
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+    <input class="fi" id="fBusca" placeholder="Buscar número, cliente, resumo..." style="min-width:200px;flex:1;margin:0" oninput="filtDem()">
+    <select class="fi" id="fStatus" style="width:155px;margin:0" onchange="filtDem()">
+      <option value="">Todos os status</option>
+      <option value="aberta">🔵 Aberta</option>
+      <option value="em_andamento">🟢 Em andamento</option>
+      <option value="aguardando_cliente">🟡 Ag. cliente</option>
+      <option value="aguardando_orgao">🟣 Ag. órgão</option>
+      <option value="aguardando_conclusao">🟠 Ag. conclusão</option>
+      <option value="concluida">✅ Concluída</option>
+      <option value="cancelada">❌ Cancelada</option>
+    </select>
+    <select class="fi" id="fPrio" style="width:120px;margin:0" onchange="filtDem()">
+      <option value="">Todas prioridades</option>
+      <option value="urgente">🔴 Urgente</option>
+      <option value="alta">🟡 Alta</option>
+      <option value="normal">⚪ Normal</option>
+    </select>
+    <select class="fi" id="fDep" style="width:155px;margin:0" onchange="filtDem()"><option value="">Todos depto.</option></select>
+  </div>
+
+  <div class="card" style="margin-bottom:0">
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>Número</th><th>Cliente</th><th>Resumo</th><th>Status</th><th>Prioridade</th><th>Responsável</th><th>Inatividade</th><th>Prazo</th></tr></thead>
+        <tbody id="demTabela"><tr><td colspan="8" class="loading">Carregando...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
 </div>
 
 <!-- DETALHE DEMANDA -->
@@ -5564,32 +5594,30 @@ let abaAtual = 'aberta';
 
 function trocarAba(aba) {
   abaAtual = aba;
-  // Resetar fStatus para não conflitar com a aba
-  const fSt = document.getElementById('fStatus');
-  if(fSt) fSt.value = '';
-  // Estilo das abas
-  ['aberta','aprovacao','encerrada'].forEach(a=>{
-    const cap = a.charAt(0).toUpperCase()+a.slice(1);
-    const btn = document.getElementById('aba'+cap);
-    const cnt = document.getElementById('cnt'+cap);
+  document.getElementById('fStatus').value = '';
+  ['aberta','aprovacao','encerrada','todas'].forEach(a => {
+    const btn = document.getElementById('aba' + a.charAt(0).toUpperCase() + a.slice(1));
+    const cnt = document.getElementById('cnt' + a.charAt(0).toUpperCase() + a.slice(1));
+    const active = a === aba;
     if(btn){
-      btn.style.color         = a===aba?'var(--accent)':'var(--text3)';
-      btn.style.borderBottom  = a===aba?'2px solid var(--accent)':'2px solid transparent';
-      btn.style.fontWeight    = a===aba?'600':'500';
+      btn.style.color = active ? 'var(--accent)' : 'var(--text3)';
+      btn.style.borderBottom = active ? '2px solid var(--accent)' : '2px solid transparent';
+      btn.style.fontWeight = active ? '700' : '500';
     }
-    if(cnt) cnt.style.background = a===aba?'var(--accent)':'var(--text3)';
+    if(cnt) cnt.style.background = active ? 'var(--accent)' : 'var(--text3)';
   });
   filtDem();
 }
 
-// loadDem — lê TUDO do localStorage, faz joins manuais, conta abas
 async function loadDem() {
-  // Gestor/Supervisor ve todas — colaborador ve so as suas
+  document.getElementById('demTabela').innerHTML = '<tr><td colspan="8" class="loading">Carregando...</td></tr>';
+  // Buscar do Supabase
   let q = sbRest('demandas').select('id,numero,resumo,status,prioridade,prazo,ultima_movimentacao,created_at,responsavel_atual_id,departamento_atual_id,departamento_id,cliente_id').order('created_at',{ascending:false});
   if (U.perfil !== 'gestor' && U.perfil !== 'supervisor') {
     q = q.eq('responsavel_atual_id', U.id);
   }
-  const {data: dems} = await q;
+  const {data: dems, error} = await q;
+  if (error) { document.getElementById('demTabela').innerHTML = '<tr><td colspan="8" class="vazio">Erro ao carregar demandas.</td></tr>'; return; }
   const todas = dems || [];
   const clis  = dbGet('clientes');
   const profs = dbGet('profiles');
@@ -5600,18 +5628,17 @@ async function loadDem() {
     profiles:      profs.find(p => p.id === d.responsavel_atual_id) || null,
     departamentos: depts.find(x => x.id === (d.departamento_atual_id || d.departamento_id)) || null,
   }));
-  const aberta = allDem.filter(d=>!['aguardando_conclusao','concluida','cancelada'].includes(d.status));
-  const aprov  = allDem.filter(d=>d.status==='aguardando_conclusao');
-  const enc    = allDem.filter(d=>['concluida','cancelada'].includes(d.status));
-  const cA=document.getElementById('cntAberta');   if(cA)  cA.textContent=aberta.length;
-  const cAp=document.getElementById('cntAprovacao');if(cAp) cAp.textContent=aprov.length;
-  const cE=document.getElementById('cntEncerrada'); if(cE)  cE.textContent=enc.length;
-  const tot=document.getElementById('demTotal');
-  if(tot) tot.textContent=allDem.length+' total · '+aberta.length+' ativas · '+enc.length+' encerradas';
+  const ativas  = allDem.filter(d => !['aguardando_conclusao','concluida','cancelada'].includes(d.status));
+  const aprov   = allDem.filter(d => d.status === 'aguardando_conclusao');
+  const enc     = allDem.filter(d => ['concluida','cancelada'].includes(d.status));
+  const cA  = document.getElementById('cntAberta');    if(cA)  cA.textContent  = ativas.length;
+  const cAp = document.getElementById('cntAprovacao'); if(cAp) cAp.textContent = aprov.length;
+  const cE  = document.getElementById('cntEncerrada'); if(cE)  cE.textContent  = enc.length;
+  const tot = document.getElementById('demTotal');
+  if(tot) tot.textContent = allDem.length + ' total · ' + ativas.length + ' ativas · ' + enc.length + ' concluídas';
   filtDem();
 }
 
-// filtDem — respeita aba ativa E seletor de status
 function filtDem() {
   const b   = (document.getElementById('fBusca')?.value||'').toLowerCase();
   const s   = document.getElementById('fStatus')?.value||'';
@@ -5619,31 +5646,29 @@ function filtDem() {
   const dep = document.getElementById('fDep')?.value||'';
   const hj  = new Date().toISOString().split('T')[0];
 
-  let f = allDem.filter(x=>{
-    // Status: filtro manual tem prioridade sobre aba
+  let f = allDem.filter(x => {
     let ms;
-    if(s==='todas')       ms=true;
-    else if(s!=='')       ms=x.status===s;
-    else if(abaAtual==='aberta')    ms=!['aguardando_conclusao','concluida','cancelada'].includes(x.status);
-    else if(abaAtual==='aprovacao') ms=x.status==='aguardando_conclusao';
-    else if(abaAtual==='encerrada') ms=['concluida','cancelada'].includes(x.status);
-    else ms=true;
+    if (s !== '') ms = x.status === s;
+    else if (abaAtual === 'aberta')    ms = !['aguardando_conclusao','concluida','cancelada'].includes(x.status);
+    else if (abaAtual === 'aprovacao') ms = x.status === 'aguardando_conclusao';
+    else if (abaAtual === 'encerrada') ms = ['concluida','cancelada'].includes(x.status);
+    else ms = true; // todas
 
-    const mb=!b||(x.numero||'').toLowerCase().includes(b)||(x.clientes?.nome||'').toLowerCase().includes(b)||(x.resumo||'').toLowerCase().includes(b);
-    return ms&&mb&&(!p||x.prioridade===p)&&(!dep||x.departamento_atual_id===dep||x.departamento_id===dep);
+    const mb = !b || (x.numero||'').toLowerCase().includes(b) || (x.clientes?.nome||'').toLowerCase().includes(b) || (x.resumo||'').toLowerCase().includes(b);
+    return ms && mb && (!p || x.prioridade === p) && (!dep || x.departamento_atual_id === dep || x.departamento_id === dep);
   });
 
-  if(!f.length){
-    document.getElementById('demTabela').innerHTML='<tr><td colspan="8"><div class="vazio" style="padding:2rem">Nenhuma demanda encontrada.</div></td></tr>';
+  if (!f.length) {
+    document.getElementById('demTabela').innerHTML = '<tr><td colspan="8"><div class="vazio" style="padding:2rem">Nenhuma demanda encontrada.</div></td></tr>';
     return;
   }
 
-  document.getElementById('demTabela').innerHTML=f.map(d=>{
-    const isConcluida=['concluida','cancelada'].includes(d.status);
-    const dias=Math.floor((Date.now()-new Date(d.ultima_movimentacao||d.created_at))/86400000);
-    const dc=isConcluida?'tgr':dias>=10?'tr':dias>=5?'ta':dias>=2?'ta':'ts';
-    const pv=d.prazo&&d.prazo<hj&&!isConcluida;
-    return `<tr onclick="abrirDet('${d.id}')" style="${isConcluida?'opacity:.75;background:var(--surface2)':''}">
+  document.getElementById('demTabela').innerHTML = f.map(d => {
+    const isConcluida = ['concluida','cancelada'].includes(d.status);
+    const dias = Math.floor((Date.now()-new Date(d.ultima_movimentacao||d.created_at))/86400000);
+    const dc = isConcluida?'tgr':dias>=10?'tr':dias>=5?'ta':'ts';
+    const pv = d.prazo && d.prazo < hj && !isConcluida;
+    return `<tr onclick="abrirDet('${d.id}')" style="${isConcluida?'opacity:.7;background:var(--surface2)':''}">
       <td><strong style="color:${isConcluida?'var(--text3)':'var(--accent)'};font-family:monospace">${d.numero}</strong></td>
       <td style="font-size:13px">${d.clientes?.nome||'—'}</td>
       <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px">${d.resumo||'—'}</td>
