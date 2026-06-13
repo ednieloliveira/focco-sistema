@@ -1,7 +1,3 @@
-// ═══════════════════════════════════════════
-// Módulo financeiro / honorários
-// ═══════════════════════════════════════════
-
 // ══════════════════════════════════════════
 let honorarios = JSON.parse(localStorage.getItem('focco_honorarios') || '[]');
 
