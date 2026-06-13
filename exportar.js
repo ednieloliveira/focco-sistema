@@ -1,7 +1,3 @@
-// ═══════════════════════════════════════════
-// Exportação Excel + exclusão
-// ═══════════════════════════════════════════
-
 // ══════════════════════════════════════════
 function exportarExcel(dados, nomeArquivo, nomeAba) {
   if (!dados || !dados.length) { toast('Nenhum dado para exportar','err'); return; }
