@@ -3031,12 +3031,15 @@ function abrirNovaDemanda() {
   const prev=document.getElementById('ndPrevWrap');
   if(prev) prev.style.display='none';
 
-  // Popular clientes do cache
+  // Popular clientes — busca do Supabase sempre
   const cliSel=document.getElementById('ndCli');
   if(cliSel){
-    cliSel.innerHTML='<option value="">Selecione o cliente...</option>';
-    dbGet('clientes').filter(c=>c.ativo!==false).sort((a,b)=>a.nome.localeCompare(b.nome))
-      .forEach(c=>cliSel.innerHTML+=`<option value="${c.id}">${c.nome}</option>`);
+    cliSel.innerHTML='<option value="">Carregando clientes...</option>';
+    sbRest('clientes').select('id,nome').eq('ativo',true).order('nome').then(({data:clis})=>{
+      cliSel.innerHTML='<option value="">Selecione o cliente...</option>';
+      (clis||[]).forEach(c=>cliSel.innerHTML+=`<option value="${c.id}">${c.nome}</option>`);
+      if(clis) dbSet('clientes', clis);
+    });
   }
 
   // Popular departamentos com icones modernos
