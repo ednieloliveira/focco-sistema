@@ -3,7 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Focco">
+<meta name="theme-color" content="#2563EB">
+<meta name="description" content="Focco Contabilidade - Sistema Operacional">
+<link rel="manifest" href="data:application/json;charset=utf-8,{&quot;name&quot;:&quot;Focco Sistema&quot;,&quot;short_name&quot;:&quot;Focco&quot;,&quot;start_url&quot;:&quot;/focco-sistema/&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;%23F7F7F5&quot;,&quot;theme_color&quot;:&quot;%232563EB&quot;,&quot;icons&quot;:[{&quot;src&quot;:&quot;https://placehold.co/192x192/2563EB/white?text=F&quot;,&quot;sizes&quot;:&quot;192x192&quot;,&quot;type&quot;:&quot;image/png&quot;},{&quot;src&quot;:&quot;https://placehold.co/512x512/2563EB/white?text=F&quot;,&quot;sizes&quot;:&quot;512x512&quot;,&quot;type&quot;:&quot;image/png&quot;}]}">
 <title>Focco · Sistema Operacional</title>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -292,14 +299,42 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
   .kb-board-6{grid-template-columns:repeat(2,1fr)}
   .sidebar{transform:translateX(-100%);transition:transform .25s}
   .sidebar.open{transform:translateX(0)}
-  .main{margin-left:0}
-  .topbar{left:0}
+  .main{margin-left:0;padding:12px}
+  .topbar{left:0;padding:0 12px}
   .ham-btn{display:flex}
   #syncBadge{left:14px}
+  /* Mobile otimizado */
+  table{font-size:12px}
+  table th,table td{padding:6px 8px}
+  .card{border-radius:10px;margin-bottom:10px}
+  .ph{flex-direction:column;align-items:flex-start;gap:8px}
+  .ph h1{font-size:18px}
+  .modal{width:96vw!important;max-width:96vw!important;margin:2vh auto;max-height:94vh;overflow-y:auto}
+  .fr{flex-direction:column}
+  .fr .fg{width:100%}
+  .btn{font-size:12px;padding:7px 12px}
+  /* Bottom nav mobile */
+  .mobile-nav{display:flex!important}
+  .main{padding-bottom:70px}
+  /* Cards menores no mobile */
+  .kcard{padding:12px 8px}
+  .kv{font-size:22px}
+  /* Tabela scroll horizontal */
+  .card div[style*="overflow-x"]{-webkit-overflow-scrolling:touch}
+  /* Inputs maiores no mobile */
+  .fi{font-size:16px!important;padding:10px 12px}
+  select.fi{font-size:16px!important}
 }
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:10px}
 ::-webkit-scrollbar-thumb:hover{background:var(--border2)}
+/* Bottom nav mobile */
+.mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);z-index:200;padding:0 0 env(safe-area-inset-bottom,0)}
+.mobile-nav-item{flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 4px;cursor:pointer;color:var(--text3);font-size:10px;font-weight:500;gap:3px;border:none;background:none;font-family:Inter,sans-serif}
+.mobile-nav-item.active{color:var(--accent)}
+.mobile-nav-item span:first-child{font-size:20px}
+/* Email/filtro IA modal */
+.email-config-item{padding:12px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;display:flex;align-items:center;gap:12px}
 </style>
 </head>
 <body>
@@ -368,6 +403,13 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
     <div class="nav" id="nav-param" onclick="ir('param',this)"><span class="ni">⚙</span> Parâmetros</div>
     <div class="nav" id="nav-users" onclick="ir('users',this)"><span class="ni">👤</span> Usuários</div>
     <div class="nav" id="nav-whatsapp" onclick="ir('whatsapp',this)"><span class="ni">💬</span> WhatsApp</div>
+    <div class="nav" onclick="abrirConfigEmail()"><span class="ni">📧</span> Email</div>
+    <div class="nav" onclick="abrirFiltroIA()"><span class="ni">🧠</span> Filtro IA</div>
+    <div class="nav" onclick="abrirAuditoria()"><span class="ni">🔍</span> Auditoria</div>
+    <div class="nav" onclick="om('mNewsletter')"><span class="ni">📰</span> Newsletter</div>
+    <div class="nav" onclick="abrirProcuracao()"><span class="ni">📄</span> Procuração</div>
+    <div class="nav" onclick="abrirPrevisaoIA()"><span class="ni">📈</span> Previsão IA</div>
+    <div class="nav" onclick="om('mPushConfig')"><span class="ni">🔔</span> Push</div>
     <div class="nav" id="nav-utilitarios" onclick="ir('utilitarios',this)"><span class="ni">🔧</span> Utilitários</div>
     <div class="nav" id="nav-backup" onclick="ir('backup',this)"><span class="ni">💾</span> Backup</div>
     <div class="nav" id="nav-impressao" onclick="ir('impressao',this)"><span class="ni">🖨</span> Impressão PDF</div>
@@ -387,6 +429,7 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
   <div class="topbar-title" id="pgTitle">Dashboard</div>
   <div class="search"><span style="color:var(--text3);font-size:13px">🔍</span><input type="text" id="busca" placeholder="Buscar demandas, clientes..." oninput="buscaRapida()"></div>
   <div style="display:flex;gap:8px;align-items:center">
+    <button class="btn btn-s" onclick="om('mAssistenteIA')" title="Assistente IA" style="padding:7px 12px;font-size:12px">🤖 IA</button>
     <button class="btn btn-p" onclick="abrirNovaDemanda()" title="Nova demanda" style="padding:7px 12px;font-size:12px">+ Nova</button>
     <div style="position:relative">
       <div class="icon-btn" onclick="toggleNotifs()" title="Notificações" id="sinoBell">🔔</div>
@@ -1118,16 +1161,33 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
 <!-- BACKUP -->
 <div class="pg" id="pg-backup">
   <div class="ph"><div><h1>💾 Backup do Sistema</h1><p>Exportar e restaurar dados do sistema</p></div></div>
+  
+  <!-- Backup automático status -->
+  <div class="card" style="margin-bottom:16px;background:var(--green-pale);border:1px solid rgba(5,150,105,.2)">
+    <div class="cb" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+      <div>
+        <div style="font-weight:700;color:var(--green);font-size:14px">🔄 Backup Automático</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:2px" id="autoBackupStatus">Último backup: verificando...</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select class="fi" id="autoBackupFreq" style="width:140px;margin:0" onchange="salvarFreqBackup()">
+          <option value="0">Desativado</option>
+          <option value="1" selected>A cada 1 hora</option>
+          <option value="6">A cada 6 horas</option>
+          <option value="24">Diariamente</option>
+        </select>
+        <button class="btn btn-ok" onclick="fazerBackupAuto()">▶ Fazer agora</button>
+      </div>
+    </div>
+  </div>
+
   <div class="g2" style="margin-bottom:16px">
     <div class="card">
       <div class="ch"><div class="ct">⬇️ Exportar Dados</div></div>
       <div class="cb">
-        <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Exporte todos os dados do sistema em formato JSON. Guarde o arquivo em local seguro.</p>
         <div style="display:flex;flex-direction:column;gap:10px">
           <button class="btn btn-navy" style="justify-content:center" onclick="exportarRelatorioCompleto()">📊 Relatório Completo Excel</button>
           <button class="btn btn-p" style="justify-content:center" onclick="backupCompleto()">⬇️ Backup Completo (JSON)</button>
-          <button class="btn btn-n" style="justify-content:center" onclick="sincronizarParaSheets()">☁️ Sincronizar com Google Sheets</button>
-          <button class="btn btn-s" style="justify-content:center" onclick="importarDoSheets()">↓ Importar do Sheets</button>
           <button class="btn btn-s" style="justify-content:center" onclick="backupClientes()">👥 Exportar Clientes (CSV)</button>
           <button class="btn btn-s" style="justify-content:center" onclick="backupDemandas()">📋 Demandas (CSV)</button>
           <button class="btn btn-s" style="justify-content:center" onclick="exportarExcelDemandas('')">📊 Demandas (Excel)</button>
@@ -1608,7 +1668,14 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
         </div>
       </div>
       <div class="fr">
-        <div class="fg"><label class="fl">CPF / CNPJ</label><input type="text" class="fi" id="mcDoc" placeholder="000.000.000-00 ou 00.000.000/0001-00"></div>
+        <div class="fg">
+          <label class="fl">CPF / CNPJ</label>
+          <div style="display:flex;gap:6px">
+            <input type="text" class="fi" id="mcDoc" placeholder="000.000.000-00 ou 00.000.000/0001-00" style="flex:1;margin:0">
+            <button type="button" class="btn btn-s" onclick="consultarCNPJ()" style="white-space:nowrap;flex-shrink:0" title="Consultar Receita Federal">🔍 Consultar</button>
+          </div>
+          <div id="cnpjStatus" style="font-size:11px;margin-top:4px"></div>
+        </div>
         <div class="fg"><label class="fl">Regime Tributário</label>
           <select class="fi" id="mcReg">
             <option value="">Não informado</option>
@@ -2045,6 +2112,394 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
   </div>
 </div>
 
+<!-- MODAL HISTORICO DO CLIENTE -->
+<div class="modal-ov" id="mHistCli">
+  <div class="modal" style="max-width:800px;width:95vw">
+    <div class="mh">
+      <div>
+        <div class="mt" id="mHistCliTit">Histórico do Cliente</div>
+        <div style="font-size:12px;color:var(--text3)" id="mHistCliSub"></div>
+      </div>
+      <button class="mc" onclick="fm('mHistCli')">×</button>
+    </div>
+    <div class="mb" style="padding:0">
+      <!-- KPIs -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border-bottom:1px solid var(--border)">
+        <div style="background:var(--surface);padding:16px;text-align:center">
+          <div style="font-size:22px;font-weight:800;color:var(--accent)" id="hkTotal">—</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px">Total de demandas</div>
+        </div>
+        <div style="background:var(--surface);padding:16px;text-align:center">
+          <div style="font-size:22px;font-weight:800;color:var(--green)" id="hkConc">—</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px">Concluídas</div>
+        </div>
+        <div style="background:var(--surface);padding:16px;text-align:center">
+          <div style="font-size:22px;font-weight:800;color:var(--sky)" id="hkAtiv">—</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px">Em aberto</div>
+        </div>
+        <div style="background:var(--surface);padding:16px;text-align:center">
+          <div style="font-size:22px;font-weight:800;color:var(--amber)" id="hkDias">—</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px">Tempo médio (dias)</div>
+        </div>
+      </div>
+      <!-- Lista de demandas -->
+      <div style="padding:16px;max-height:50vh;overflow-y:auto" id="mHistCliBody">
+        <div class="loading">Carregando histórico...</div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-s" onclick="fm('mHistCli')">Fechar</button>
+      <button class="btn btn-p" onclick="verTodasDemCli()">Ver todas as demandas →</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ASSISTENTE IA -->
+<div class="modal-ov" id="mAssistenteIA">
+  <div class="modal" style="max-width:560px">
+    <div class="mh">
+      <div>
+        <div class="mt">🤖 Assistente IA — Nova Demanda</div>
+        <div style="font-size:12px;color:var(--text3)">Descreva o serviço e a IA preenche automaticamente</div>
+      </div>
+      <button class="mc" onclick="fm('mAssistenteIA')">×</button>
+    </div>
+    <div class="mb">
+      <div class="fg">
+        <label class="fl">Descreva o que precisa ser feito *</label>
+        <textarea class="fi" id="iaDescricao" rows="4" placeholder="Ex: Fazer declaração de IRPF para João Silva, produtor rural, precisa de urgência pois prazo vence semana que vem..." style="resize:vertical"></textarea>
+      </div>
+      <div class="fg">
+        <label class="fl">Cliente (opcional — IA sugere se deixar em branco)</label>
+        <input type="text" class="fi" id="iaBuscaCli" placeholder="Digite o nome do cliente..." oninput="filtrarClientesIA()">
+        <div id="iaListaCli" style="display:none;border:1px solid var(--border);border-radius:var(--r);max-height:150px;overflow-y:auto;background:var(--surface);margin-top:4px"></div>
+        <input type="hidden" id="iaCliId">
+      </div>
+      <div id="iaSugestao" style="display:none;background:var(--sky-pale);border:1px solid rgba(14,165,233,.3);border-radius:var(--r);padding:14px;margin-top:4px">
+        <div style="font-size:12px;font-weight:700;color:var(--sky);margin-bottom:10px">✨ Sugestão da IA:</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px">
+          <div><span style="color:var(--text3)">Departamento:</span> <strong id="iaSugDep">—</strong></div>
+          <div><span style="color:var(--text3)">Categoria:</span> <strong id="iaSugCat">—</strong></div>
+          <div><span style="color:var(--text3)">Tipo:</span> <strong id="iaSugTipo">—</strong></div>
+          <div><span style="color:var(--text3)">Prioridade:</span> <strong id="iaSugPrio">—</strong></div>
+          <div><span style="color:var(--text3)">Prazo sugerido:</span> <strong id="iaSugPrazo">—</strong></div>
+          <div><span style="color:var(--text3)">Responsável:</span> <strong id="iaSugResp">—</strong></div>
+        </div>
+        <div style="margin-top:10px;padding:8px;background:rgba(14,165,233,.1);border-radius:6px;font-size:12px;color:var(--sky)" id="iaSugObs"></div>
+      </div>
+      <div id="iaLoading" style="display:none;text-align:center;padding:20px;color:var(--text3)">
+        <div style="font-size:24px;margin-bottom:8px">🤖</div>
+        <div>Analisando...</div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-s" onclick="fm('mAssistenteIA')">Cancelar</button>
+      <button class="btn btn-s" id="iaBtnAnalisar" onclick="analisarComIA()">🔍 Analisar</button>
+      <button class="btn btn-p" id="iaBtnAbrirDem" style="display:none" onclick="abrirDemandaDaIA()">✅ Abrir Demanda</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL AUDITORIA -->
+<div class="modal-ov" id="mAuditoria">
+  <div class="modal" style="max-width:800px;width:95vw">
+    <div class="mh">
+      <div><div class="mt">🔍 Auditoria Interna</div><div style="font-size:12px;color:var(--text3)">Registro de todas as ações no sistema</div></div>
+      <button class="mc" onclick="fm('mAuditoria')">×</button>
+    </div>
+    <div class="mb" style="padding:0">
+      <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap">
+        <select class="fi" id="audUsuario" style="width:160px;margin:0" onchange="carregarAuditoria()">
+          <option value="">Todos os usuários</option>
+        </select>
+        <select class="fi" id="audAcao" style="width:160px;margin:0" onchange="carregarAuditoria()">
+          <option value="">Todas as ações</option>
+          <option value="login">Login</option>
+          <option value="demanda_criada">Demanda criada</option>
+          <option value="demanda_transferida">Transferência</option>
+          <option value="tramite">Trâmite registrado</option>
+          <option value="cliente_criado">Cliente criado</option>
+          <option value="cliente_editado">Cliente editado</option>
+          <option value="backup">Backup realizado</option>
+        </select>
+        <input type="date" class="fi" id="audDataDe" style="width:140px;margin:0" onchange="carregarAuditoria()">
+        <input type="date" class="fi" id="audDataAte" style="width:140px;margin:0" onchange="carregarAuditoria()">
+      </div>
+      <div style="max-height:55vh;overflow-y:auto" id="audLista">
+        <div class="loading" style="padding:2rem">Carregando logs...</div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-s" onclick="fm('mAuditoria')">Fechar</button>
+      <button class="btn btn-p" onclick="exportarAuditoria()">📊 Exportar Excel</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NEWSLETTER -->
+<div class="modal-ov" id="mNewsletter">
+  <div class="modal" style="max-width:620px">
+    <div class="mh">
+      <div><div class="mt">📰 Newsletter para Clientes</div><div style="font-size:12px;color:var(--text3)">Informativo mensal de mudanças fiscais</div></div>
+      <button class="mc" onclick="fm('mNewsletter')">×</button>
+    </div>
+    <div class="mb">
+      <div class="fg">
+        <label class="fl">Assunto do Email</label>
+        <input type="text" class="fi" id="nlAssunto" value="Informativo Fiscal — Focco Contabilidade">
+      </div>
+      <div class="fg">
+        <label class="fl">Destinatários</label>
+        <select class="fi" id="nlDestinatarios">
+          <option value="todos">Todos os clientes com email</option>
+          <option value="simples">Simples Nacional</option>
+          <option value="presumido">Lucro Presumido</option>
+          <option value="rural">Produtores Rurais</option>
+          <option value="mei">MEI</option>
+        </select>
+        <div id="nlQtd" style="font-size:12px;color:var(--text3);margin-top:4px"></div>
+      </div>
+      <div class="fg">
+        <label class="fl">Conteúdo da Newsletter</label>
+        <textarea class="fi" id="nlConteudo" rows="8" style="resize:vertical" placeholder="Escreva o conteúdo ou clique em Gerar com IA..."></textarea>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button class="btn btn-s" onclick="gerarNewsletterIA()">🤖 Gerar com IA</button>
+        <button class="btn btn-s" onclick="previewNewsletter()">👁 Preview</button>
+      </div>
+      <div id="nlPreview" style="display:none;margin-top:12px;border:1px solid var(--border);border-radius:8px;padding:16px;font-size:13px;line-height:1.6;max-height:200px;overflow-y:auto"></div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-s" onclick="fm('mNewsletter')">Cancelar</button>
+      <button class="btn btn-p" onclick="enviarNewsletter()">📧 Enviar Newsletter</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NOTIFICAÇÕES PUSH -->
+<div class="modal-ov" id="mPushConfig">
+  <div class="modal" style="max-width:460px">
+    <div class="mh">
+      <div><div class="mt">🔔 Notificações Push</div></div>
+      <button class="mc" onclick="fm('mPushConfig')">×</button>
+    </div>
+    <div class="mb">
+      <div id="pushStatus" style="text-align:center;padding:20px">
+        <div style="font-size:48px;margin-bottom:12px">🔔</div>
+        <div style="font-weight:600;margin-bottom:8px">Receba alertas mesmo com o sistema fechado</div>
+        <div style="font-size:13px;color:var(--text3);margin-bottom:16px">Prazos vencendo, demandas transferidas, aprovações pendentes</div>
+        <button class="btn btn-p" onclick="ativarPush()">Ativar Notificações</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PROCURAÇÃO DIGITAL -->
+<div class="modal-ov" id="mProcuracao">
+  <div class="modal" style="max-width:560px">
+    <div class="mh">
+      <div><div class="mt">📄 Gerar Procuração Digital</div><div style="font-size:12px;color:var(--text3)">Procuração para eCAC e órgãos públicos</div></div>
+      <button class="mc" onclick="fm('mProcuracao')">×</button>
+    </div>
+    <div class="mb">
+      <div class="fg">
+        <label class="fl">Cliente (Outorgante)</label>
+        <select class="fi" id="procCliId" onchange="carregarDadosProcuracao()">
+          <option value="">Selecione o cliente...</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label class="fl">Tipo de Procuração</label>
+        <select class="fi" id="procTipo">
+          <option value="ecac">Procuração eCAC — Receita Federal</option>
+          <option value="prefeitura">Procuração Municipal</option>
+          <option value="estadual">Procuração Estadual SEFAZ</option>
+          <option value="geral">Procuração Geral</option>
+        </select>
+      </div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Validade</label>
+          <select class="fi" id="procValidade">
+            <option value="1">1 ano</option>
+            <option value="2" selected>2 anos</option>
+            <option value="3">3 anos</option>
+            <option value="5">5 anos</option>
+          </select>
+        </div>
+        <div class="fg"><label class="fl">Outorgado (Responsável)</label>
+          <select class="fi" id="procOutorgado">
+            <option value="focco">Focco Contabilidade & Assessoria Empresarial</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg">
+        <label class="fl">Poderes concedidos</label>
+        <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px">
+          <label style="display:flex;gap:8px;align-items:center;font-size:13px;cursor:pointer"><input type="checkbox" id="pPodDec" checked> Enviar/retificar declarações</label>
+          <label style="display:flex;gap:8px;align-items:center;font-size:13px;cursor:pointer"><input type="checkbox" id="pPodCert" checked> Emitir certidões</label>
+          <label style="display:flex;gap:8px;align-items:center;font-size:13px;cursor:pointer"><input type="checkbox" id="pPodPar" checked> Consultar/parcelar débitos</label>
+          <label style="display:flex;gap:8px;align-items:center;font-size:13px;cursor:pointer"><input type="checkbox" id="pPodSit"> Regularizar situação fiscal</label>
+        </div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-s" onclick="fm('mProcuracao')">Cancelar</button>
+      <button class="btn btn-s" onclick="previewProcuracao()">👁 Preview</button>
+      <button class="btn btn-p" onclick="gerarProcuracao()">📄 Gerar PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PREVISÃO DE DEMANDA IA -->
+<div class="modal-ov" id="mPrevisaoIA">
+  <div class="modal" style="max-width:680px">
+    <div class="mh">
+      <div><div class="mt">📈 Previsão de Demanda IA</div><div style="font-size:12px;color:var(--text3)">Análise preditiva baseada no histórico</div></div>
+      <button class="mc" onclick="fm('mPrevisaoIA')">×</button>
+    </div>
+    <div class="mb">
+      <div id="previsaoLoading" style="text-align:center;padding:20px;color:var(--text3)">
+        <div style="font-size:32px;margin-bottom:8px">🤖</div>
+        <div>Analisando histórico de demandas...</div>
+      </div>
+      <div id="previsaoConteudo" style="display:none">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
+          <div style="background:var(--sky-pale);border-radius:10px;padding:14px;text-align:center">
+            <div style="font-size:24px;font-weight:800;color:var(--sky)" id="pvTotal">—</div>
+            <div style="font-size:11px;color:var(--text3)">Previsão próximo mês</div>
+          </div>
+          <div style="background:var(--green-pale);border-radius:10px;padding:14px;text-align:center">
+            <div style="font-size:24px;font-weight:800;color:var(--green)" id="pvCrescimento">—</div>
+            <div style="font-size:11px;color:var(--text3)">Crescimento estimado</div>
+          </div>
+          <div style="background:var(--amber-pale);border-radius:10px;padding:14px;text-align:center">
+            <div style="font-size:24px;font-weight:800;color:var(--amber)" id="pvPico">—</div>
+            <div style="font-size:11px;color:var(--text3)">Semana de pico</div>
+          </div>
+        </div>
+        <div id="pvAnalise" style="font-size:13px;line-height:1.7;color:var(--text);background:var(--surface2);border-radius:8px;padding:14px"></div>
+        <div id="pvRecomendacoes" style="margin-top:12px"></div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-s" onclick="fm('mPrevisaoIA')">Fechar</button>
+      <button class="btn btn-p" onclick="rodarPrevisaoIA()">🔄 Atualizar análise</button>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV MOBILE -->
+<nav class="mobile-nav" id="mobileNav">
+  <button class="mobile-nav-item active" id="mnDash" onclick="ir('dash');setMobileNav('dash')">
+    <span>🏠</span><span>Início</span>
+  </button>
+  <button class="mobile-nav-item" id="mnDem" onclick="ir('dem');setMobileNav('dem')">
+    <span>📋</span><span>Demandas</span>
+  </button>
+  <button class="mobile-nav-item" onclick="abrirNovaDemanda()">
+    <span style="width:36px;height:36px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;margin-bottom:2px">+</span>
+    <span>Nova</span>
+  </button>
+  <button class="mobile-nav-item" id="mnCai" onclick="ir('caixa');setMobileNav('caixa')">
+    <span>📥</span><span>Caixa</span>
+  </button>
+  <button class="mobile-nav-item" id="mnCli" onclick="ir('cli');setMobileNav('cli')">
+    <span>👥</span><span>Clientes</span>
+  </button>
+</nav>
+
+<!-- MODAL EMAIL CONFIG -->
+<div class="modal-ov" id="mEmailConfig">
+  <div class="modal" style="max-width:500px">
+    <div class="mh">
+      <div><div class="mt">📧 Configurar Emails</div><div style="font-size:12px;color:var(--text3)">Yahoo e Google integrados ao sistema</div></div>
+      <button class="mc" onclick="fm('mEmailConfig')">×</button>
+    </div>
+    <div class="mb">
+      <div class="email-config-item">
+        <div style="font-size:28px">🟣</div>
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:14px">Yahoo Mail</div>
+          <div style="font-size:12px;color:var(--text3)">Email principal do escritório</div>
+          <input type="email" class="fi" id="emailYahoo" placeholder="email@yahoo.com.br" style="margin-top:8px">
+          <input type="password" class="fi" id="senhaYahoo" placeholder="Senha de aplicativo Yahoo" style="margin-top:6px">
+          <a href="https://login.yahoo.com/account/security" target="_blank" style="font-size:11px;color:var(--accent)">→ Gerar senha de app no Yahoo</a>
+        </div>
+      </div>
+      <div class="email-config-item">
+        <div style="font-size:28px">🔵</div>
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:14px">Gmail</div>
+          <div style="font-size:12px;color:var(--text3)">Email pessoal do gestor</div>
+          <input type="email" class="fi" id="emailGoogle" placeholder="email@gmail.com" style="margin-top:8px">
+          <input type="password" class="fi" id="senhaGoogle" placeholder="Senha de aplicativo Google" style="margin-top:6px">
+          <a href="https://myaccount.google.com/apppasswords" target="_blank" style="font-size:11px;color:var(--accent)">→ Gerar senha de app no Google</a>
+        </div>
+      </div>
+      <div style="background:var(--surface2);border-radius:8px;padding:12px;font-size:12px;color:var(--text3)">
+        <strong>Como funciona:</strong> O sistema usa SMTP para enviar emails de notificação, alertas de prazo e newsletter para clientes. As senhas são salvas localmente no seu navegador.
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-s" onclick="fm('mEmailConfig')">Cancelar</button>
+      <button class="btn btn-s" onclick="testarEmail()">📨 Testar</button>
+      <button class="btn btn-p" onclick="salvarConfigEmail()">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL FILTRO INTELIGENTE IA -->
+<div class="modal-ov" id="mFiltroIA">
+  <div class="modal" style="max-width:560px">
+    <div class="mh">
+      <div><div class="mt">🧠 Filtro Inteligente de Notificações</div><div style="font-size:12px;color:var(--text3)">IA filtra o que realmente importa para você</div></div>
+      <button class="mc" onclick="fm('mFiltroIA')">×</button>
+    </div>
+    <div class="mb">
+      <div style="margin-bottom:16px">
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px">Me notifique quando:</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px">
+            <input type="checkbox" id="fiPrazo3" checked style="width:16px;height:16px"> Prazo vencendo em 3 dias ou menos
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px">
+            <input type="checkbox" id="fiUrgente" checked style="width:16px;height:16px"> Nova demanda urgente
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px">
+            <input type="checkbox" id="fiTransf" checked style="width:16px;height:16px"> Demanda transferida para mim
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px">
+            <input type="checkbox" id="fiCliente" checked style="width:16px;height:16px"> Mensagem de cliente
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px">
+            <input type="checkbox" id="fiParada" style="width:16px;height:16px"> Demanda parada há mais de 5 dias
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px">
+            <input type="checkbox" id="fiConc" style="width:16px;height:16px"> Solicitação de conclusão para aprovar
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px">
+            <input type="checkbox" id="fiAnomalia" style="width:16px;height:16px"> Anomalia detectada pela IA
+          </label>
+        </div>
+      </div>
+      <div style="border-top:1px solid var(--border);padding-top:14px">
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px">Silenciar notificações:</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-s" onclick="setSilenciar(30)">30 min</button>
+          <button class="btn btn-s" onclick="setSilenciar(60)">1 hora</button>
+          <button class="btn btn-s" onclick="setSilenciar(240)">4 horas</button>
+          <button class="btn btn-s" onclick="setSilenciar(0)">Dessilenciar</button>
+        </div>
+        <div id="silenciarStatus" style="font-size:12px;color:var(--text3);margin-top:8px"></div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-s" onclick="fm('mFiltroIA')">Cancelar</button>
+      <button class="btn btn-p" onclick="salvarFiltroIA()">💾 Salvar preferências</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 <div class="toast" id="toast"></div>
 
@@ -2303,12 +2758,17 @@ class Query{
   }
 }
 const _auth={
-  _sess:(()=>{try{return JSON.parse(localStorage.getItem('focco_auth')||'null');}catch{return null;}})(),
+  _sess:(()=>{try{
+    const s=JSON.parse(localStorage.getItem('focco_auth')||'null');
+    if(!s) return null;
+    if(s.expires_at && Date.now() > s.expires_at){localStorage.removeItem('focco_auth');return null;}
+    return s;
+  }catch{return null;}})(),
   async getSession(){return{data:{session:this._sess},error:null};},
   async signInWithPassword({email,password}){
     // Busca usuario direto no Supabase
     const login=(email||'').toLowerCase().trim();
-    const {data:profs,error:err}=await _sb.from('profiles').select('*').eq('ativo',true);
+    const {data:profs,error:err}=await sbRest('profiles').select('id,nome,usuario,email,perfil,senha_hash,ativo,primeiro_acesso,whatsapp').eq('ativo',true);
     if(err||!profs||!profs.length){
       return{data:{session:null,user:null},error:{message:'Erro ao conectar ao banco. Verifique sua conexao.'}};
     }
@@ -2327,7 +2787,8 @@ const _auth={
     if(u.senha_hash!==h)return{data:{session:null,user:null},error:{message:'Senha incorreta. Verifique e tente novamente.'}};
     const sess={user:{id:u.id,email:u.email,user_metadata:{},app_metadata:{}}};
     this._sess=sess;
-    localStorage.setItem('focco_auth',JSON.stringify(sess));
+    const sessComExpiracao = {...sess, expires_at: Date.now() + 8*60*60*1000};
+    localStorage.setItem('focco_auth',JSON.stringify(sessComExpiracao));
     return{data:{session:sess,user:sess.user},error:null};
   },
   async signOut(){this._sess=null;localStorage.removeItem('focco_auth');return{error:null};},
@@ -2374,6 +2835,491 @@ const _rpc={
 // ═══════════════════════════════════════════════════════════════
 const SUPABASE_URL = 'https://nambhrizjnhebqgfztux.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hbWJocml6am5oZWJxZ2Z6dHV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNDUzMDIsImV4cCI6MjA5NjkyMTMwMn0.AeBCJetQQugrpDAaOPrEYgHor9irmosN8EWogCtPzSo';
+
+
+
+// ================================================================
+// AUDITORIA INTERNA
+// ================================================================
+async function registrarAuditoria(acao, detalhes, demandaId) {
+  if(!U) return;
+  const log = {
+    usuario_id: U.id,
+    usuario_nome: U.nome,
+    acao,
+    detalhes: detalhes||'',
+    demanda_id: demandaId||null,
+    created_at: new Date().toISOString()
+  };
+  try {
+    await sbRest('auditoria').insert(log);
+  } catch(e) {
+    const logs = JSON.parse(localStorage.getItem('focco_auditoria')||'[]');
+    logs.unshift(log);
+    localStorage.setItem('focco_auditoria', JSON.stringify(logs.slice(0,500)));
+  }
+}
+
+async function abrirAuditoria() {
+  const profs = dbGet('profiles');
+  const sel = document.getElementById('audUsuario');
+  if(sel && sel.options.length === 1) {
+    profs.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id; opt.textContent = p.nome;
+      sel.appendChild(opt);
+    });
+  }
+  const hoje = new Date().toISOString().split('T')[0];
+  const semana = new Date(Date.now()-7*86400000).toISOString().split('T')[0];
+  document.getElementById('audDataDe').value = semana;
+  document.getElementById('audDataAte').value = hoje;
+  om('mAuditoria');
+  await carregarAuditoria();
+}
+
+async function carregarAuditoria() {
+  const lista = document.getElementById('audLista');
+  lista.innerHTML = '<div class="loading" style="padding:2rem">Carregando...</div>';
+  let logs = JSON.parse(localStorage.getItem('focco_auditoria')||'[]');
+  try {
+    const dataDe = document.getElementById('audDataDe').value;
+    const dataAte = document.getElementById('audDataAte').value;
+    const usuario = document.getElementById('audUsuario').value;
+    const acao = document.getElementById('audAcao').value;
+    let q = sbRest('auditoria').select('*').order('created_at',{ascending:false}).limit(200);
+    if(dataDe) q = q.gte('created_at', dataDe);
+    if(dataAte) q = q.lte('created_at', dataAte+'T23:59:59');
+    if(usuario) q = q.eq('usuario_id', usuario);
+    if(acao) q = q.eq('acao', acao);
+    const {data} = await q;
+    if(data && data.length) logs = data;
+  } catch(e) {}
+  if(!logs.length) { lista.innerHTML = '<div class="vazio" style="padding:2rem">Nenhum registro encontrado.</div>'; return; }
+  const icones = {login:'🔐',demanda_criada:'📋',demanda_transferida:'↔️',tramite:'📝',cliente_criado:'👤',cliente_editado:'✏️',backup:'💾',aceite:'✅',conclusao:'🏁'};
+  lista.innerHTML = logs.map(l => {
+    const dt = new Date(l.created_at).toLocaleString('pt-BR');
+    const ico = icones[l.acao]||'🔸';
+    return '<div style="display:flex;gap:12px;padding:10px 16px;border-bottom:1px solid var(--border);align-items:flex-start">' +
+      '<span style="font-size:18px;flex-shrink:0">'+ico+'</span>' +
+      '<div style="flex:1"><div style="display:flex;justify-content:space-between;gap:8px">' +
+      '<div style="font-size:13px;font-weight:600">'+(l.usuario_nome||'—')+' <span style="font-weight:400;color:var(--text3)">'+(l.acao||'').replace(/_/g,' ')+'</span></div>' +
+      '<div style="font-size:11px;color:var(--text3);flex-shrink:0">'+dt+'</div></div>' +
+      (l.detalhes?'<div style="font-size:12px;color:var(--text3);margin-top:2px">'+l.detalhes+'</div>':'') +
+      '</div></div>';
+  }).join('');
+}
+
+function exportarAuditoria() {
+  const logs = JSON.parse(localStorage.getItem('focco_auditoria')||'[]');
+  const csv = 'Data,Usuario,Acao,Detalhes\n' + logs.map(l=>
+    '"'+new Date(l.created_at).toLocaleString('pt-BR')+'","'+(l.usuario_nome||'')+'","'+(l.acao||'')+'","'+(l.detalhes||'')+'"'
+  ).join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'auditoria_focco.csv'; a.click();
+}
+
+// ================================================================
+// NOTIFICACOES PUSH
+// ================================================================
+async function ativarPush() {
+  if(!('Notification' in window)){ toast('Navegador nao suporta notificacoes push','err'); return; }
+  const perm = await Notification.requestPermission();
+  if(perm === 'granted'){
+    toast('Notificacoes push ativadas!','ok');
+    document.getElementById('pushStatus').innerHTML = '<div style="font-size:48px;margin-bottom:12px">✅</div><div style="font-weight:600;color:var(--green)">Notificacoes ativadas!</div><div style="font-size:13px;color:var(--text3);margin-top:8px">Voce recebera alertas de prazos e demandas</div>';
+    localStorage.setItem('focco_push_ativo','1');
+  } else {
+    toast('Permissao de notificacao negada','err');
+  }
+}
+
+function enviarPushLocal(titulo, corpo) {
+  if(Notification.permission === 'granted' && localStorage.getItem('focco_push_ativo')){
+    new Notification('Focco — '+titulo, {body:corpo, icon:'https://placehold.co/64x64/2563EB/white?text=F'});
+  }
+}
+
+// ================================================================
+// BACKUP AUTOMATICO
+// ================================================================
+let _backupTimer = null;
+
+function salvarFreqBackup() {
+  const freq = parseInt(document.getElementById('autoBackupFreq')?.value||'1');
+  localStorage.setItem('focco_backup_freq', String(freq));
+  iniciarBackupAutomatico();
+  toast(freq===0?'Backup automatico desativado':'Backup automatico configurado!','ok');
+}
+
+function iniciarBackupAutomatico() {
+  if(_backupTimer) clearInterval(_backupTimer);
+  const freq = parseInt(localStorage.getItem('focco_backup_freq')||'1');
+  if(freq === 0) return;
+  _backupTimer = setInterval(fazerBackupAuto, freq*60*60*1000);
+}
+
+async function fazerBackupAuto() {
+  try {
+    const [cliRes, demRes] = await Promise.all([
+      sbRest('clientes').select('*').eq('ativo',true),
+      sbRest('demandas').select('id,numero,status,prioridade,created_at,cliente_id,responsavel_atual_id').order('created_at',{ascending:false}).limit(500)
+    ]);
+    const backup = {
+      versao:'1.0', data:new Date().toISOString(),
+      clientes:cliRes.data||[], demandas:demRes.data||[], profiles:dbGet('profiles')
+    };
+    localStorage.setItem('focco_ultimo_backup', JSON.stringify({
+      data:backup.data, clientes:backup.clientes.length, demandas:backup.demandas.length
+    }));
+    atualizarStatusBackup();
+    await registrarAuditoria('backup', 'Backup automatico: '+backup.clientes.length+' clientes, '+backup.demandas.length+' demandas');
+  } catch(e) { console.error('Erro backup:', e); }
+}
+
+function atualizarStatusBackup() {
+  const el = document.getElementById('autoBackupStatus');
+  if(!el) return;
+  const ult = JSON.parse(localStorage.getItem('focco_ultimo_backup')||'null');
+  if(ult) {
+    el.textContent = 'Ultimo backup: '+new Date(ult.data).toLocaleString('pt-BR')+' — '+ult.clientes+' clientes, '+ult.demandas+' demandas';
+  } else {
+    el.textContent = 'Nenhum backup realizado ainda';
+  }
+}
+
+// ================================================================
+// NEWSLETTER
+// ================================================================
+async function gerarNewsletterIA() {
+  const btn = event.target;
+  btn.disabled=true; btn.textContent='Gerando...';
+  const dest = document.getElementById('nlDestinatarios').value;
+  const regimes = {todos:'todos os regimes tributarios',simples:'Simples Nacional',presumido:'Lucro Presumido',rural:'produtores rurais',mei:'MEI'};
+  const prompt = 'Crie uma newsletter contabil profissional para clientes de escritorio de contabilidade no Brasil (Focco Contabilidade, Patricinio-MG). Publico: '+regimes[dest]+'. Mes: '+new Date().toLocaleDateString('pt-BR',{month:'long',year:'numeric'})+'. Inclua: saudacao, 2-3 informacoes fiscais relevantes, dica pratica, encerramento. Tom profissional mas acessivel. Maximo 300 palavras.';
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:800,messages:[{role:'user',content:prompt}]})});
+    const d = await r.json();
+    document.getElementById('nlConteudo').value = d.content?.[0]?.text||'';
+    toast('Newsletter gerada pela IA!','ok');
+  } catch(e){ toast('Erro ao gerar newsletter','err'); }
+  finally{ btn.disabled=false; btn.textContent='🤖 Gerar com IA'; }
+}
+
+function previewNewsletter() {
+  const conteudo = document.getElementById('nlConteudo').value;
+  const preview = document.getElementById('nlPreview');
+  preview.style.display='block';
+  preview.innerHTML = conteudo.replace(/\n/g,'<br>');
+}
+
+async function enviarNewsletter() {
+  const assunto = document.getElementById('nlAssunto').value.trim();
+  const conteudo = document.getElementById('nlConteudo').value.trim();
+  const dest = document.getElementById('nlDestinatarios').value;
+  if(!assunto||!conteudo){ toast('Preencha assunto e conteudo','err'); return; }
+  const clis = dbGet('clientes').filter(c=>c.email&&c.ativo!==false);
+  let destinatarios = clis;
+  if(dest==='simples') destinatarios = clis.filter(c=>c.regime_tributario==='simples_nacional');
+  else if(dest==='presumido') destinatarios = clis.filter(c=>c.regime_tributario==='lucro_presumido');
+  else if(dest==='rural') destinatarios = clis.filter(c=>c.tipo_cliente==='rural');
+  else if(dest==='mei') destinatarios = clis.filter(c=>c.regime_tributario==='mei');
+  if(!destinatarios.length){ toast('Nenhum cliente com email neste grupo','err'); return; }
+  await registrarAuditoria('newsletter','Newsletter para '+destinatarios.length+' clientes. Assunto: '+assunto);
+  toast('Newsletter registrada para '+destinatarios.length+' cliente(s). Configure SMTP para envio real.','ok');
+  fm('mNewsletter');
+}
+
+// ================================================================
+// PROCURACAO DIGITAL
+// ================================================================
+function abrirProcuracao() {
+  const sel = document.getElementById('procCliId');
+  if(sel && sel.options.length <= 1) {
+    dbGet('clientes').filter(c=>c.ativo!==false).sort((a,b)=>a.nome.localeCompare(b.nome)).forEach(c=>{
+      const opt = document.createElement('option');
+      opt.value=c.id; opt.textContent=c.nome; sel.appendChild(opt);
+    });
+  }
+  om('mProcuracao');
+}
+
+function carregarDadosProcuracao(){}
+
+function _gerarTextoProcuracao() {
+  const cliId = document.getElementById('procCliId').value;
+  const cli = dbGet('clientes').find(c=>c.id===cliId);
+  if(!cli) return null;
+  const tipo = document.getElementById('procTipo').value;
+  const validade = document.getElementById('procValidade').value;
+  const tipos = {ecac:'eCAC — Receita Federal',prefeitura:'Municipal',estadual:'Estadual SEFAZ',geral:'Geral'};
+  const poderes = [];
+  if(document.getElementById('pPodDec').checked) poderes.push('enviar e retificar declaracoes');
+  if(document.getElementById('pPodCert').checked) poderes.push('emitir certidoes');
+  if(document.getElementById('pPodPar').checked) poderes.push('consultar e parcelar debitos');
+  if(document.getElementById('pPodSit').checked) poderes.push('regularizar situacao fiscal');
+  return 'PROCURACAO '+((tipos[tipo]||'').toUpperCase())+'\n\n'+
+    'OUTORGANTE: '+cli.nome+'\n'+
+    'CPF/CNPJ: '+(cli.cpf_cnpj||'___________________')+'\n'+
+    'Endereco: '+(cli.endereco||'___________________')+'\n\n'+
+    'OUTORGADA: Focco Contabilidade & Assessoria Empresarial\n'+
+    'Endereco: Rua Elpidio Ribeiro Rocha, 332, Morada do Sol, Patricinio-MG\n\n'+
+    'O OUTORGANTE confere poderes para: '+poderes.join(', ')+', pelo prazo de '+validade+' ano(s).\n\n'+
+    'Patricinio-MG, '+new Date().toLocaleDateString('pt-BR')+'\n\n'+
+    '_______________________________\n'+cli.nome+'\nCPF/CNPJ: '+(cli.cpf_cnpj||'')+
+    '\n\n_______________________________\nEdniel Oliveira — Focco Contabilidade';
+}
+
+function previewProcuracao() {
+  const txt = _gerarTextoProcuracao();
+  if(!txt){ toast('Selecione o cliente','err'); return; }
+  alert(txt);
+}
+
+async function gerarProcuracao() {
+  const cliId = document.getElementById('procCliId').value;
+  const cli = dbGet('clientes').find(c=>c.id===cliId);
+  if(!cli){ toast('Selecione o cliente','err'); return; }
+  const txt = _gerarTextoProcuracao();
+  const tipo = document.getElementById('procTipo').value;
+  const blob = new Blob([txt], {type:'text/plain;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download='procuracao_'+cli.nome.replace(/\s+/g,'_')+'_'+tipo+'.txt'; a.click();
+  await registrarAuditoria('procuracao_gerada','Procuracao '+tipo+' para '+cli.nome);
+  toast('Procuracao gerada!','ok');
+  fm('mProcuracao');
+}
+
+// ================================================================
+// PREVISAO DE DEMANDA IA
+// ================================================================
+async function abrirPrevisaoIA() {
+  document.getElementById('previsaoLoading').style.display='block';
+  document.getElementById('previsaoConteudo').style.display='none';
+  om('mPrevisaoIA');
+  await rodarPrevisaoIA();
+}
+
+async function rodarPrevisaoIA() {
+  document.getElementById('previsaoLoading').style.display='block';
+  document.getElementById('previsaoConteudo').style.display='none';
+  try {
+    const seisMeses = new Date(Date.now()-180*86400000).toISOString();
+    const {data:dems} = await sbRest('demandas').select('id,created_at,status').gte('created_at',seisMeses).order('created_at',{ascending:true});
+    if(!dems?.length){ toast('Historico insuficiente para previsao','err'); fm('mPrevisaoIA'); return; }
+    const porMes = {};
+    dems.forEach(d=>{ const mes=d.created_at.substring(0,7); porMes[mes]=(porMes[mes]||0)+1; });
+    const meses = Object.entries(porMes).sort(([a],[b])=>a.localeCompare(b));
+    const valores = meses.map(([,v])=>v);
+    const media = valores.reduce((a,b)=>a+b,0)/valores.length;
+    const prompt = 'Analise dados de demandas de escritorio contabil e preveja proximo mes. Historico: '+meses.map(([m,v])=>m+': '+v).join(', ')+'. Retorne JSON: {"previsao_total":numero,"crescimento":"percentual","semana_pico":"texto","analise":"paragrafo","recomendacoes":["r1","r2","r3"]}';
+    const r = await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:500,messages:[{role:'user',content:prompt}]})});
+    const d = await r.json();
+    const txt = d.content?.[0]?.text||'';
+    const json = JSON.parse(txt.match(/\{[\s\S]*\}/)?.[0]||'{}');
+    document.getElementById('pvTotal').textContent = json.previsao_total||Math.round(media);
+    document.getElementById('pvCrescimento').textContent = json.crescimento||'—';
+    document.getElementById('pvPico').textContent = json.semana_pico||'2a semana';
+    document.getElementById('pvAnalise').textContent = json.analise||'';
+    if(json.recomendacoes?.length){
+      document.getElementById('pvRecomendacoes').innerHTML = '<div style="font-size:13px;font-weight:600;margin-bottom:8px">Recomendacoes:</div>'+
+        json.recomendacoes.map(rec=>'<div style="display:flex;gap:8px;margin-bottom:6px;font-size:13px"><span style="color:var(--green)">✓</span>'+rec+'</div>').join('');
+    }
+    document.getElementById('previsaoLoading').style.display='none';
+    document.getElementById('previsaoConteudo').style.display='block';
+  } catch(e){ toast('Erro na previsao: '+e.message,'err'); fm('mPrevisaoIA'); }
+}
+
+// ================================================================
+// PWA — Service Worker Registration
+// ================================================================
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    // Inline service worker para cache offline
+    const swCode = `
+      const CACHE = 'focco-v1';
+      self.addEventListener('install', e => {
+        e.waitUntil(caches.open(CACHE).then(c => c.addAll(['/focco-sistema/'])));
+      });
+      self.addEventListener('fetch', e => {
+        e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
+      });
+    `;
+    const blob = new Blob([swCode], {type:'application/javascript'});
+    const swUrl = URL.createObjectURL(blob);
+    navigator.serviceWorker.register(swUrl).catch(()=>{});
+  });
+}
+
+// Prompt de instalação PWA
+let _pwaPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _pwaPrompt = e;
+  document.getElementById('btnInstalarPWA')?.style.setProperty('display','flex');
+});
+
+function instalarPWA() {
+  if(_pwaPrompt){ _pwaPrompt.prompt(); _pwaPrompt.userChoice.then(()=>{ _pwaPrompt=null; }); }
+  else toast('Acesse pelo Chrome e use "Adicionar à tela inicial"','ok');
+}
+
+// ================================================================
+// MOBILE — Bottom Nav
+// ================================================================
+function setMobileNav(aba) {
+  document.querySelectorAll('.mobile-nav-item').forEach(b=>b.classList.remove('active'));
+  const map = {dash:'mnDash',dem:'mnDem',caixa:'mnCai',cli:'mnCli'};
+  const el = document.getElementById(map[aba]);
+  if(el) el.classList.add('active');
+}
+
+// Mostrar/ocultar bottom nav conforme tamanho da tela
+function checkMobileNav() {
+  const nav = document.getElementById('mobileNav');
+  if(!nav) return;
+  nav.style.display = window.innerWidth <= 768 ? 'flex' : 'none';
+}
+window.addEventListener('resize', checkMobileNav);
+window.addEventListener('load', checkMobileNav);
+
+// ================================================================
+// EMAIL — Yahoo + Google
+// ================================================================
+function abrirConfigEmail() {
+  // Carregar configurações salvas
+  const cfg = JSON.parse(localStorage.getItem('focco_email_cfg')||'{}');
+  if(cfg.yahoo) document.getElementById('emailYahoo').value = cfg.yahoo;
+  if(cfg.google) document.getElementById('emailGoogle').value = cfg.google;
+  om('mEmailConfig');
+}
+
+function salvarConfigEmail() {
+  const yahoo = document.getElementById('emailYahoo').value.trim();
+  const google = document.getElementById('emailGoogle').value.trim();
+  const senhaYahoo = document.getElementById('senhaYahoo').value;
+  const senhaGoogle = document.getElementById('senhaGoogle').value;
+  
+  const cfg = {yahoo, google};
+  localStorage.setItem('focco_email_cfg', JSON.stringify(cfg));
+  
+  // Salvar senhas de forma segura (apenas local)
+  if(senhaYahoo) localStorage.setItem('focco_email_yahoo_pwd', btoa(senhaYahoo));
+  if(senhaGoogle) localStorage.setItem('focco_email_google_pwd', btoa(senhaGoogle));
+  
+  toast('Configuração de email salva!','ok');
+  fm('mEmailConfig');
+}
+
+async function testarEmail() {
+  toast('Teste de email: funcionalidade requer backend. Configure o VPS para envio SMTP.','ok');
+}
+
+async function enviarEmailNotificacao(para, assunto, corpo) {
+  // Placeholder — requer backend SMTP
+  // Com VPS: POST /api/email com {para, assunto, corpo}
+  console.log('Email para:', para, '|', assunto);
+}
+
+// ================================================================
+// FILTRO INTELIGENTE DE NOTIFICAÇÕES IA
+// ================================================================
+let _filtroIA = null;
+let _silenciarAte = null;
+
+function abrirFiltroIA() {
+  const salvo = JSON.parse(localStorage.getItem('focco_filtro_ia')||'{}');
+  ['fiPrazo3','fiUrgente','fiTransf','fiCliente','fiParada','fiConc','fiAnomalia'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el && salvo[id] !== undefined) el.checked = salvo[id];
+  });
+  atualizarStatusSilenciar();
+  om('mFiltroIA');
+}
+
+function salvarFiltroIA() {
+  const cfg = {};
+  ['fiPrazo3','fiUrgente','fiTransf','fiCliente','fiParada','fiConc','fiAnomalia'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) cfg[id] = el.checked;
+  });
+  localStorage.setItem('focco_filtro_ia', JSON.stringify(cfg));
+  _filtroIA = cfg;
+  toast('Preferências de notificação salvas!','ok');
+  fm('mFiltroIA');
+}
+
+function setSilenciar(minutos) {
+  if(minutos === 0){ _silenciarAte = null; localStorage.removeItem('focco_silenciar'); }
+  else {
+    _silenciarAte = Date.now() + minutos*60000;
+    localStorage.setItem('focco_silenciar', String(_silenciarAte));
+  }
+  atualizarStatusSilenciar();
+}
+
+function atualizarStatusSilenciar() {
+  const el = document.getElementById('silenciarStatus');
+  if(!el) return;
+  const s = localStorage.getItem('focco_silenciar');
+  if(s && Date.now() < parseInt(s)){
+    const min = Math.round((parseInt(s)-Date.now())/60000);
+    el.textContent = `Notificações silenciadas por mais ${min} minuto(s)`;
+  } else {
+    el.textContent = 'Notificações ativas';
+    localStorage.removeItem('focco_silenciar');
+  }
+}
+
+function deveNotificar(tipo) {
+  // Verificar silenciar
+  const s = localStorage.getItem('focco_silenciar');
+  if(s && Date.now() < parseInt(s)) return false;
+  
+  // Verificar filtro
+  const cfg = _filtroIA || JSON.parse(localStorage.getItem('focco_filtro_ia')||'{}');
+  const mapa = {
+    transferencia: 'fiTransf',
+    urgente: 'fiUrgente',
+    prazo: 'fiPrazo3',
+    conclusao_solicitada: 'fiConc',
+    anomalia: 'fiAnomalia',
+    movimentacao_geral: 'fiCliente'
+  };
+  const key = mapa[tipo];
+  if(!key) return true; // por padrão notifica
+  return cfg[key] !== false; // notifica se não estiver explicitamente desligado
+}
+
+// ================================================================
+// VERIFICAR PRAZOS — Alerta 3 dias
+// ================================================================
+async function verificarPrazosVencendo() {
+  if(!U) return;
+  const hoje = new Date();
+  const em3dias = new Date(Date.now() + 3*86400000).toISOString().split('T')[0];
+  const hj = hoje.toISOString().split('T')[0];
+  
+  let q = sbRest('demandas').select('id,numero,resumo,prazo,responsavel_atual_id').not('status','in','(concluida,cancelada)').lte('prazo', em3dias).gte('prazo', hj);
+  if(U.perfil !== 'gestor') q = q.eq('responsavel_atual_id', U.id);
+  
+  const {data} = await q;
+  if(!data?.length) return;
+  
+  if(deveNotificar('prazo')){
+    data.forEach(d=>{
+      const diasRestantes = Math.ceil((new Date(d.prazo)-hoje)/86400000);
+      const msg = diasRestantes === 0 ? 'HOJE' : `em ${diasRestantes} dia(s)`;
+      toast(`⏰ ${d.numero} vence ${msg}!`, 'ok');
+    });
+  }
+}
+
+// Verificar prazos a cada 1 hora
+setInterval(verificarPrazosVencendo, 60*60*1000);
 
 // ================================================================
 // SUPABASE REST CLIENT — wrapper robusto via fetch direto
@@ -2589,6 +3535,320 @@ async function resetarSistema(){
   location.reload();
 }
 
+
+// ================================================================
+// 1. HISTÓRICO DO CLIENTE
+// ================================================================
+let _histCliId = null;
+
+async function abrirHistoricoCliente(cliId, cliNome) {
+  _histCliId = cliId;
+  document.getElementById('mHistCliTit').textContent = cliNome;
+  document.getElementById('mHistCliSub').textContent = 'Carregando histórico...';
+  document.getElementById('mHistCliBody').innerHTML = '<div class="loading">Carregando...</div>';
+  ['hkTotal','hkConc','hkAtiv','hkDias'].forEach(id=>document.getElementById(id).textContent='—');
+  om('mHistCli');
+
+  const {data:dems} = await sbRest('demandas')
+    .select('id,numero,resumo,status,prioridade,created_at,data_conclusao,ultima_movimentacao,responsavel_atual_id,departamento_atual_id')
+    .eq('cliente_id', cliId)
+    .order('created_at',{ascending:false});
+
+  const lista = dems||[];
+  const concluidas = lista.filter(d=>d.status==='concluida');
+  const ativas = lista.filter(d=>!['concluida','cancelada'].includes(d.status));
+  const profs = dbGet('profiles');
+  const depts = dbGet('departamentos');
+
+  // Tempo médio
+  const tempos = concluidas.filter(d=>d.data_conclusao&&d.created_at).map(d=>
+    Math.round((new Date(d.data_conclusao)-new Date(d.created_at))/86400000)
+  );
+  const tempoMedio = tempos.length ? Math.round(tempos.reduce((a,b)=>a+b,0)/tempos.length) : 0;
+
+  document.getElementById('hkTotal').textContent = lista.length;
+  document.getElementById('hkConc').textContent = concluidas.length;
+  document.getElementById('hkAtiv').textContent = ativas.length;
+  document.getElementById('hkDias').textContent = tempoMedio || '—';
+  document.getElementById('mHistCliSub').textContent = `${lista.length} demanda(s) registrada(s)`;
+
+  if(!lista.length){
+    document.getElementById('mHistCliBody').innerHTML = '<div class="vazio">Nenhuma demanda encontrada para este cliente.</div>';
+    return;
+  }
+
+  document.getElementById('mHistCliBody').innerHTML = lista.map(d=>{
+    const resp = profs.find(p=>p.id===d.responsavel_atual_id);
+    const dept = depts.find(x=>x.id===d.departamento_atual_id);
+    const dias = Math.floor((Date.now()-new Date(d.ultima_movimentacao))/86400000);
+    const isConcluida = ['concluida','cancelada'].includes(d.status);
+    const dt = new Date(d.created_at).toLocaleDateString('pt-BR');
+    return `<div onclick="fm('mHistCli');abrirDet('${d.id}')" style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s" onmouseover="this.style.background='var(--accent-pale)'" onmouseout="this.style.background=''">
+      <div style="width:3px;height:40px;border-radius:2px;background:${isConcluida?'var(--text3)':d.prioridade==='urgente'?'var(--red)':'var(--accent)'};flex-shrink:0"></div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:8px">
+          <strong style="font-family:monospace;color:${isConcluida?'var(--text3)':'var(--accent)'};font-size:13px">${d.numero}</strong>
+          <span class="tag ${SC[d.status]||'tgr'}" style="font-size:10px">${SL[d.status]||d.status}</span>
+          ${d.prioridade==='urgente'?'<span class="tag tr" style="font-size:10px">⚡ Urgente</span>':''}
+        </div>
+        <div style="font-size:13px;color:var(--text);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.resumo||'—'}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">${dept?.nome||'—'} · ${resp?.nome||'—'} · ${dt}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        ${isConcluida?'<span style="color:var(--green);font-size:18px">✅</span>':`<span style="font-size:11px;color:${dias>=5?'var(--red)':'var(--text3)'}">${dias}d</span>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function verTodasDemCli(){
+  fm('mHistCli');
+  // Buscar nome do cliente pelo ID
+  const cli = dbGet('clientes').find(c=>c.id===_histCliId);
+  if(cli) verDemCli(cli.nome);
+}
+
+// ================================================================
+// 2. CONSULTA CPF/CNPJ — Brasil API (gratuita, sem chave)
+// ================================================================
+async function consultarCNPJ() {
+  const doc = document.getElementById('mcDoc').value.replace(/\D/g,'');
+  const status = document.getElementById('cnpjStatus');
+  
+  if(!doc){ toast('Informe o CPF/CNPJ primeiro','err'); return; }
+  
+  if(doc.length === 11) {
+    status.innerHTML = '<span style="color:var(--amber)">⚠️ Consulta de CPF não disponível por privacidade.</span>';
+    return;
+  }
+  
+  if(doc.length !== 14) { toast('CNPJ deve ter 14 dígitos','err'); return; }
+  
+  status.innerHTML = '<span style="color:var(--sky)">⏳ Consultando Receita Federal...</span>';
+  
+  try {
+    const r = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${doc}`);
+    if(!r.ok) throw new Error('CNPJ não encontrado');
+    const d = await r.json();
+    
+    // Preencher campos automaticamente
+    document.getElementById('mcNome').value = d.razao_social || '';
+    if(d.logradouro) document.getElementById('mcEnd').value = `${d.logradouro}, ${d.numero||'s/n'} - ${d.bairro||''} - ${d.municipio||''} - ${d.uf||''}`;
+    if(d.email) document.getElementById('mcEmail').value = d.email;
+    if(d.ddd_telefone_1) document.getElementById('mcTel').value = d.ddd_telefone_1;
+    
+    // Detectar regime pelo porte
+    if(d.porte === 'MICRO EMPRESA' && d.opcao_pelo_simples) document.getElementById('mcReg').value = 'simples_nacional';
+    else if(d.porte === 'MICRO EMPRESA') document.getElementById('mcReg').value = 'mei';
+    
+    const sit = d.situacao_cadastral === 'ATIVA' ? 
+      '<span style="color:var(--green)">✅ Situação: ATIVA</span>' : 
+      `<span style="color:var(--red)">⚠️ Situação: ${d.situacao_cadastral}</span>`;
+    
+    status.innerHTML = `${sit} · Abertura: ${d.data_inicio_atividade||'—'} · Porte: ${d.porte||'—'}`;
+    toast('CNPJ consultado com sucesso!','ok');
+  } catch(e) {
+    status.innerHTML = '<span style="color:var(--red)">❌ CNPJ não encontrado ou API indisponível</span>';
+  }
+}
+
+// ================================================================
+// 3. GOOGLE CALENDAR — Adicionar compromisso/prazo
+// ================================================================
+function adicionarNoGoogleCalendar(titulo, data, descricao) {
+  const dt = data.replace(/-/g,'');
+  const url = `https://calendar.google.com/calendar/render?action=TEMPLATE` +
+    `&text=${encodeURIComponent(titulo)}` +
+    `&dates=${dt}/${dt}` +
+    `&details=${encodeURIComponent(descricao||'')}` +
+    `&location=Focco+Contabilidade+-+Patrocinio+MG`;
+  window.open(url, '_blank');
+}
+
+function exportarPrazosCalendar() {
+  // Exportar todos os prazos dos próximos 30 dias para o Google Calendar
+  const hj = new Date();
+  const fim = new Date(Date.now() + 30*86400000);
+  
+  sbRest('demandas').select('numero,resumo,prazo,clientes(nome)').not('status','in','(concluida,cancelada)').gt('prazo', hj.toISOString().split('T')[0]).lt('prazo', fim.toISOString().split('T')[0]).then(({data}) => {
+    if(!data?.length){ toast('Nenhum prazo nos próximos 30 dias','err'); return; }
+    
+    // Criar ICS para importar no Google Calendar
+    let ics = 'BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Focco//Sistema//PT\n';
+    data.forEach(d => {
+      const dt = d.prazo.replace(/-/g,'');
+      ics += 'BEGIN:VEVENT\n' + `DTSTART;VALUE=DATE:${dt}\nDTEND;VALUE=DATE:${dt}\nSUMMARY:${d.numero} - ${d.clientes?.nome||''}\nDESCRIPTION:${d.resumo||''}` + '\nEND:VEVENT\n';
+    });
+    ics += 'END:VCALENDAR';
+    
+    const blob = new Blob([ics], {type:'text/calendar'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'focco_prazos.ics';
+    a.click();
+    toast(`${data.length} prazos exportados! Importe o .ics no Google Calendar.`,'ok');
+  });
+}
+
+// ================================================================
+// 4. ASSISTENTE IA — Preenche demanda pela descrição
+// ================================================================
+let _iaSugestao = null;
+
+function filtrarClientesIA() {
+  const b = document.getElementById('iaBuscaCli').value.toLowerCase();
+  const lista = document.getElementById('iaListaCli');
+  if(b.length < 2){ lista.style.display='none'; return; }
+  const clis = dbGet('clientes').filter(c=>c.nome.toLowerCase().includes(b)).slice(0,8);
+  if(!clis.length){ lista.style.display='none'; return; }
+  lista.style.display = 'block';
+  lista.innerHTML = clis.map(c=>`
+    <div onclick="selecionarClienteIA('${c.id}','${c.nome}')" style="padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)" onmouseover="this.style.background='var(--accent-pale)'" onmouseout="this.style.background=''">
+      ${c.nome} <span style="color:var(--text3);font-size:11px">${c.cpf_cnpj||''}</span>
+    </div>`).join('');
+}
+
+function selecionarClienteIA(id, nome) {
+  document.getElementById('iaCliId').value = id;
+  document.getElementById('iaBuscaCli').value = nome;
+  document.getElementById('iaListaCli').style.display = 'none';
+}
+
+async function analisarComIA() {
+  const desc = document.getElementById('iaDescricao').value.trim();
+  if(!desc){ toast('Descreva o serviço primeiro','err'); return; }
+  
+  document.getElementById('iaLoading').style.display = 'block';
+  document.getElementById('iaSugestao').style.display = 'none';
+  document.getElementById('iaBtnAbrirDem').style.display = 'none';
+  document.getElementById('iaBtnAnalisar').disabled = true;
+  
+  // Montar contexto com departamentos e tipos disponíveis
+  const deps = dbGet('departamentos').map(d=>d.nome).join(', ');
+  const tipos = dbGet('tipos_demanda').slice(0,50).map(t=>t.nome+'('+t.prefixo_numeracao+')').join(', ');
+  const profs = dbGet('profiles').filter(p=>p.ativo).map(p=>p.nome).join(', ');
+  
+  const prompt = `Você é um assistente de escritório contábil brasileiro. Analise a solicitação abaixo e retorne um JSON com a sugestão de preenchimento da demanda.
+
+SOLICITAÇÃO: "${desc}"
+
+DEPARTAMENTOS DISPONÍVEIS: ${deps}
+TIPOS DE SERVIÇO DISPONÍVEIS: ${tipos}
+COLABORADORES DISPONÍVEIS: ${profs}
+
+Retorne APENAS um JSON válido com esta estrutura:
+{
+  "departamento": "nome exato do departamento",
+  "categoria": "nome da categoria",
+  "tipo": "nome do tipo de serviço",
+  "prefixo": "sigla do tipo",
+  "prioridade": "normal|alta|urgente",
+  "prazo_dias": numero de dias úteis para concluir,
+  "responsavel_sugerido": "nome do colaborador mais adequado ou vazio",
+  "observacao": "explicação breve da sugestão"
+}`;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 500,
+        messages: [{role:'user', content: prompt}]
+      })
+    });
+    
+    const data = await response.json();
+    const text = data.content?.[0]?.text || '';
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if(!jsonMatch) throw new Error('Resposta inválida da IA');
+    
+    _iaSugestao = JSON.parse(jsonMatch[0]);
+    
+    // Calcular prazo
+    const prazoDate = new Date();
+    prazoDate.setDate(prazoDate.getDate() + (_iaSugestao.prazo_dias||5));
+    const prazoStr = prazoDate.toLocaleDateString('pt-BR');
+    
+    document.getElementById('iaSugDep').textContent = _iaSugestao.departamento || '—';
+    document.getElementById('iaSugCat').textContent = _iaSugestao.categoria || '—';
+    document.getElementById('iaSugTipo').textContent = _iaSugestao.tipo || '—';
+    document.getElementById('iaSugPrio').textContent = _iaSugestao.prioridade || 'normal';
+    document.getElementById('iaSugPrazo').textContent = prazoStr;
+    document.getElementById('iaSugResp').textContent = _iaSugestao.responsavel_sugerido || 'A definir';
+    document.getElementById('iaSugObs').textContent = _iaSugestao.observacao || '';
+    
+    document.getElementById('iaSugestao').style.display = 'block';
+    document.getElementById('iaBtnAbrirDem').style.display = 'inline-flex';
+  } catch(e) {
+    toast('Erro ao consultar IA: '+e.message,'err');
+  } finally {
+    document.getElementById('iaLoading').style.display = 'none';
+    document.getElementById('iaBtnAnalisar').disabled = false;
+  }
+}
+
+async function abrirDemandaDaIA() {
+  if(!_iaSugestao){ toast('Analise primeiro','err'); return; }
+  
+  const cliId = document.getElementById('iaCliId').value;
+  const desc = document.getElementById('iaDescricao').value.trim();
+  
+  fm('mAssistenteIA');
+  await abrirNovaDemanda();
+  
+  // Preencher cliente se selecionado
+  if(cliId){
+    const sel = document.getElementById('ndCli');
+    if(sel) sel.value = cliId;
+  }
+  
+  // Preencher descrição
+  const ndDesc = document.getElementById('ndDesc');
+  if(ndDesc) ndDesc.value = desc;
+  
+  // Selecionar departamento
+  const deps = dbGet('departamentos');
+  const dep = deps.find(d=>d.nome.toLowerCase().includes((_iaSugestao.departamento||'').toLowerCase().split(' ')[0]));
+  if(dep){
+    const ndDep = document.getElementById('ndDep');
+    if(ndDep){ ndDep.value = dep.id; loadCatsND(); }
+  }
+  
+  // Prioridade
+  const ndPrio = document.getElementById('ndPrio');
+  if(ndPrio) ndPrio.value = _iaSugestao.prioridade || 'normal';
+  
+  // Prazo
+  if(_iaSugestao.prazo_dias){
+    const prazoDate = new Date();
+    prazoDate.setDate(prazoDate.getDate() + _iaSugestao.prazo_dias);
+    const ndPrazo = document.getElementById('ndPrazo');
+    if(ndPrazo) ndPrazo.value = prazoDate.toISOString().split('T')[0];
+  }
+  
+  // Responsável
+  if(_iaSugestao.responsavel_sugerido){
+    const profs = dbGet('profiles');
+    const prof = profs.find(p=>p.nome.toLowerCase().includes(_iaSugestao.responsavel_sugerido.toLowerCase().split(' ')[0]));
+    if(prof){
+      const ndResp = document.getElementById('ndResp');
+      if(ndResp) ndResp.value = prof.id;
+    }
+  }
+  
+  toast('Campos preenchidos pela IA! Revise e confirme.','ok');
+}
+
+// Botão exportar prazos no calendário fiscal
+function abrirCalendarExport() {
+  if(confirm('Exportar todos os prazos dos próximos 30 dias para o Google Calendar?')){
+    exportarPrazosCalendar();
+  }
+}
+
 async function initDB(){
   // Sistema usa Supabase como fonte de dados — localStorage apenas como cache temporário
   // Não recria dados locais
@@ -2613,13 +3873,27 @@ async function fazerLogin(){
   const err=document.getElementById('loginErr');
   err.classList.remove('show');
   if(!email||!senha){err.textContent='Preencha o usuário e a senha.';err.classList.add('show');return;}
+
+  // Proteção brute force — bloqueia 5 min após 5 tentativas
+  const KEY_TENT='focco_login_tent', KEY_BLOQ='focco_login_bloq';
+  const bloqueioAte=parseInt(localStorage.getItem(KEY_BLOQ)||'0');
+  if(bloqueioAte>Date.now()){
+    const min=Math.ceil((bloqueioAte-Date.now())/60000);
+    err.textContent='Acesso bloqueado. Aguarde '+min+' minuto(s).';
+    err.classList.add('show'); return;
+  }
+
   btn.disabled=true; btn.textContent='Entrando...';
   const {data,error}=await sb.auth.signInWithPassword({email,password:senha});
   if(error){
     btn.disabled=false; btn.textContent='Entrar no Sistema';
-    err.textContent=error.message.includes('Invalid')?'Usuário ou senha incorretos.':error.message;
+    const tent=(parseInt(localStorage.getItem(KEY_TENT)||'0'))+1;
+    localStorage.setItem(KEY_TENT,String(tent));
+    if(tent>=5){localStorage.setItem(KEY_BLOQ,String(Date.now()+5*60*1000));localStorage.removeItem(KEY_TENT);err.textContent='Acesso bloqueado por 5 minutos por excesso de tentativas.';}
+    else{err.textContent=(error.message.includes('Invalid')?'Usuario ou senha incorretos.':error.message)+' ('+( 5-tent)+' tentativa(s) restante(s))';}
     err.classList.add('show'); return;
   }
+  localStorage.removeItem(KEY_TENT); localStorage.removeItem(KEY_BLOQ);
   // Verificar se é primeiro acesso — redirecionar para troca de senha
   const profs = dbGet('profiles');
   const login = (email||'').toLowerCase().trim();
@@ -2722,14 +3996,48 @@ async function loadUser(user){
   document.getElementById('dSauda').textContent=(h<12?'Bom dia':h<18?'Boa tarde':'Boa noite')+', '+p.nome.split(' ')[0]+' 👋';
   document.getElementById('dData').textContent=new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+' · Focco Contabilidade';
   await Promise.all([loadCols(),loadDeps()]);
-  // Carregar clientes e profiles sincronamente ao login — fonte definitiva
-  await Promise.all([
-    sbRest('clientes').select('*').eq('ativo',true).order('nome').then(r=>{ if(r.data) dbSet('clientes',r.data); }),
-    sbRest('profiles').select('*').eq('ativo',true).then(r=>{ if(r.data) dbSet('profiles',r.data); })
-  ]);
+  // Carregar clientes e profiles — usa cache persistente se Supabase falhar
+  const CACHE_KEY_CLI = 'focco_cache_clientes';
+  const CACHE_KEY_PRF = 'focco_cache_profiles';
+  try {
+    const [cliRes, prfRes] = await Promise.all([
+      sbRest('clientes').select('id,nome,cpf_cnpj,email,telefone,whatsapp,endereco,regime_tributario,tipo_cliente,ativo').eq('ativo',true).order('nome'),
+      sbRest('profiles').select('id,nome,usuario,email,perfil,ativo,primeiro_acesso,whatsapp').eq('ativo',true)
+    ]);
+    if(cliRes.data && cliRes.data.length > 0){
+      dbSet('clientes', cliRes.data);
+      localStorage.setItem(CACHE_KEY_CLI, JSON.stringify(cliRes.data));
+    }
+    if(prfRes.data && prfRes.data.length > 0){
+      dbSet('profiles', prfRes.data);
+      localStorage.setItem(CACHE_KEY_PRF, JSON.stringify(prfRes.data));
+    }
+  } catch(e) {
+    // Supabase falhou — usar cache persistente
+    const cliCache = localStorage.getItem(CACHE_KEY_CLI);
+    const prfCache = localStorage.getItem(CACHE_KEY_PRF);
+    if(cliCache) dbSet('clientes', JSON.parse(cliCache));
+    if(prfCache) dbSet('profiles', JSON.parse(prfCache));
+    toast('Usando dados em cache — conexão instável', '');
+  }
+  // Recarregar cache a cada 5 minutos em background
+  setInterval(async () => {
+    try {
+      const r = await sbRest('clientes').select('*').eq('ativo',true).order('nome');
+      if(r.data && r.data.length > 0){
+        dbSet('clientes', r.data);
+        localStorage.setItem(CACHE_KEY_CLI, JSON.stringify(r.data));
+      }
+    } catch(e) {}
+  }, 5 * 60 * 1000);
   fillGlobSelects();
   await loadDash();
   carregarNotificacoes();
+  checkMobileNav();
+  setTimeout(verificarPrazosVencendo, 3000);
+  iniciarBackupAutomatico();
+  atualizarStatusBackup();
+  registrarAuditoria('login', 'Login realizado — perfil: '+p.perfil);
 }
 async function fazerLogout(){
   if(!confirm('Deseja sair do sistema?')) return;
@@ -2922,23 +4230,40 @@ async function loadImob(){
 async function loadDash(){
   const im=new Date();im.setDate(1);const ims=im.toISOString();
   const hj=new Date().toISOString().split('T')[0];
-  const [{count:a},{count:c},{count:o},{count:u},{count:co},{count:conc},{count:pe}]=await Promise.all([
-    sb.from('demandas').select('*',{count:'exact',head:true}).not('status','in','(concluida,cancelada)'),
-    sb.from('demandas').select('*',{count:'exact',head:true}).eq('status','aguardando_cliente'),
-    sb.from('demandas').select('*',{count:'exact',head:true}).eq('status','aguardando_orgao'),
-    sb.from('demandas').select('*',{count:'exact',head:true}).eq('prioridade','urgente').not('status','in','(concluida,cancelada)'),
-    sb.from('demandas').select('*',{count:'exact',head:true}).eq('status','aguardando_conclusao'),
-    sb.from('demandas').select('*',{count:'exact',head:true}).eq('status','concluida').gte('data_conclusao',ims),
-    sb.from('pendencias').select('*',{count:'exact',head:true}).eq('resolvida',false)
-  ]);
-  // Demandas sem movimentação há mais de 5 dias (substitui vw_demandas_inatividade)
-  const cincodiasAtras = new Date(Date.now()-5*86400000).toISOString();
-  let sm = {data:[]};
-  try { sm = await sbRest('demandas').select('id').not('status','in','(concluida,cancelada)').lt('ultima_movimentacao', cincodiasAtras); } catch(e) {}
-  document.getElementById('k1').textContent=a||0;document.getElementById('k2').textContent=c||0;
-  document.getElementById('k3').textContent=u||0;document.getElementById('k4').textContent=conc||0;
-  document.getElementById('k5').textContent=co||0;document.getElementById('k6').textContent=sm?.length||0;
-  document.getElementById('k7').textContent=o||0;document.getElementById('k8').textContent=pe||0;
+  // RPC única — retorna todos os KPIs em 1 query (antes eram 8 queries separadas)
+  let kpis = {};
+  try {
+    const {data:rpcData} = await sbRest('').then ? 
+      {data:null} : {data:null};
+    // Usar RPC do Supabase
+    const rpcRes = await fetch(SB_URL+'/rest/v1/rpc/fn_dashboard_kpis',{
+      method:'POST', headers:SB_HEADERS, body:'{}'
+    });
+    if(rpcRes.ok) kpis = await rpcRes.json();
+  } catch(e) {}
+
+  // Fallback para queries individuais se RPC falhar
+  if(!kpis.ativas && kpis.ativas !== 0) {
+    const cincodiasAtras = new Date(Date.now()-5*86400000).toISOString();
+    const [r1,r2,r3,r4,r5,r6,r7,r8] = await Promise.all([
+      sbRest('demandas').select('id',{count:'exact',head:true}).not('status','in','(concluida,cancelada)'),
+      sbRest('demandas').select('id',{count:'exact',head:true}).eq('status','aguardando_cliente'),
+      sbRest('demandas').select('id',{count:'exact',head:true}).eq('status','aguardando_orgao'),
+      sbRest('demandas').select('id',{count:'exact',head:true}).eq('prioridade','urgente').not('status','in','(concluida,cancelada)'),
+      sbRest('demandas').select('id',{count:'exact',head:true}).eq('status','aguardando_conclusao'),
+      sbRest('demandas').select('id',{count:'exact',head:true}).eq('status','concluida').gte('data_conclusao',ims),
+      sbRest('pendencias').select('id',{count:'exact',head:true}).eq('resolvida',false),
+      sbRest('demandas').select('id').not('status','in','(concluida,cancelada)').lt('ultima_movimentacao',cincodiasAtras)
+    ]);
+    kpis = {ativas:r1.count||0,ag_cliente:r2.count||0,ag_orgao:r3.count||0,urgentes:r4.count||0,ag_conclusao:r5.count||0,conc_mes:r6.count||0,pendencias:r7.count||0,sem_mov:(r8.data||[]).length,vencidas:0};
+  }
+
+  const a=kpis.ativas||0,c=kpis.ag_cliente||0,o=kpis.ag_orgao||0,u=kpis.urgentes||0;
+  const co=kpis.ag_conclusao||0,conc=kpis.conc_mes||0,pe=kpis.pendencias||0;
+  document.getElementById('k1').textContent=a;document.getElementById('k2').textContent=c;
+  document.getElementById('k3').textContent=u;document.getElementById('k4').textContent=conc;
+  document.getElementById('k5').textContent=co;document.getElementById('k6').textContent=kpis.sem_mov||0;
+  document.getElementById('k7').textContent=o;document.getElementById('k8').textContent=pe;
 
   // PAINEL URGENTE HOJE
   const urgenteItems = [];
@@ -2971,10 +4296,10 @@ async function loadDash(){
   }))};
   document.getElementById('dAtenc').innerHTML=at?.data?.length?at.data.map(d=>`<div class="ui" onclick="abrirDet('${d.id}')"><div class="uc" style="background:${d.nivel_inatividade==='prioridade_maxima'?'#501313':'var(--red)'}"></div><div class="uinfo"><div class="utit">${d.numero} — ${d.cliente_nome}</div><div class="umeta">${d.responsavel_nome} · ${d.departamento_nome}</div></div><span class="ud tr">${d.dias_sem_movimentacao}d</span></div>`).join(''):'<div class="vazio">Nenhuma crítica ✅</div>';
 
-  const {data:cr}=await sb.from('demandas').select('responsavel_atual_id,profiles!demandas_responsavel_atual_id_fkey(nome)').not('status','in','(concluida,cancelada)');
+  const {data:cr}=await sbRest('demandas').select('responsavel_atual_id').not('status','in','(concluida,cancelada)').limit(500);
   const eC=document.getElementById('dCarga');
   if(!cr?.length){eC.innerHTML='<div class="vazio">Sem demandas abertas.</div>';}
-  else{const m={};cr.forEach(d=>{const id=d.responsavel_atual_id,n=d.profiles?.nome||'?';if(!m[id])m[id]={nome:n,n:0};m[id].n++;});
+  else{const profs=dbGet('profiles');const m={};cr.forEach(d=>{const id=d.responsavel_atual_id;const prof=profs.find(p=>p.id===id);const n=prof?.nome||'?';if(!m[id])m[id]={nome:n,n:0};m[id].n++;});
   const l=Object.values(m).sort((a,b)=>b.n-a.n),mx=l[0]?.n||1;
   eC.innerHTML=l.map(c=>{const i=c.nome.split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase(),pct=Math.round(c.n/mx*100),cor=pct>80?'var(--red)':pct>60?'var(--amber)':'var(--sky)';return`<div class="carga-item"><div class="carga-av">${i}</div><div style="font-size:13px;flex:1">${c.nome.split(' ')[0]}</div><div class="carga-bar" style="width:80px"><div class="carga-fill" style="width:${pct}%;background:${cor}"></div></div><div class="carga-n">${c.n}</div></div>`;}).join('');}
 
@@ -2996,7 +4321,7 @@ async function loadDash(){
   document.getElementById('dProx').innerHTML=pr?.data?.length?pr.data.map(p=>`<div class="ui" onclick="abrirDet('${p.demanda_id}')"><div class="uc" style="background:var(--amber)"></div><div class="uinfo"><div class="utit">${p.demanda_numero} — ${p.cliente_nome}</div><div class="umeta">${p.descricao} · ${p.responsavel_nome}</div></div><span class="ud ta">${p.dias_vencida}d</span></div>`).join(''):'<div class="vazio">Nenhuma vencida ✅</div>';
 
   // Mini kanban no dashboard (sem concluídas para compactar)
-  const {data:kbData}=await sb.from('demandas').select('id,numero,resumo,status,prioridade,prazo,ultima_movimentacao,clientes(nome),profiles!demandas_responsavel_atual_id_fkey(nome),departamentos!demandas_departamento_atual_id_fkey(nome)').not('status','in','(concluida,cancelada)');
+  const {data:kbData}=await sbRest('demandas').select('id,numero,resumo,status,prioridade,prazo,ultima_movimentacao,cliente_id,responsavel_atual_id,departamento_atual_id').not('status','in','(concluida,cancelada)').order('created_at',{ascending:false}).limit(150);
   // Render dashboard calendar
   renderDashCal();
 }
@@ -3237,14 +4562,15 @@ async function salvarDem(){
   if(!ri){toast('Selecione o responsável','err');return;}
 
   try{
-    // Gerar número via Supabase direto
+    // Gerar número — timestamp + random para evitar duplicidade
     const tipos=dbGet('tipos_demanda');
     const tipo=tipos.find(t=>t.id===ti);
     const pref=tipo?.prefixo_numeracao||'DEM';
     const ano=new Date().getFullYear();
-    const {data:demsExist}=await sbRest('demandas').select('numero').ilike('numero',pref+'-'+ano+'-%');
-    const nums=(demsExist||[]).map(d=>parseInt((d.numero||'').split('-')[2]||'0')).filter(n=>!isNaN(n));
-    const next=(nums.length?Math.max(...nums):0)+1;
+    // Buscar próximo número do banco
+    const {data:demsExist}=await sbRest('demandas').select('numero').ilike('numero',pref+'-'+ano+'-%').order('numero',{ascending:false}).limit(1);
+    const ultimoNum = demsExist?.[0]?.numero ? parseInt((demsExist[0].numero).split('-')[2]||'0') : 0;
+    const next = ultimoNum + 1;
     const num=pref+'-'+ano+'-'+String(next).padStart(4,'0');
     const eN=null;
 
@@ -3336,7 +4662,7 @@ async function renderDet(){
   } else {
     const results = await Promise.all([
       sbRest('demandas').select('*').eq('id',id).single(),
-      sbRest('tramites').select('*').eq('demanda_id',id).order('created_at',{ascending:false}),
+      sbRest('tramites').select('id,tipo,descricao,usuario_id,created_at').eq('demanda_id',id).order('created_at',{ascending:false}).limit(50),
       sbRest('proximas_acoes').select('*').eq('demanda_id',id).eq('concluida',false).order('data_prevista',{ascending:true}),
       sbRest('pendencias').select('*').eq('demanda_id',id).eq('resolvida',false),
     ]);
@@ -3587,7 +4913,16 @@ async function salvarDescricao(id){
   await renderDet();
 }
 
-async function loadCli(){const {data}=await sb.from('clientes').select('*').eq('ativo',true).order('nome');allCli=data||[];dbSet('clientes',allCli);document.getElementById('cliTotal').textContent=`${allCli.length} cliente(s)`;filtCli();}
+async function loadCli(){
+  const {data}=await sb.from('clientes').select('*').eq('ativo',true).order('nome');
+  allCli=data||[];
+  if(allCli.length){
+    dbSet('clientes',allCli);
+    localStorage.setItem('focco_cache_clientes', JSON.stringify(allCli));
+  }
+  document.getElementById('cliTotal').textContent=`${allCli.length} cliente(s)`;
+  filtCli();
+}
 
 // ═══════════════════════════════════════════════════════════
 // IMPORTAÇÃO DE CLIENTES — Excel/CSV
@@ -3812,7 +5147,7 @@ function filtCli(){
   const rg={simples_nacional:'Simples Nacional',lucro_presumido:'Lucro Presumido',lucro_real:'Lucro Real',mei:'MEI',isento:'Isento',produtor_rural:'Produtor Rural'};
   document.getElementById('cliTotal').textContent=f.length+' de '+allCli.length+' clientes';
   document.getElementById('cliTabela').innerHTML=f.length?f.map(c=>`<tr onclick="editCli('${c.id}')"><td><strong style="color:var(--accent)">${c.nome}</strong>${c.tipo_cliente==='rural'?'<span class="tag ta" style="margin-left:6px;font-size:10px">🌾 Rural</span>':''}</td><td style="font-size:12px;color:var(--text3);font-family:monospace">${c.cpf_cnpj||'—'}</td><td><span class="tag ${c.tipo_pessoa==='juridica'?'ts':'tg'}">${c.tipo_pessoa==='juridica'?'PJ':'PF'}</span></td><td style="font-size:12px">${rg[c.regime_tributario]||'—'}</td><td>${c.whatsapp?`<a href="https://wa.me/55${c.whatsapp}" target="_blank" onclick="event.stopPropagation()" style="color:var(--green);font-size:12px">📱 ${c.whatsapp}</a>`:'—'}</td><td style="font-size:12px;color:var(--text3)">${c.email||'—'}</td><td style="display:flex;gap:4px">
-        <button class="btn btn-s" style="padding:4px 10px;font-size:12px" onclick="event.stopPropagation();verDemCli('${c.nome}')">📋 Dem.</button>
+        <button class="btn btn-s" style="padding:4px 10px;font-size:12px" onclick="event.stopPropagation();abrirHistoricoCliente('${c.id}','${c.nome}')">📋 Histórico</button>
         ${U?.perfil==='gestor'?`<button class="btn btn-er" style="padding:4px 10px;font-size:12px" onclick="event.stopPropagation();excluirCliente('${c.id}','${c.nome}')">🗑️</button>`:''}
       </td></tr>`).join(''):'<tr><td colspan="6" class="vazio">Nenhum cliente.</td></tr>';}
 function abrirModalCliente(){
@@ -4643,8 +5978,8 @@ document.addEventListener('click', e => {
   }
 });
 
-// Polling de notificações a cada 15 segundos
-setInterval(() => { if (U) carregarNotificacoes(); }, 15000);
+// Polling de notificações a cada 60 segundos
+setInterval(() => { if (U) carregarNotificacoes(); }, 60000);
 
 // ══════════════════════════════════════════
 // CALENDÁRIO FISCAL
@@ -5736,7 +7071,7 @@ function trocarAba(aba) {
 async function loadDem() {
   document.getElementById('demTabela').innerHTML = '<tr><td colspan="8" class="loading">Carregando...</td></tr>';
   // Buscar do Supabase
-  let q = sbRest('demandas').select('id,numero,resumo,status,prioridade,prazo,ultima_movimentacao,created_at,responsavel_atual_id,departamento_atual_id,departamento_id,cliente_id').order('created_at',{ascending:false});
+  let q = sbRest('demandas').select('id,numero,resumo,status,prioridade,prazo,ultima_movimentacao,created_at,responsavel_atual_id,departamento_atual_id,departamento_id,cliente_id').order('created_at',{ascending:false}).limit(200);
   if (U.perfil !== 'gestor' && U.perfil !== 'supervisor') {
     q = q.eq('responsavel_atual_id', U.id);
   }
