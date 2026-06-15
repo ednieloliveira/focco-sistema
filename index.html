@@ -4361,7 +4361,7 @@ async function loadCaixa(){
   const aces = aceRes.data||[];
   const urgs = urgRes.data||[];
   const vcs  = vcRes.data||[];
-  const mns  = mnRes.data||[];
+  const mns  = (mnRes.data||[]).filter(d=>!['concluida','cancelada','aguardando_aceite'].includes(d.status));
 
   // Buscar demandas dos aceites pendentes
   let aceDemsMap = {};
@@ -4397,7 +4397,7 @@ async function loadCaixa(){
       <div style="display:flex;gap:8px">
         <button onclick="aceitarDemanda('${a.id}','${a.demanda_id}')" class="btn btn-ok" style="flex:1;justify-content:center">✅ Aceitar</button>
         <button onclick="recusarDemanda('${a.id}','${a.demanda_id}')" class="btn btn-er" style="flex:1;justify-content:center">❌ Recusar</button>
-        <button onclick="abrirDet('${a.demanda_id}')" class="btn btn-s" style="flex:1;justify-content:center">👁 Ver</button>
+        <button onclick="abrirDet('${a.demanda_id}','caixa')" class="btn btn-s" style="flex:1;justify-content:center">👁 Ver</button>
       </div>
     </div>`;
   }).join('') : '<div class="vazio">Nenhum aceite pendente ✅</div>';
@@ -4406,7 +4406,7 @@ async function loadCaixa(){
   document.getElementById('cUList').innerHTML = urgs.length ? urgs.map(d => {
     const cli = todasCli.find(c=>c.id===d.cliente_id);
     const dias = Math.floor((Date.now()-new Date(d.ultima_movimentacao))/86400000);
-    return `<div class="ui" onclick="abrirDet('${d.id}')">
+    return `<div class="ui" onclick="abrirDet('${d.id}','caixa')">
       <div class="uc" style="background:var(--red)"></div>
       <div class="uinfo"><div class="utit">${d.numero}</div><div class="umeta">${cli?.nome||'—'}</div></div>
       <span class="ud tr">${dias}d</span>
@@ -4421,7 +4421,7 @@ async function loadCaixa(){
         const cli = todasCli.find(c=>c.id===d.cliente_id);
         const dias=Math.floor((Date.now()-new Date(d.ultima_movimentacao))/86400000);
         const dc=dias>=5?'tr':dias>=2?'ta':'ts';
-        return `<tr onclick="abrirDet('${d.id}')">
+        return `<tr onclick="abrirDet('${d.id}','caixa')">
           <td><strong style="color:var(--sky)">${d.numero}</strong></td>
           <td>${cli?.nome||'—'}</td>
           <td><span class="tag ${SC[d.status]||''}">${SL[d.status]||d.status}</span></td>
@@ -4641,8 +4641,9 @@ async function salvarDem(){
   }
 }
 
-async function abrirDet(id){
-  // _paginaAntesDet já é atualizado pela função ir()
+async function abrirDet(id, origem){
+  // Se origem fornecida, usar ela; senão usar _paginaAtual
+  if(origem) _paginaAntesDet = origem;
   demId=id;ir('det');
   document.getElementById('detConteudo').innerHTML='<div class="loading">Carregando...</div>';
   try {
@@ -5204,8 +5205,8 @@ function editCli(id){
   om('mCli');
 }
 function voltarDoDet(){
-  ir(_paginaAntesDet||'dem');
-  if(_paginaAntesDet==='caixa') loadCaixa();
+  const destino = _paginaAntesDet||'dem';
+  ir(destino);
 }
 
 function verDemCli(nome){ir('dem');document.getElementById('fBusca').value=nome;if(allDem.length)filtDem();else loadDem();}
