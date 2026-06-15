@@ -2300,6 +2300,148 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
   </div>
 </div>
 
+<!-- MODAL PAINEL DE URGÊNCIAS -->
+<div class="modal-ov" id="mUrgentes">
+  <div class="modal" style="max-width:860px;width:95vw">
+    <div class="mh">
+      <div>
+        <div class="mt">🚨 Painel de Urgências</div>
+        <div style="font-size:12px;color:var(--text3)">Demandas que precisam de atenção imediata</div>
+      </div>
+      <button class="mc" onclick="fm('mUrgentes')">×</button>
+    </div>
+    <div class="mb" style="padding:0">
+      <!-- Abas internas -->
+      <div style="display:flex;border-bottom:1px solid var(--border)">
+        <button onclick="abaUrgente('vencidas')" id="abaUrg_vencidas" style="padding:10px 18px;border:none;background:none;cursor:pointer;font-size:13px;font-weight:700;color:var(--red);border-bottom:2px solid var(--red);margin-bottom:-1px;font-family:Inter,sans-serif">⏰ Prazo Vencido</button>
+        <button onclick="abaUrgente('urgentes')" id="abaUrg_urgentes" style="padding:10px 18px;border:none;background:none;cursor:pointer;font-size:13px;font-weight:500;color:var(--text3);border-bottom:2px solid transparent;margin-bottom:-1px;font-family:Inter,sans-serif">🔴 Prioridade Urgente</button>
+        <button onclick="abaUrgente('paradas')" id="abaUrg_paradas" style="padding:10px 18px;border:none;background:none;cursor:pointer;font-size:13px;font-weight:500;color:var(--text3);border-bottom:2px solid transparent;margin-bottom:-1px;font-family:Inter,sans-serif">😴 Sem Movimentação</button>
+        <button onclick="abaUrgente('conclusao')" id="abaUrg_conclusao" style="padding:10px 18px;border:none;background:none;cursor:pointer;font-size:13px;font-weight:500;color:var(--text3);border-bottom:2px solid transparent;margin-bottom:-1px;font-family:Inter,sans-serif">✅ Ag. Aprovação</button>
+      </div>
+      <div id="urgentesCorpo" style="max-height:60vh;overflow-y:auto;padding:16px">
+        <div class="loading">Carregando...</div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-s" onclick="fm('mUrgentes')">Fechar</button>
+      <button class="btn btn-p" onclick="fm('mUrgentes');ir('dem')">Ver todas as demandas →</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL RECUSAR CONCLUSÃO -->
+<div class="modal-ov" id="mRecusarConc">
+  <div class="modal" style="max-width:460px">
+    <div class="mh">
+      <div>
+        <div class="mt">✗ Recusar Solicitação de Conclusão</div>
+        <div style="font-size:12px;color:var(--text3)">O processo voltará para Em Andamento</div>
+      </div>
+      <button class="mc" onclick="fm('mRecusarConc')">×</button>
+    </div>
+    <div class="mb">
+      <div style="background:var(--red-pale);border:1px solid rgba(220,38,38,.2);border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px;color:var(--text)">
+        ⚠️ Ao recusar, o processo voltará ao status <strong>Em Andamento</strong> para o responsável e ele receberá uma notificação com o motivo.
+      </div>
+      <div class="fg">
+        <label class="fl">Motivo da recusa *</label>
+        <textarea class="fi" id="rcMotivo" rows="4" placeholder="Explique o motivo da recusa para que o responsável possa corrigir e reenviar..."></textarea>
+      </div>
+      <div class="fg">
+        <label class="fl">O que precisa ser feito?</label>
+        <textarea class="fi" id="rcOrientacao" rows="3" placeholder="Ex: Falta o documento X, verificar o item Y, completar Z..."></textarea>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-s" onclick="fm('mRecusarConc')">Cancelar</button>
+      <button class="btn btn-er" onclick="recusarConc()">✗ Confirmar Recusa</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ALTERAR PRIORIDADE -->
+<div class="modal-ov" id="mAlterarPrioridade">
+  <div class="modal" style="max-width:400px">
+    <div class="mh">
+      <div>
+        <div class="mt">⚡ Alterar Prioridade</div>
+        <div style="font-size:12px;color:var(--text3)" id="mAltPrioSub"></div>
+      </div>
+      <button class="mc" onclick="fm('mAlterarPrioridade')">×</button>
+    </div>
+    <div class="mb">
+      <div class="fg">
+        <label class="fl">Prioridade atual</label>
+        <input type="text" class="fi" id="apPrioAtual" disabled style="background:var(--surface2);color:var(--text3)">
+      </div>
+      <div class="fg">
+        <label class="fl">Nova Prioridade *</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px">
+          <label id="apBaixa" onclick="selecionarPrio('baixa')" style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:2px solid var(--border);border-radius:8px;cursor:pointer;transition:all .15s">
+            <span style="font-size:18px">🔵</span>
+            <div><div style="font-size:13px;font-weight:600">Baixa</div><div style="font-size:11px;color:var(--text3)">Sem urgência</div></div>
+          </label>
+          <label id="apNormal" onclick="selecionarPrio('normal')" style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:2px solid var(--border);border-radius:8px;cursor:pointer;transition:all .15s">
+            <span style="font-size:18px">⚪</span>
+            <div><div style="font-size:13px;font-weight:600">Normal</div><div style="font-size:11px;color:var(--text3)">Padrão</div></div>
+          </label>
+          <label id="apAlta" onclick="selecionarPrio('alta')" style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:2px solid var(--border);border-radius:8px;cursor:pointer;transition:all .15s">
+            <span style="font-size:18px">🟡</span>
+            <div><div style="font-size:13px;font-weight:600">Alta</div><div style="font-size:11px;color:var(--text3)">Atenção</div></div>
+          </label>
+          <label id="apUrgente" onclick="selecionarPrio('urgente')" style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:2px solid var(--border);border-radius:8px;cursor:pointer;transition:all .15s">
+            <span style="font-size:18px">🔴</span>
+            <div><div style="font-size:13px;font-weight:600">Urgente</div><div style="font-size:11px;color:var(--text3)">Imediato</div></div>
+          </label>
+        </div>
+        <input type="hidden" id="apNovaPrio">
+      </div>
+      <div class="fg">
+        <label class="fl">Motivo (opcional)</label>
+        <textarea class="fi" id="apMotivo" rows="2" placeholder="Ex: Cliente solicitou urgência, prazo regulatório..."></textarea>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-s" onclick="fm('mAlterarPrioridade')">Cancelar</button>
+      <button class="btn btn-p" onclick="salvarAlteracaoPrioridade()">⚡ Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DILATAR PRAZO -->
+<div class="modal-ov" id="mDilatarPrazo">
+  <div class="modal" style="max-width:460px">
+    <div class="mh">
+      <div>
+        <div class="mt">📅 Dilatar Prazo</div>
+        <div style="font-size:12px;color:var(--text3)" id="mDilatarPrazoSub"></div>
+      </div>
+      <button class="mc" onclick="fm('mDilatarPrazo')">×</button>
+    </div>
+    <div class="mb">
+      <div class="fg">
+        <label class="fl">Prazo atual</label>
+        <input type="text" class="fi" id="dpPrazoAtual" disabled style="background:var(--surface2);color:var(--text3)">
+      </div>
+      <div class="fg">
+        <label class="fl">Novo Prazo *</label>
+        <input type="date" class="fi" id="dpNovoPrazo">
+      </div>
+      <div class="fg">
+        <label class="fl">Justificativa *</label>
+        <textarea class="fi" id="dpJustificativa" rows="3" placeholder="Ex: Cliente solicitou mais tempo para reunir documentos. Novo prazo acordado em reunião do dia..."></textarea>
+      </div>
+      <div style="background:var(--amber-pale);border:1px solid #FCD34D;border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text)">
+        ⚠️ A dilatação de prazo será registrada no histórico de tramitações com data, hora e justificativa.
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-s" onclick="fm('mDilatarPrazo')">Cancelar</button>
+      <button class="btn btn-p" onclick="salvarDilatacaoPrazo()" style="background:var(--amber);border-color:var(--amber)">📅 Confirmar Dilatação</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL LEMBRETE -->
 <div class="modal-ov" id="mLembrete">
   <div class="modal" style="max-width:460px">
@@ -3921,7 +4063,7 @@ let demId=null,pDepSel=null,pCatSel=null,editUser=false;
 const SL={aberta:'Aberta',em_andamento:'Em andamento',aguardando_aceite:'Ag. aceite',aguardando_cliente:'Ag. cliente',aguardando_orgao:'Ag. órgão',aguardando_gestor:'Ag. gestor',aguardando_conclusao:'Ag. conclusão',concluida:'Concluída',cancelada:'Cancelada'};
 const SC={aberta:'ts',em_andamento:'tg',aguardando_aceite:'ta',aguardando_cliente:'ta',aguardando_orgao:'tp',aguardando_gestor:'tn',aguardando_conclusao:'tg',concluida:'tgr',cancelada:'tr'};
 const PC={baixa:'tgr',normal:'ts',alta:'ta',urgente:'tr'};
-const TL={abertura:'Abertura',documento_recebido:'Doc. recebido',documento_solicitado:'Doc. solicitado',protocolo:'Protocolo',exigencia_recebida:'Exigência recebida',exigencia_respondida:'Exigência respondida',transferencia:'Transferência',aceite:'Aceite',pendencia_criada:'Pendência criada',pendencia_resolvida:'Pendência resolvida',aprovacao_solicitada:'Aprox. solicitada',aprovacao_concedida:'Aprovado',aprovacao_devolvida:'Devolvido',conclusao:'Conclusão',cancelamento:'Cancelamento',movimentacao_geral:'Movimentação'};
+const TL={abertura:'Abertura',documento_recebido:'Doc. recebido',documento_solicitado:'Doc. solicitado',protocolo:'Protocolo',exigencia_recebida:'Exigência recebida',exigencia_respondida:'Exigência respondida',transferencia:'Transferência',aceite:'Aceite',pendencia_criada:'Pendência criada',pendencia_resolvida:'Pendência resolvida',aprovacao_solicitada:'Aprox. solicitada',aprovacao_concedida:'✅ Aprovado',aprovacao_devolvida:'⚠️ Devolvido',conclusao:'Conclusão',cancelamento:'Cancelamento',movimentacao_geral:'Movimentação'};
 
 async function init(){
   const {data:{session}}=await sb.auth.getSession();
@@ -4344,6 +4486,8 @@ async function loadDash(){
   if(urgenteItems.length>0){
     dashUrg.style.display='block';
     document.getElementById('dashUrgenteList').innerHTML=urgenteItems.map(i=>`<div class="urgente-item" onclick="${i.fn}"><span class="urgente-item-label">${i.label}</span><span class="urgente-badge">${i.badge}</span></div>`).join('');
+    // Botão para ver painel completo de urgentes
+    document.getElementById('dashUrgenteList').innerHTML += `<div style="margin-top:8px"><button onclick="abrirPainelUrgentes()" class="btn btn-s" style="background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3);color:#fff;font-size:12px">🔍 Ver painel completo de urgências</button></div>`;
   } else {
     dashUrg.style.display='none';
   }
@@ -4801,7 +4945,12 @@ async function renderDet(){
       ${U.usuario==='Gerente'||U.nome==='Edniel Oliveira'?`<button class="btn btn-s" onclick="om('mWA')">📱 WhatsApp</button>`:''}
       ${(U.usuario==='Gerente'||U.nome==='Edniel Oliveira')&&iG?`<button class="btn btn-er" onclick="excluirDemanda('${d.id}','${d.numero}')">🗑️ Excluir</button>`:''}
       ${d.status!=='aguardando_conclusao'?`<button class="btn btn-p" onclick="om('mConc')">✓ Solicitar conclusão</button>`:''}
-      ${iG&&d.status==='aguardando_conclusao'?`<button class="btn btn-ok" onclick="aprovarConc()">✓ Aprovar conclusão</button>`:''}
+      ${iG&&d.status==='aguardando_conclusao'?`
+        <button class="btn btn-ok" onclick="aprovarConc()">✓ Aprovar conclusão</button>
+        <button class="btn btn-er" onclick="om('mRecusarConc')" style="font-size:13px">✗ Recusar</button>
+      `:''}
+      <button class="btn btn-s" onclick="abrirDilatarPrazo('${d.id}','${d.prazo||''}','${d.numero}')" style="border-color:var(--amber);color:var(--amber)">📅 Dilatar Prazo</button>
+      ${iG?`<button class="btn btn-s" onclick="abrirAlterarPrioridade('${d.id}','${d.prioridade}','${d.numero}')" style="border-color:var(--sky);color:var(--sky)">⚡ Prioridade</button>`:''}
       `}
     </div>`:''}
   </div>
@@ -4949,7 +5098,88 @@ async function salvarConc(){
   fm('mConc');
   await renderDet();
 }
-async function aprovarConc(){if(!confirm('Aprovar conclusão desta demanda?'))return;await sb.from('demandas').update({status:'concluida',data_conclusao:new Date().toISOString()}).eq('id',demId);await sb.from('aprovacoes').update({status:'aprovada',aprovado_por:U.id,respondido_em:new Date().toISOString()}).eq('demanda_id',demId).eq('status','pendente');await sb.from('tramites').insert({demanda_id:demId,usuario_id:U.id,tipo:'aprovacao_concedida',descricao:'Conclusão aprovada. Demanda encerrada.'});toast('Demanda concluída!','ok');await renderDet();}
+async function aprovarConc(){
+  if(!confirm('Aprovar conclusão desta demanda?')) return;
+  await sbRest('demandas').update({
+    status:'concluida',
+    data_conclusao:new Date().toISOString(),
+    ultima_movimentacao:new Date().toISOString(),
+    ultimo_tramite_at:new Date().toISOString(),
+    ultimo_tramite_usuario:U.nome,
+    ultimo_tramite_descricao:'Conclusão aprovada pelo gestor.'
+  }).eq('id',demId);
+  await sbRest('aprovacoes').update({status:'aprovada',aprovado_por:U.id,respondido_em:new Date().toISOString()}).eq('demanda_id',demId).eq('status','pendente');
+  await sbRest('tramites').insert({demanda_id:demId,usuario_id:U.id,tipo:'aprovacao_concedida',descricao:'Conclusão aprovada. Demanda encerrada.'});
+  delete _detCache[demId];
+  toast('Demanda concluída!','ok');
+  await renderDet();
+}
+
+async function recusarConc(){
+  const motivo = document.getElementById('rcMotivo').value.trim();
+  const orientacao = document.getElementById('rcOrientacao').value.trim();
+  if(!motivo){ toast('Informe o motivo da recusa','err'); return; }
+
+  const btn = document.querySelector('#mRecusarConc .btn-er');
+  if(btn){ btn.disabled=true; btn.textContent='Salvando...'; }
+
+  try {
+    // Buscar responsável atual para notificar
+    const {data:dem} = await sbRest('demandas').select('responsavel_atual_id,numero').eq('id',demId).single();
+
+    // Voltar status para em_andamento
+    await sbRest('demandas').update({
+      status: 'em_andamento',
+      ultima_movimentacao: new Date().toISOString(),
+      ultimo_tramite_at: new Date().toISOString(),
+      ultimo_tramite_usuario: U.nome,
+      ultimo_tramite_descricao: 'Conclusão recusada: '+motivo
+    }).eq('id',demId);
+
+    // Atualizar aprovação como recusada
+    await sbRest('aprovacoes').update({
+      status:'recusada',
+      aprovado_por:U.id,
+      respondido_em:new Date().toISOString()
+    }).eq('demanda_id',demId).eq('status','pendente');
+
+    // Registrar trâmite
+    const descTramite = 'Conclusao RECUSADA pelo gestor '+U.nome+'. Motivo: '+motivo+(orientacao?' O que fazer: '+orientacao:'');
+    await sbRest('tramites').insert({
+      demanda_id:demId,
+      usuario_id:U.id,
+      tipo:'aprovacao_devolvida',
+      descricao:descTramite
+    });
+
+    // Notificar responsável
+    if(dem?.responsavel_atual_id && dem.responsavel_atual_id !== U.id){
+      await criarNotificacao(
+        dem.responsavel_atual_id,
+        '⚠️ Conclusão recusada — '+dem.numero,
+        'O gestor '+U.nome+' recusou a conclusão. Motivo: '+motivo+(orientacao?' | O que fazer: '+orientacao:''),
+        demId,
+        'aprovacao_devolvida'
+      );
+    }
+
+    fm('mRecusarConc');
+    delete _detCache[demId];
+    toast('Conclusão recusada. Processo devolvido ao responsável.','ok');
+    adicionarTramiteNaTela({
+      tipo:'aprovacao_devolvida',
+      descricao:descTramite,
+      usuario_id:U.id,
+      created_at:new Date().toISOString(),
+      profiles:{nome:U.nome}
+    });
+    await renderDet();
+  } catch(e){
+    toast('Erro: '+e.message,'err');
+  } finally {
+    if(btn){ btn.disabled=false; btn.textContent='✗ Confirmar Recusa'; }
+  }
+}
 // Aceitar/Recusar direto do detalhe da demanda
 async function aceitarDemandaDet(demandaId){
   const {data:dr} = await sbRest('demanda_responsaveis').select('id').eq('demanda_id',demandaId).eq('responsavel_id',U.id).eq('aceite_status','pendente').limit(1);
@@ -4975,6 +5205,265 @@ async function recusarDemandaDet(demandaId){
   delete _detCache[demandaId];
   toast('Demanda recusada.','ok');
   ir('dem');
+}
+
+// ================================================================
+// ALTERAR PRIORIDADE
+// ================================================================
+let _alterarPrioDemId = null;
+
+function abrirAlterarPrioridade(demandaId, prioAtual, numero) {
+  _alterarPrioDemId = demandaId;
+  document.getElementById('mAltPrioSub').textContent = 'Demanda: ' + numero;
+  const labels = {baixa:'🔵 Baixa', normal:'⚪ Normal', alta:'🟡 Alta', urgente:'🔴 Urgente'};
+  document.getElementById('apPrioAtual').value = labels[prioAtual] || prioAtual;
+  document.getElementById('apNovaPrio').value = '';
+  document.getElementById('apMotivo').value = '';
+  // Resetar seleção visual
+  ['baixa','normal','alta','urgente'].forEach(p => {
+    const el = document.getElementById('ap'+p.charAt(0).toUpperCase()+p.slice(1));
+    if(el) el.style.border = '2px solid var(--border)';
+  });
+  om('mAlterarPrioridade');
+}
+
+function selecionarPrio(prio) {
+  document.getElementById('apNovaPrio').value = prio;
+  const cores = {baixa:'var(--sky)',normal:'var(--text3)',alta:'var(--amber)',urgente:'var(--red)'};
+  ['baixa','normal','alta','urgente'].forEach(p => {
+    const el = document.getElementById('ap'+p.charAt(0).toUpperCase()+p.slice(1));
+    if(el) el.style.border = p===prio ? `2px solid ${cores[p]}` : '2px solid var(--border)';
+  });
+}
+
+async function salvarAlteracaoPrioridade() {
+  const novaPrio = document.getElementById('apNovaPrio').value;
+  const motivo = document.getElementById('apMotivo').value.trim();
+  if(!novaPrio){ toast('Selecione a nova prioridade','err'); return; }
+
+  const btn = document.querySelector('#mAlterarPrioridade .btn-p');
+  if(btn){ btn.disabled=true; btn.textContent='Salvando...'; }
+
+  try {
+    const labels = {baixa:'Baixa',normal:'Normal',alta:'Alta',urgente:'Urgente'};
+    const prioAtualTxt = document.getElementById('apPrioAtual').value;
+
+    await sbRest('demandas').update({
+      prioridade: novaPrio,
+      ultima_movimentacao: new Date().toISOString(),
+      ultimo_tramite_at: new Date().toISOString(),
+      ultimo_tramite_usuario: U.nome,
+      ultimo_tramite_descricao: 'Prioridade alterada para '+labels[novaPrio]
+    }).eq('id', _alterarPrioDemId);
+
+    const descTramite = 'Prioridade alterada de "'+prioAtualTxt+'" para "'+labels[novaPrio]+'"'+(motivo?'. Motivo: '+motivo:'.'); 
+    await sbRest('tramites').insert({
+      demanda_id: _alterarPrioDemId,
+      usuario_id: U.id,
+      tipo: 'movimentacao_geral',
+      descricao: descTramite
+    });
+
+    fm('mAlterarPrioridade');
+    delete _detCache[_alterarPrioDemId];
+    toast('Prioridade alterada para '+labels[novaPrio]+'!','ok');
+    adicionarTramiteNaTela({
+      tipo: 'movimentacao_geral',
+      descricao: descTramite,
+      usuario_id: U.id,
+      created_at: new Date().toISOString(),
+      profiles: {nome: U.nome}
+    });
+    await renderDet();
+  } catch(e) {
+    toast('Erro: '+e.message,'err');
+  } finally {
+    if(btn){ btn.disabled=false; btn.textContent='⚡ Confirmar'; }
+  }
+}
+
+// ================================================================
+// PAINEL DE URGÊNCIAS
+// ================================================================
+let _abaUrgenteAtual = 'vencidas';
+let _dadosUrgentes = {};
+
+async function abrirPainelUrgentes() {
+  om('mUrgentes');
+  await carregarDadosUrgentes();
+  abaUrgente('vencidas');
+}
+
+async function carregarDadosUrgentes() {
+  const hj = new Date().toISOString().split('T')[0];
+  const cincoD = new Date(Date.now()-5*86400000).toISOString();
+  const profs = dbGet('profiles');
+  const clis = dbGet('clientes');
+  const depts = dbGet('departamentos');
+
+  const [vencRes, urgRes, paradaRes, concRes] = await Promise.all([
+    sbRest('demandas').select('id,numero,resumo,prazo,status,prioridade,responsavel_atual_id,cliente_id,departamento_atual_id,ultima_movimentacao').not('status','in','(concluida,cancelada)').lt('prazo',hj).order('prazo',{ascending:true}),
+    sbRest('demandas').select('id,numero,resumo,prazo,status,prioridade,responsavel_atual_id,cliente_id,departamento_atual_id,ultima_movimentacao').eq('prioridade','urgente').not('status','in','(concluida,cancelada)').order('ultima_movimentacao',{ascending:true}),
+    sbRest('demandas').select('id,numero,resumo,prazo,status,prioridade,responsavel_atual_id,cliente_id,departamento_atual_id,ultima_movimentacao').not('status','in','(concluida,cancelada)').lt('ultima_movimentacao',cincoD).order('ultima_movimentacao',{ascending:true}).limit(50),
+    sbRest('demandas').select('id,numero,resumo,prazo,status,prioridade,responsavel_atual_id,cliente_id,departamento_atual_id').eq('status','aguardando_conclusao').order('created_at',{ascending:true})
+  ]);
+
+  const enrich = (list) => (list||[]).map(d=>({
+    ...d,
+    cli: clis.find(c=>c.id===d.cliente_id),
+    resp: profs.find(p=>p.id===d.responsavel_atual_id),
+    dept: depts.find(x=>x.id===d.departamento_atual_id)
+  }));
+
+  _dadosUrgentes = {
+    vencidas: enrich(vencRes.data),
+    urgentes: enrich(urgRes.data),
+    paradas:  enrich(paradaRes.data),
+    conclusao: enrich(concRes.data)
+  };
+
+  // Atualizar badges nas abas
+  document.getElementById('abaUrg_vencidas').textContent  = `⏰ Prazo Vencido (${_dadosUrgentes.vencidas.length})`;
+  document.getElementById('abaUrg_urgentes').textContent  = `🔴 Urgentes (${_dadosUrgentes.urgentes.length})`;
+  document.getElementById('abaUrg_paradas').textContent   = `😴 Paradas +5d (${_dadosUrgentes.paradas.length})`;
+  document.getElementById('abaUrg_conclusao').textContent = `✅ Ag. Aprovação (${_dadosUrgentes.conclusao.length})`;
+}
+
+function abaUrgente(aba) {
+  _abaUrgenteAtual = aba;
+  // Estilo das abas
+  const cores = {vencidas:'var(--red)',urgentes:'var(--red)',paradas:'var(--amber)',conclusao:'var(--green)'};
+  ['vencidas','urgentes','paradas','conclusao'].forEach(a=>{
+    const btn = document.getElementById('abaUrg_'+a);
+    if(!btn) return;
+    const ativo = a===aba;
+    btn.style.color = ativo ? cores[a] : 'var(--text3)';
+    btn.style.borderBottom = ativo ? `2px solid ${cores[a]}` : '2px solid transparent';
+    btn.style.fontWeight = ativo ? '700' : '500';
+  });
+  renderListaUrgentes();
+}
+
+function renderListaUrgentes() {
+  const lista = _dadosUrgentes[_abaUrgenteAtual]||[];
+  const corpo = document.getElementById('urgentesCorpo');
+  const hj = new Date().toISOString().split('T')[0];
+
+  if(!lista.length){
+    corpo.innerHTML = '<div class="vazio" style="padding:2rem">Nenhuma demanda nesta categoria ✅</div>';
+    return;
+  }
+
+  corpo.innerHTML = `<table style="width:100%">
+    <thead><tr>
+      <th>Número</th><th>Cliente</th><th>Resumo</th>
+      <th>Responsável</th><th>Prazo</th><th>Inatividade</th><th>Ação</th>
+    </tr></thead>
+    <tbody>${lista.map(d=>{
+      const diasPrazo = d.prazo ? Math.floor((new Date()-new Date(d.prazo+'T12:00:00'))/86400000) : null;
+      const diasSemMov = Math.floor((Date.now()-new Date(d.ultima_movimentacao||d.created_at))/86400000);
+      const prazoVencido = d.prazo && d.prazo < hj;
+      return `<tr onclick="fm('mUrgentes');abrirDet('${d.id}','dash')" style="cursor:pointer" onmouseover="this.style.background='var(--accent-pale)'" onmouseout="this.style.background=''">
+        <td><strong style="font-family:monospace;color:var(--accent);font-size:12px">${d.numero}</strong></td>
+        <td style="font-size:12px">${d.cli?.nome||'—'}</td>
+        <td style="font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.resumo||'—'}</td>
+        <td style="font-size:12px">${d.resp?.nome?.split(' ')[0]||'—'}</td>
+        <td style="font-size:12px;color:${prazoVencido?'var(--red)':'inherit'}">
+          ${d.prazo?new Date(d.prazo+'T12:00:00').toLocaleDateString('pt-BR'):'—'}
+          ${prazoVencido?`<div style="font-size:10px;color:var(--red);font-weight:700">${diasPrazo}d atrasado</div>`:''}
+        </td>
+        <td><span class="tag ${diasSemMov>=10?'tr':diasSemMov>=5?'ta':'ts'}">${diasSemMov}d</span></td>
+        <td>
+          <button onclick="event.stopPropagation();fm('mUrgentes');abrirDilatarPrazo('${d.id}','${d.prazo||''}','${d.numero}')" style="background:none;border:1px solid var(--amber);color:var(--amber);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:11px">📅 Prazo</button>
+        </td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table>`;
+}
+
+// ================================================================
+// DILATAR PRAZO
+// ================================================================
+let _dilatarDemandaId = null;
+
+function abrirDilatarPrazo(demandaId, prazoAtual, numero) {
+  _dilatarDemandaId = demandaId;
+  document.getElementById('mDilatarPrazoSub').textContent = 'Demanda: ' + numero;
+  document.getElementById('dpPrazoAtual').value = prazoAtual
+    ? new Date(prazoAtual+'T12:00:00').toLocaleDateString('pt-BR')
+    : 'Sem prazo definido';
+  // Novo prazo padrão: 7 dias a partir de hoje
+  const novoPrazo = new Date();
+  novoPrazo.setDate(novoPrazo.getDate() + 7);
+  document.getElementById('dpNovoPrazo').value = novoPrazo.toISOString().split('T')[0];
+  document.getElementById('dpJustificativa').value = '';
+  om('mDilatarPrazo');
+}
+
+async function salvarDilatacaoPrazo() {
+  const novoPrazo = document.getElementById('dpNovoPrazo').value;
+  const justificativa = document.getElementById('dpJustificativa').value.trim();
+  const prazoAtual = document.getElementById('dpPrazoAtual').value;
+
+  if(!novoPrazo){ toast('Informe o novo prazo','err'); return; }
+  if(!justificativa){ toast('Informe a justificativa','err'); return; }
+
+  // Validar que novo prazo é futuro
+  if(novoPrazo <= new Date().toISOString().split('T')[0]){
+    toast('O novo prazo deve ser uma data futura','err'); return;
+  }
+
+  const btn = document.querySelector('#mDilatarPrazo .btn-p');
+  if(btn){ btn.disabled=true; btn.textContent='Salvando...'; }
+
+  try {
+    // Atualizar prazo na demanda
+    await sbRest('demandas').update({
+      prazo: novoPrazo,
+      ultima_movimentacao: new Date().toISOString(),
+      ultimo_tramite_at: new Date().toISOString(),
+      ultimo_tramite_usuario: U.nome,
+      ultimo_tramite_descricao: 'Prazo dilatado: ' + justificativa
+    }).eq('id', _dilatarDemandaId);
+
+    // Registrar trâmite com justificativa
+    const novoPrazoFmt = new Date(novoPrazo+'T12:00:00').toLocaleDateString('pt-BR');
+    const descTramite = `Prazo dilatado de "${prazoAtual}" para ${novoPrazoFmt}.
+
+Justificativa: ${justificativa}`;
+    await sbRest('tramites').insert({
+      demanda_id: _dilatarDemandaId,
+      usuario_id: U.id,
+      tipo: 'movimentacao_geral',
+      descricao: descTramite
+    });
+
+    // Notificar gestor se for colaborador
+    if(U.perfil !== 'gestor'){
+      const {data:gestores} = await sbRest('profiles').select('id').eq('perfil','gestor').eq('ativo',true);
+      for(const g of (gestores||[])){
+        if(g.id !== U.id) await criarNotificacao(g.id, 'Prazo dilatado', U.nome+' dilatou o prazo da demanda. Justificativa: '+justificativa, _dilatarDemandaId, 'movimentacao_geral');
+      }
+    }
+
+    fm('mDilatarPrazo');
+    delete _detCache[_dilatarDemandaId];
+    toast('Prazo dilatado com sucesso!','ok');
+    // Adicionar tramite na tela instantaneamente
+    adicionarTramiteNaTela({
+      tipo: 'movimentacao_geral',
+      descricao: descTramite,
+      usuario_id: U.id,
+      created_at: new Date().toISOString(),
+      profiles: {nome: U.nome}
+    });
+    // Atualizar cabeçalho da demanda
+    await renderDet();
+  } catch(e) {
+    toast('Erro ao dilatar prazo: '+e.message,'err');
+  } finally {
+    if(btn){ btn.disabled=false; btn.textContent='📅 Confirmar Dilatação'; }
+  }
 }
 
 // Tramite inline no detalhe da demanda
@@ -9254,7 +9743,6 @@ const _renderDetOriginal = window.renderDet;
 // ================================================================
 async function carregarLembretesHoje() {
   const hoje = new Date().toISOString().split('T')[0];
-  // Buscar lembretes pendentes de hoje ou vencidos
   const {data} = await sbRest('lembretes')
     .select('id,descricao,data_lembrete,hora_lembrete,status,demanda_id')
     .eq('responsavel_id', U.id)
@@ -9266,6 +9754,10 @@ async function carregarLembretesHoje() {
   const lembretes = data||[];
   const el = document.getElementById('cLembretes');
   if(!el) return;
+
+  // IDs já vistos hoje (resetar a cada dia)
+  const VISTO_KEY = 'focco_lem_vistos_'+hoje+'_'+U.id;
+  const vistos = new Set(JSON.parse(localStorage.getItem(VISTO_KEY)||'[]'));
 
   if(!lembretes.length){
     el.innerHTML='<div class="vazio">Nenhum lembrete para hoje ✅</div>';
@@ -9288,18 +9780,37 @@ async function carregarLembretesHoje() {
   el.innerHTML = lembretes.map(l=>{
     const dem = demsMap[l.demanda_id]||{};
     const vencido = l.data_lembrete < hoje2;
+    const jaVisto = vistos.has(l.id);
     const dtFmt = l.data_lembrete === hoje2 ? 'Hoje' : new Date(l.data_lembrete+'T12:00:00').toLocaleDateString('pt-BR');
     const hora = l.hora_lembrete ? ' às '+l.hora_lembrete.slice(0,5) : '';
-    return `<div onclick="abrirDet('${l.demanda_id}','caixa')" style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer" onmouseover="this.style.background='var(--accent-pale)'" onmouseout="this.style.background=''">
-      <div style="font-size:20px;flex-shrink:0">${vencido?'🔴':'📞'}</div>
-      <div style="flex:1">
-        <div style="font-size:13px;font-weight:600;color:${vencido?'var(--red)':'var(--text)'}">${l.descricao}</div>
+    return `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);${jaVisto?'opacity:.6':''}" >
+      <div style="font-size:20px;flex-shrink:0">${vencido?'🔴':jaVisto?'👁':'📞'}</div>
+      <div style="flex:1;cursor:pointer" onclick="abrirDet('${l.demanda_id}','caixa')">
+        <div style="display:flex;align-items:center;gap:6px">
+          <div style="font-size:13px;font-weight:${jaVisto?400:600};color:${vencido?'var(--red)':'var(--text)'}">${l.descricao}</div>
+          ${jaVisto?'<span style="font-size:10px;background:var(--surface2);color:var(--text3);padding:1px 6px;border-radius:10px">Visto</span>':''}
+        </div>
         ${dem.numero?`<div style="font-size:12px;color:var(--text3)">Processo: <strong>${dem.numero}</strong>${dem.cli_nome?' — '+dem.cli_nome:''}</div>`:''}
         <div style="font-size:11px;color:${vencido?'var(--red)':'var(--text3)'};margin-top:2px">📅 ${dtFmt}${hora}</div>
       </div>
-      <button onclick="event.stopPropagation();concluirLembreteRapido('${l.id}')" style="background:none;border:1px solid var(--green);color:var(--green);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:11px;flex-shrink:0">✓</button>
+      <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
+        <button onclick="concluirLembreteRapido('${l.id}')" style="background:none;border:1px solid var(--green);color:var(--green);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:11px">✓ OK</button>
+        ${!jaVisto?`<button onclick="marcarLembreteVisto('${l.id}')" style="background:none;border:1px solid var(--border);color:var(--text3);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:11px">👁 Visto</button>`:''}
+      </div>
     </div>`;
   }).join('');
+}
+
+function marcarLembreteVisto(id) {
+  const hoje = new Date().toISOString().split('T')[0];
+  const VISTO_KEY = 'focco_lem_vistos_'+hoje+'_'+U.id;
+  const vistos = new Set(JSON.parse(localStorage.getItem(VISTO_KEY)||'[]'));
+  vistos.add(id);
+  localStorage.setItem(VISTO_KEY, JSON.stringify([...vistos]));
+  // Limpar chaves de dias anteriores
+  Object.keys(localStorage).filter(k=>k.startsWith('focco_lem_vistos_')&&!k.includes(hoje)).forEach(k=>localStorage.removeItem(k));
+  carregarLembretesHoje();
+  toast('Lembrete marcado como visto','ok');
 }
 
 async function concluirLembreteRapido(id) {
