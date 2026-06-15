@@ -582,7 +582,7 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
     <div class="card"><div class="ch"><div class="ct">🔔 Aguardando Meu Aceite</div></div><div class="cb" id="cAList"><div class="loading">Carregando...</div></div></div>
     <div class="card"><div class="ch"><div class="ct">⚡ Urgentes</div></div><div class="cb" id="cUList"><div class="loading">Carregando...</div></div></div>
   </div>
-  <div class="card"><div class="ch"><div class="ct">📌 Lembretes do Dia</div></div><div class="cb" id="cLembretes"><div class="loading">Carregando...</div></div></div>
+  <div class="card"><div class="ch"><div class="ct">📌 Lembretes Pendentes</div></div><div class="cb" id="cLembretes"><div class="loading">Carregando...</div></div></div>
   <div class="card"><div class="ch"><div class="ct">📋 Minhas Demandas Ativas</div></div><div class="cb" id="cMList"><div class="loading">Carregando...</div></div></div>
 </div>
 
@@ -9607,11 +9607,18 @@ async function carregarLembretesHoje() {
     .select('id,descricao,data_lembrete,hora_lembrete,status,demanda_id')
     .eq('responsavel_id', U.id)
     .eq('status','pendente')
-    .lte('data_lembrete', hoje)
     .order('data_lembrete',{ascending:true})
     .order('hora_lembrete',{ascending:true});
 
-  const lembretes = data||[];
+  // Separar: vencidos/hoje (aparecem primeiro) e futuros (aparecem depois)
+  const lembretes = (data||[]).sort((a,b)=>{
+    const aVenc = a.data_lembrete <= hoje;
+    const bVenc = b.data_lembrete <= hoje;
+    if(aVenc && !bVenc) return -1;
+    if(!aVenc && bVenc) return 1;
+    return (a.data_lembrete||'').localeCompare(b.data_lembrete||'');
+  });
+
   const el = document.getElementById('cLembretes');
   if(!el) return;
 
@@ -9620,7 +9627,7 @@ async function carregarLembretesHoje() {
   const vistos = new Set(JSON.parse(localStorage.getItem(VISTO_KEY)||'[]'));
 
   if(!lembretes.length){
-    el.innerHTML='<div class="vazio">Nenhum lembrete para hoje ✅</div>';
+    el.innerHTML='<div class="vazio">Nenhum lembrete pendente ✅</div>';
     return;
   }
 
@@ -9643,19 +9650,28 @@ async function carregarLembretesHoje() {
     const jaVisto = vistos.has(l.id);
     const dtFmt = l.data_lembrete === hoje2 ? 'Hoje' : new Date(l.data_lembrete+'T12:00:00').toLocaleDateString('pt-BR');
     const hora = l.hora_lembrete ? ' às '+l.hora_lembrete.slice(0,5) : '';
-    return `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);${jaVisto?'opacity:.6':''}" >
-      <div style="font-size:20px;flex-shrink:0;cursor:pointer" onclick="abrirAcaoLembrete('${l.id}','${l.descricao.replace(/'/g,'\'').replace(/"/g,'\"')}','${l.demanda_id}','${dem.numero||''}','${dem.cli_nome||''}')">${vencido?'🔴':jaVisto?'👁':'📞'}</div>
-      <div style="flex:1;cursor:pointer" onclick="abrirAcaoLembrete('${l.id}','${l.descricao.replace(/'/g,'\'').replace(/"/g,'\"')}','${l.demanda_id}','${dem.numero||''}','${dem.cli_nome||''}')">
-        <div style="display:flex;align-items:center;gap:6px">
-          <div style="font-size:13px;font-weight:${jaVisto?400:600};color:${vencido?'var(--red)':'var(--text)'}">${l.descricao}</div>
-          ${jaVisto?'<span style="font-size:10px;background:var(--surface2);color:var(--text3);padding:1px 6px;border-radius:10px">Visto</span>':''}
+    const futuro = l.data_lembrete > hoje2;
+    const icone = vencido ? '🔴' : futuro ? '🔔' : jaVisto ? '👁' : '📞';
+    const corTexto = vencido ? 'var(--red)' : futuro ? 'var(--text3)' : 'var(--text)';
+    const tagStatus = vencido
+      ? '<span style="font-size:10px;background:var(--red);color:#fff;padding:1px 6px;border-radius:10px">Em Atraso</span>'
+      : futuro
+        ? '<span style="font-size:10px;background:var(--surface2);color:var(--text3);padding:1px 6px;border-radius:10px">Agendado</span>'
+        : jaVisto ? '<span style="font-size:10px;background:var(--surface2);color:var(--text3);padding:1px 6px;border-radius:10px">Visto</span>' : '';
+    const descEsc = (l.descricao||'').replace(/'/g,"\'").replace(/"/g,'\"');
+    return `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);${jaVisto?'opacity:.7':''};${futuro?'opacity:.85':''}" >
+      <div style="font-size:20px;flex-shrink:0;cursor:pointer" onclick="abrirAcaoLembrete('${l.id}','${descEsc}','${l.demanda_id}','${dem.numero||''}','${dem.cli_nome||''}')">${icone}</div>
+      <div style="flex:1;cursor:pointer" onclick="abrirAcaoLembrete('${l.id}','${descEsc}','${l.demanda_id}','${dem.numero||''}','${dem.cli_nome||''}')">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          <div style="font-size:13px;font-weight:${jaVisto?400:600};color:${corTexto}">${l.descricao}</div>
+          ${tagStatus}
         </div>
         ${dem.numero?`<div style="font-size:12px;color:var(--accent)">📋 ${dem.numero}${dem.cli_nome?' — '+dem.cli_nome:''}</div>`:''}
-        <div style="font-size:11px;color:${vencido?'var(--red)':'var(--text3)'};margin-top:2px">📅 ${dtFmt}${hora}${vencido?' · <strong style=color:var(--red)>Em Atraso</strong>':''}</div>
+        <div style="font-size:11px;color:${vencido?'var(--red)':futuro?'var(--sky)':'var(--text3)'};margin-top:2px">📅 ${dtFmt}${hora}</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
-        <button onclick="event.stopPropagation();abrirAcaoLembrete('${l.id}','${l.descricao.replace(/'/g,'\'').replace(/"/g,'\"')}','${l.demanda_id}','${dem.numero||''}','${dem.cli_nome||''}')" style="background:var(--accent);border:none;color:#fff;border-radius:6px;padding:3px 8px;cursor:pointer;font-size:11px">▶ Agir</button>
-        ${!jaVisto?`<button onclick="event.stopPropagation();marcarLembreteVisto('${l.id}')" style="background:none;border:1px solid var(--border);color:var(--text3);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:11px">👁 Visto</button>`:''}
+        <button onclick="event.stopPropagation();abrirAcaoLembrete('${l.id}','${descEsc}','${l.demanda_id}','${dem.numero||''}','${dem.cli_nome||''}')" style="background:var(--accent);border:none;color:#fff;border-radius:6px;padding:3px 8px;cursor:pointer;font-size:11px">▶ Agir</button>
+        ${!jaVisto&&!futuro?`<button onclick="event.stopPropagation();marcarLembreteVisto('${l.id}')" style="background:none;border:1px solid var(--border);color:var(--text3);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:11px">👁 Visto</button>`:''}
       </div>
     </div>`;
   }).join('');
