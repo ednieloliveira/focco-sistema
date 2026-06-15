@@ -4097,7 +4097,12 @@ function fillGlobSelects(){
   ['ndAcaoD','pData','aData'].forEach(id=>{const el=document.getElementById(id);if(el&&!el.value)el.value=as;});
 }
 
+let _paginaAtual = 'dash';
+
 function ir(p,el){
+  // Salvar página anterior antes de mudar (exceto detalhe)
+  if(p !== 'det' && _paginaAtual !== 'det') _paginaAntesDet = _paginaAtual;
+  if(p !== 'det') _paginaAtual = p;
   document.querySelectorAll('.pg').forEach(x=>x.classList.remove('on'));
   document.querySelectorAll('.nav').forEach(n=>n.classList.remove('active'));
   const pg=document.getElementById('pg-'+p);
@@ -4348,7 +4353,7 @@ async function loadCaixa(){
     sbRest('demanda_responsaveis').select('id,demanda_id,observacao').eq('responsavel_id',U.id).eq('aceite_status','pendente'),
     sbRest('demandas').select('id,numero,cliente_id,ultima_movimentacao').eq('responsavel_atual_id',U.id).eq('prioridade','urgente').not('status','in','(concluida,cancelada)'),
     sbRest('proximas_acoes').select('id').eq('responsavel_id',U.id).eq('concluida',false).lt('data_prevista',hj),
-    sbRest('demandas').select('id,numero,status,prioridade,ultima_movimentacao,cliente_id').eq('responsavel_atual_id',U.id).not('status','in','(concluida,cancelada)').order('ultima_movimentacao',{ascending:true}),
+    sbRest('demandas').select('id,numero,status,prioridade,ultima_movimentacao,cliente_id').eq('responsavel_atual_id',U.id).not('status','in','(concluida,cancelada,aguardando_aceite)').order('ultima_movimentacao',{ascending:true}),
   ]);
 
   const dems = demRes.data||[];
@@ -4635,15 +4640,8 @@ async function salvarDem(){
   }
 }
 
-let _paginaAntesDet = 'dem';
-
 async function abrirDet(id){
-  // Rastrear página atual antes de abrir detalhe
-  const pgAtiva = document.querySelector('.pg.active');
-  if(pgAtiva){
-    const pgId = pgAtiva.id.replace('pg-','');
-    if(pgId && pgId !== 'det') _paginaAntesDet = pgId;
-  }
+  // _paginaAntesDet já é atualizado pela função ir()
   demId=id;ir('det');
   document.getElementById('detConteudo').innerHTML='<div class="loading">Carregando...</div>';
   try {
