@@ -620,6 +620,18 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
       <option value="normal">⚪ Normal</option>
     </select>
     <select class="fi" id="fDep" style="width:155px;margin:0" onchange="filtDem()"><option value="">Todos depto.</option></select>
+    <select class="fi" id="fResp" style="width:155px;margin:0" onchange="filtDem()"><option value="">Todos resp.</option></select>
+    <select class="fi" id="fUltMov" style="width:170px;margin:0" onchange="filtDem()">
+      <option value="">Última movimentação</option>
+      <option value="1">Hoje</option>
+      <option value="3">Últimos 3 dias</option>
+      <option value="7">Últimos 7 dias</option>
+      <option value="15">Últimos 15 dias</option>
+      <option value="30">Últimos 30 dias</option>
+      <option value="sem5">Parada +5 dias</option>
+      <option value="sem10">Parada +10 dias</option>
+      <option value="sem30">Parada +30 dias</option>
+    </select>
   </div>
 
   <div class="card" style="margin-bottom:0">
@@ -634,7 +646,7 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
 
 <!-- DETALHE DEMANDA -->
 <div class="pg" id="pg-det">
-  <div style="margin-bottom:16px"><button class="btn btn-s" onclick="ir('dem')">← Voltar</button></div>
+  <div style="margin-bottom:16px"><button class="btn btn-s" id="btnVoltarDet" onclick="voltarDoDet()">← Voltar</button></div>
   <div id="detConteudo"><div class="loading">Carregando...</div></div>
 </div>
 
@@ -4332,7 +4344,7 @@ async function loadCaixa(){
 
   // Buscar dados em paralelo
   const [demRes, aceRes, urgRes, vcRes, mnRes] = await Promise.all([
-    sbRest('demandas').select('id,numero,status,prioridade,ultima_movimentacao,cliente_id').eq('responsavel_atual_id',U.id).not('status','in','(concluida,cancelada)'),
+    sbRest('demandas').select('id,numero,status,prioridade,ultima_movimentacao,cliente_id').eq('responsavel_atual_id',U.id).not('status','in','(concluida,cancelada,aguardando_aceite)'),
     sbRest('demanda_responsaveis').select('id,demanda_id,observacao').eq('responsavel_id',U.id).eq('aceite_status','pendente'),
     sbRest('demandas').select('id,numero,cliente_id,ultima_movimentacao').eq('responsavel_atual_id',U.id).eq('prioridade','urgente').not('status','in','(concluida,cancelada)'),
     sbRest('proximas_acoes').select('id').eq('responsavel_id',U.id).eq('concluida',false).lt('data_prevista',hj),
@@ -4605,8 +4617,16 @@ async function salvarDem(){
     }
 
     toast('Demanda '+num+' aberta!','ok');
+    // Resetar formulário para nova demanda sem recarregar
+    ['ndDesc','ndPrazo'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    ['ndCli','ndCat','ndTipo'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML='<option value="">Selecione...</option>';});
+    document.getElementById('ndPrio').value='normal';
+    document.getElementById('ndProtocolo').textContent='Protocolo: ...';
+    const btnAbrir3=document.querySelector('#mNovaDem .btn-p[onclick="salvarDem()"]');
+    if(btnAbrir3){btnAbrir3.disabled=false;btnAbrir3.textContent='Abrir Demanda';}
     fm('mNovaDem');
-    await loadDem();
+    // Atualizar lista em background sem travar
+    loadDem();
   }catch(e){
     toast('Erro ao salvar: '+String(e.message),'err');
     const btnAbrir2 = document.querySelector('#mNovaDem .btn-p[onclick="salvarDem()"]');
@@ -4615,7 +4635,15 @@ async function salvarDem(){
   }
 }
 
+let _paginaAntesDet = 'dem';
+
 async function abrirDet(id){
+  // Rastrear página atual antes de abrir detalhe
+  const pgAtiva = document.querySelector('.pg.active');
+  if(pgAtiva){
+    const pgId = pgAtiva.id.replace('pg-','');
+    if(pgId && pgId !== 'det') _paginaAntesDet = pgId;
+  }
   demId=id;ir('det');
   document.getElementById('detConteudo').innerHTML='<div class="loading">Carregando...</div>';
   try {
@@ -5176,6 +5204,11 @@ function editCli(id){
   document.getElementById('mCliTit').textContent='Editar Cliente — '+c.nome;
   om('mCli');
 }
+function voltarDoDet(){
+  ir(_paginaAntesDet||'dem');
+  if(_paginaAntesDet==='caixa') loadCaixa();
+}
+
 function verDemCli(nome){ir('dem');document.getElementById('fBusca').value=nome;if(allDem.length)filtDem();else loadDem();}
 
 let pDepSel2=null,pCatSel2=null;
@@ -5931,7 +5964,7 @@ async function carregarNotificacoes() {
   }
   _lastNotifCount = count;
   const lista = document.getElementById('notifLista');
-  if (!data?.length) { lista.innerHTML = '<div class="vazio" style="padding:2rem">Nenhuma notificacao nova</div>'; return; }
+  if (!data?.length) { lista.innerHTML = '<div class="vazio" style="padding:2rem">Sem notificações novas ✅</div>'; return; }
   lista.innerHTML = data.map(n => {
     const dt = new Date(n.created_at).toLocaleString('pt-BR');
     const did = n.demanda_id || '';
@@ -7099,11 +7132,13 @@ async function loadDem() {
 }
 
 function filtDem() {
-  const b   = (document.getElementById('fBusca')?.value||'').toLowerCase();
-  const s   = document.getElementById('fStatus')?.value||'';
-  const p   = document.getElementById('fPrio')?.value||'';
-  const dep = document.getElementById('fDep')?.value||'';
-  const hj  = new Date().toISOString().split('T')[0];
+  const b    = (document.getElementById('fBusca')?.value||'').toLowerCase();
+  const s    = document.getElementById('fStatus')?.value||'';
+  const p    = document.getElementById('fPrio')?.value||'';
+  const dep  = document.getElementById('fDep')?.value||'';
+  const resp = document.getElementById('fResp')?.value||'';
+  const mov  = document.getElementById('fUltMov')?.value||'';
+  const hj   = new Date().toISOString().split('T')[0];
 
   let f = allDem.filter(x => {
     let ms;
@@ -7114,7 +7149,19 @@ function filtDem() {
     else ms = true; // todas
 
     const mb = !b || (x.numero||'').toLowerCase().includes(b) || (x.clientes?.nome||'').toLowerCase().includes(b) || (x.resumo||'').toLowerCase().includes(b);
-    return ms && mb && (!p || x.prioridade === p) && (!dep || x.departamento_atual_id === dep || x.departamento_id === dep);
+    // Filtro de responsável
+    const mr = !resp || x.responsavel_atual_id === resp;
+    // Filtro de última movimentação
+    let mm = true;
+    if(mov){
+      const ultMov = new Date(x.ultima_movimentacao||x.created_at);
+      const diasSem = Math.floor((Date.now()-ultMov)/86400000);
+      if(mov==='sem5')  mm = diasSem >= 5;
+      else if(mov==='sem10') mm = diasSem >= 10;
+      else if(mov==='sem30') mm = diasSem >= 30;
+      else mm = diasSem <= parseInt(mov);
+    }
+    return ms && mb && (!p || x.prioridade === p) && (!dep || x.departamento_atual_id === dep || x.departamento_id === dep) && mr && mm;
   });
 
   if (!f.length) {
