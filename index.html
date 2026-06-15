@@ -392,7 +392,7 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
   <div class="sb-section">Principal</div>
   <div class="nav active" id="nav-dash" onclick="ir('dash',this)"><span class="ni">⊞</span> Dashboard</div>
   <div class="nav" id="nav-caixa" onclick="ir('caixa',this)"><span class="ni">📥</span> Minha Caixa <span class="nb" id="badgeAceite" style="display:none">0</span></div>
-  <div class="nav" id="nav-kanban" onclick="ir('kanban',this)"><span class="ni">⬛</span> Kanban</div>
+
   <div class="nav" id="nav-dem" onclick="ir('dem',this)"><span class="ni">☰</span> Demandas</div>
   <div class="nav" id="nav-cal" onclick="ir('cal',this)"><span class="ni">📅</span> Calendário Fiscal</div>
   <div class="sb-section">Cadastros</div>
@@ -499,7 +499,7 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
       <!-- Central de atenção + Carga -->
       <div class="g2" style="margin-bottom:16px">
         <div class="card"><div class="ch"><div class="ct">⚠️ Central de Atenção</div><button class="btn btn-s" style="padding:4px 10px;font-size:12px" onclick="ir('dem')">Ver todas</button></div><div class="cb" id="dAtenc"><div class="loading">Carregando...</div></div></div>
-        <div class="card"><div class="ch"><div class="ct">👥 Carga da Equipe</div></div><div class="cb" id="dCarga"><div class="loading">Carregando...</div></div></div>
+
       </div>
       <div class="g2" style="margin-bottom:0">
         <div class="card"><div class="ch"><div class="ct">✅ Aprovações Pendentes</div></div><div class="cb" id="dAprov"><div class="loading">Carregando...</div></div></div>
@@ -938,10 +938,10 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
 <!-- RELATÓRIOS -->
 <div class="pg" id="pg-relatorios">
   <div class="ph">
-    <div><h1>📊 Relatórios Gerenciais</h1><p>Análises completas do escritório</p></div>
+    <div><h1>📊 Relatórios Gerenciais</h1><p>Análises e indicadores do escritório</p></div>
     <div style="display:flex;gap:8px">
       <button class="btn btn-s" onclick="exportarCSV()">⬇️ CSV</button>
-      <button class="btn btn-p" onclick="exportarExcelRel()">📊 Exportar Excel</button>
+      <button class="btn btn-p" onclick="exportarExcelRel()">📊 Excel</button>
     </div>
   </div>
 
@@ -951,7 +951,7 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
         <div class="fg" style="margin:0;flex:0 0 160px">
           <label class="fl">Período</label>
-          <select class="fi" id="relPeriodo" style="margin:0">
+          <select class="fi" id="relPeriodo" style="margin:0" onchange="toggleRelDatas()">
             <option value="mes_atual">Mês atual</option>
             <option value="mes_anterior">Mês anterior</option>
             <option value="trimestre">Último trimestre</option>
@@ -960,335 +960,67 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
             <option value="custom">Personalizado</option>
           </select>
         </div>
-        <div class="fg" style="margin:0;flex:0 0 130px" id="relDataIniWrap">
+        <div class="fg" style="margin:0;flex:0 0 130px;display:none" id="relDataIniWrap">
           <label class="fl">De</label>
           <input type="date" class="fi" id="relDataIni" style="margin:0">
         </div>
-        <div class="fg" style="margin:0;flex:0 0 130px" id="relDataFimWrap">
+        <div class="fg" style="margin:0;flex:0 0 130px;display:none" id="relDataFimWrap">
           <label class="fl">Até</label>
           <input type="date" class="fi" id="relDataFim" style="margin:0">
         </div>
         <div class="fg" style="margin:0;flex:0 0 170px">
           <label class="fl">Departamento</label>
-          <select class="fi" id="relDept" style="margin:0">
-            <option value="">Todos</option>
-          </select>
+          <select class="fi" id="relDept" style="margin:0"><option value="">Todos</option></select>
         </div>
         <div class="fg" style="margin:0;flex:0 0 160px">
           <label class="fl">Colaborador</label>
-          <select class="fi" id="relUser" style="margin:0">
-            <option value="">Todos</option>
-          </select>
+          <select class="fi" id="relUser" style="margin:0"><option value="">Todos</option></select>
         </div>
+        <div class="fg" style="margin:0;flex:0 0 160px">
+          <label class="fl">Cliente</label>
+          <select class="fi" id="relCli" style="margin:0"><option value="">Todos</option></select>
+        </div>
+        <button class="btn btn-p" onclick="gerarRelGerencial(_relAtual||'por_departamento')" style="margin-top:18px">🔄 Atualizar</button>
       </div>
     </div>
   </div>
 
-  <!-- Cards de relatórios -->
-  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
+  <!-- Abas de relatórios -->
+  <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:16px">
+    <button onclick="gerarRelGerencial('visao_geral')" id="relBtn_visao_geral" class="btn btn-s" style="font-size:12px">📋 Visão Geral</button>
+    <button onclick="gerarRelGerencial('por_departamento')" id="relBtn_por_departamento" class="btn btn-s" style="font-size:12px">🏢 Por Departamento</button>
+    <button onclick="gerarRelGerencial('por_usuario')" id="relBtn_por_usuario" class="btn btn-s" style="font-size:12px">👤 Por Colaborador</button>
+    <button onclick="gerarRelGerencial('por_cliente')" id="relBtn_por_cliente" class="btn btn-s" style="font-size:12px">🧑‍💼 Por Cliente</button>
+    <button onclick="gerarRelGerencial('por_tipo')" id="relBtn_por_tipo" class="btn btn-s" style="font-size:12px">📂 Por Tipo</button>
+    <button onclick="gerarRelGerencial('por_mes')" id="relBtn_por_mes" class="btn btn-s" style="font-size:12px">📅 Evolução Mensal</button>
+    <button onclick="gerarRelGerencial('sla')" id="relBtn_sla" class="btn btn-s" style="font-size:12px">⏱️ SLA e Prazos</button>
+    <button onclick="gerarRelGerencial('pendencias')" id="relBtn_pendencias" class="btn btn-s" style="font-size:12px">⚠️ Pendências</button>
+    <button onclick="gerarRelGerencial('produtividade')" id="relBtn_produtividade" class="btn btn-s" style="font-size:12px">🚀 Produtividade</button>
+    <button onclick="gerarRelGerencial('demandas_mes')" id="relBtn_demandas_mes" class="btn btn-s" style="font-size:12px">📈 Demandas Abertas</button>
+  </div>
 
-    <div class="card" style="cursor:pointer;margin-bottom:0" onclick="gerarRelGerencial('por_departamento')">
-      <div class="cb" style="text-align:center;padding:20px 14px">
-        <div style="font-size:36px;margin-bottom:8px">🏢</div>
-        <div style="font-weight:700;font-size:14px;color:var(--text);margin-bottom:4px">Por Departamento</div>
-        <div style="font-size:12px;color:var(--text3)">Total, abertas, concluídas por depto.</div>
-        <button class="btn btn-p" style="width:100%;margin-top:12px;justify-content:center">Gerar</button>
-      </div>
-    </div>
-
-    <div class="card" style="cursor:pointer;margin-bottom:0" onclick="gerarRelGerencial('por_usuario')">
-      <div class="cb" style="text-align:center;padding:20px 14px">
-        <div style="font-size:36px;margin-bottom:8px">👤</div>
-        <div style="font-weight:700;font-size:14px;color:var(--text);margin-bottom:4px">Por Colaborador</div>
-        <div style="font-size:12px;color:var(--text3)">Produtividade, taxa de conclusão</div>
-        <button class="btn btn-p" style="width:100%;margin-top:12px;justify-content:center">Gerar</button>
-      </div>
-    </div>
-
-    <div class="card" style="cursor:pointer;margin-bottom:0" onclick="gerarRelGerencial('por_mes')">
-      <div class="cb" style="text-align:center;padding:20px 14px">
-        <div style="font-size:36px;margin-bottom:8px">📅</div>
-        <div style="font-weight:700;font-size:14px;color:var(--text);margin-bottom:4px">Por Mês</div>
-        <div style="font-size:12px;color:var(--text3)">Evolução mensal de demandas</div>
-        <button class="btn btn-p" style="width:100%;margin-top:12px;justify-content:center">Gerar</button>
-      </div>
-    </div>
-
-    <div class="card" style="cursor:pointer;margin-bottom:0" onclick="gerarRelGerencial('por_tipo')">
-      <div class="cb" style="text-align:center;padding:20px 14px">
-        <div style="font-size:36px;margin-bottom:8px">🏷️</div>
-        <div style="font-weight:700;font-size:14px;color:var(--text);margin-bottom:4px">Por Tipo</div>
-        <div style="font-size:12px;color:var(--text3)">Serviços mais demandados</div>
-        <button class="btn btn-p" style="width:100%;margin-top:12px;justify-content:center">Gerar</button>
-      </div>
-    </div>
-
-    <div class="card" style="cursor:pointer;margin-bottom:0" onclick="gerarRelGerencial('por_cliente')">
-      <div class="cb" style="text-align:center;padding:20px 14px">
-        <div style="font-size:36px;margin-bottom:8px">👥</div>
-        <div style="font-weight:700;font-size:14px;color:var(--text);margin-bottom:4px">Por Cliente</div>
-        <div style="font-size:12px;color:var(--text3)">Clientes com mais demandas</div>
-        <button class="btn btn-p" style="width:100%;margin-top:12px;justify-content:center">Gerar</button>
-      </div>
-    </div>
-
-    <div class="card" style="cursor:pointer;margin-bottom:0" onclick="gerarRelGerencial('demandas_mes')">
-      <div class="cb" style="text-align:center;padding:20px 14px">
-        <div style="font-size:36px;margin-bottom:8px">📋</div>
-        <div style="font-weight:700;font-size:14px;color:var(--text);margin-bottom:4px">Demandas Detalhadas</div>
-        <div style="font-size:12px;color:var(--text3)">Lista completa com todos os campos</div>
-        <button class="btn btn-p" style="width:100%;margin-top:12px;justify-content:center">Gerar</button>
-      </div>
-    </div>
-
-    <div class="card" style="cursor:pointer;margin-bottom:0" onclick="gerarRelGerencial('pendencias')">
-      <div class="cb" style="text-align:center;padding:20px 14px">
-        <div style="font-size:36px;margin-bottom:8px">⏳</div>
-        <div style="font-weight:700;font-size:14px;color:var(--text);margin-bottom:4px">Pendências</div>
-        <div style="font-size:12px;color:var(--text3)">Pendências abertas por tipo</div>
-        <button class="btn btn-p" style="width:100%;margin-top:12px;justify-content:center">Gerar</button>
-      </div>
-    </div>
-
-    <div class="card" style="cursor:pointer;margin-bottom:0" onclick="gerarRelGerencial('sla')">
-      <div class="cb" style="text-align:center;padding:20px 14px">
-        <div style="font-size:36px;margin-bottom:8px">⚡</div>
-        <div style="font-weight:700;font-size:14px;color:var(--text);margin-bottom:4px">SLA / Tempo Médio</div>
-        <div style="font-size:12px;color:var(--text3)">Tempo médio de resolução</div>
-        <button class="btn btn-p" style="width:100%;margin-top:12px;justify-content:center">Gerar</button>
-      </div>
-    </div>
+  <!-- KPIs rápidos -->
+  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px" id="relKpis">
+    <div class="kcard ks"><div class="ki ks">📋</div><div class="kv" id="relK1">—</div><div class="kl">Total no Período</div></div>
+    <div class="kcard kg"><div class="ki kg">✅</div><div class="kv" id="relK2">—</div><div class="kl">Concluídas</div></div>
+    <div class="kcard kr"><div class="ki kr">⏰</div><div class="kv" id="relK3">—</div><div class="kl">Em Atraso</div></div>
+    <div class="kcard ka"><div class="ki ka">📊</div><div class="kv" id="relK4">—</div><div class="kl">Taxa de Conclusão</div></div>
+    <div class="kcard" style="background:var(--surface2)"><div class="ki">⚡</div><div class="kv" id="relK5">—</div><div class="kl">Tempo Médio (dias)</div></div>
   </div>
 
   <!-- Resultado -->
-  <div class="card" id="relatorioResultado" style="display:none">
+  <div class="card" id="relatorioResultado">
     <div class="ch">
-      <div class="ct" id="relatorioTitulo">Relatório</div>
-      <div style="display:flex;gap:6px">
-        <button class="btn btn-s btn-sm" onclick="exportarCSV()">⬇️ CSV</button>
-        <button class="btn btn-p btn-sm" onclick="exportarExcelRel()">📊 Excel</button>
+      <div class="ct" id="relatorioTitulo">Selecione um relatório acima</div>
+      <div style="display:flex;gap:8px" id="relAcoes" style="display:none">
+        <button class="btn btn-s" onclick="imprimirRel()" style="font-size:12px">🖨️ Imprimir</button>
       </div>
     </div>
-    <div class="cb" id="relatorioConteudo"></div>
-  </div>
-</div>
-
-<!-- WHATSAPP -->
-<div class="pg" id="pg-whatsapp">
-  <div class="ph"><div><h1>WhatsApp</h1><p>Configuração e histórico de mensagens automáticas</p></div></div>
-  <div class="g2" style="margin-bottom:16px">
-    <div class="card">
-      <div class="ch"><div class="ct">⚙️ Configuração da API</div></div>
-      <div class="cb">
-        <div class="fg"><label class="fl">Provedor</label>
-          <select class="fi" id="waProv" onchange="salvarWAConfig()">
-            <option value="evolution">Evolution API</option>
-            <option value="zapi">Z-API</option>
-            <option value="wapi">W-API</option>
-          </select>
-        </div>
-        <div class="fg"><label class="fl">URL da API</label><input type="text" class="fi" id="waUrl" placeholder="https://sua-api.com" onblur="salvarWAConfig()"></div>
-        <div class="fg"><label class="fl">Token / API Key</label><input type="password" class="fi" id="waToken" placeholder="seu-token-aqui" onblur="salvarWAConfig()"></div>
-        <div class="fg"><label class="fl">Instância (Evolution)</label><input type="text" class="fi" id="waInst" placeholder="nome-da-instancia" onblur="salvarWAConfig()"></div>
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-p" style="flex:1;justify-content:center" onclick="testarWA()">📱 Testar Conexão</button>
-          <button class="btn btn-s" style="flex:1;justify-content:center" onclick="salvarWAConfig()">💾 Salvar</button>
-        </div>
-        <div id="waTeste" style="margin-top:10px;font-size:13px"></div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="ch"><div class="ct">📝 Templates de Mensagem</div></div>
-      <div class="cb">
-        <div style="margin-bottom:14px">
-          <div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Abertura de demanda</div>
-          <textarea class="fi" id="tmplAbertura" rows="3" style="resize:none;font-size:12px">Olá, *{NOME}*! 👋 Seu serviço de *{SERVICO}* foi iniciado em nosso escritório. Nossa equipe acompanhará o processo e avisará você sobre cada etapa. Atenciosamente, Focco Contabilidade.</textarea>
-        </div>
-        <div style="margin-bottom:14px">
-          <div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Aguardando documentos</div>
-          <textarea class="fi" id="tmplAguardando" rows="3" style="resize:none;font-size:12px">Olá, *{NOME}*! Para continuarmos o serviço de *{SERVICO}*, precisamos dos seguintes documentos: {PENDENCIAS}. Por favor, envie assim que possível. Obrigado!</textarea>
-        </div>
-        <div style="margin-bottom:14px">
-          <div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Conclusão do serviço</div>
-          <textarea class="fi" id="tmplConclusao" rows="3" style="resize:none;font-size:12px">Olá, *{NOME}*! 🎉 O serviço de *{SERVICO}* foi concluído com sucesso! Em caso de dúvidas, entre em contato. Atenciosamente, Focco Contabilidade.</textarea>
-        </div>
-        <button class="btn btn-p" style="width:100%;justify-content:center" onclick="salvarTemplates()">💾 Salvar Templates</button>
-      </div>
-    </div>
-  </div>
-  <div class="card">
-    <div class="ch">
-      <div class="ct">📊 Histórico de Mensagens</div>
-      <div style="display:flex;gap:8px">
-        <select class="fi" id="waFiltroStatus" style="width:140px;margin:0" onchange="loadWAHistorico()">
-          <option value="">Todos</option>
-          <option value="enviada">Enviadas</option>
-          <option value="erro">Com erro</option>
-          <option value="pendente">Pendentes</option>
-        </select>
-      </div>
-    </div>
-    <div class="cb" id="waHistorico"><div class="loading">Carregando...</div></div>
-  </div>
-</div>
-
-
-<!-- CALENDÁRIO FISCAL -->
-<div class="pg" id="pg-cal">
-  <div class="ph"><div><h1>📅 Calendário Fiscal</h1><p id="calMesAno">Obrigações e vencimentos do mês</p></div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn btn-s" onclick="mesAnterior()">← Anterior</button>
-      <button class="btn btn-s" onclick="mesAtual()">Hoje</button>
-      <button class="btn btn-p" onclick="mesProximo()">Próximo →</button>
-      <button class="btn btn-s" onclick="exportarExcelCalendario()">📊 Excel</button>
-      <button class="btn btn-s" onclick="abrirFeriados()">🗓️ Feriados</button>
-      <button class="btn btn-s" onclick="document.getElementById('importObrigFile').click()" title="Importar obrigações de planilha Excel">📤 Importar</button>
-      <input type="file" id="importObrigFile" accept=".xlsx,.xls,.csv" style="display:none" onchange="importarObrigacoes(this)">
-      <button class="btn btn-s" onclick="baixarTemplateObrigacoes()" title="Baixar planilha modelo para preencher">📥 Template</button>
-      <button class="btn btn-p" onclick="abrirNovaObrigacaoCal()">+ Nova Obrigação</button>
-      <button class="btn btn-er" onclick="limparObrigacoes()" title="Apagar todas as obrigações">🗑️</button>
-    </div>
-  </div>
-  <!-- RESUMO DO MÊS -->
-  <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
-    <div class="kcard kr"><div class="ki kr">⚠️</div><div class="kv" id="calVencidos">—</div><div class="kl">Vencidos</div></div>
-    <div class="kcard ka"><div class="ki ka">⏰</div><div class="kv" id="calHoje">—</div><div class="kl">Vencem hoje</div></div>
-    <div class="kcard ks"><div class="ki ks">📋</div><div class="kv" id="calSemana">—</div><div class="kl">Esta semana</div></div>
-    <div class="kcard kg"><div class="ki kg">✅</div><div class="kv" id="calConcluidos">—</div><div class="kl">Concluídos</div></div>
-  </div>
-  <div class="g2" style="margin-bottom:16px">
-    <!-- GRADE DO CALENDÁRIO -->
-    <div class="card" style="grid-column:1/2">
-      <div class="ch"><div class="ct">Calendário do Mês</div></div>
-      <div class="cb" id="calGrade"></div>
-    </div>
-    <!-- OBRIGAÇÕES DO DIA SELECIONADO -->
-    <div class="card">
-      <div class="ch"><div class="ct" id="calDiaTitulo">Obrigações do mês</div>
-        <button class="btn btn-s" style="padding:4px 10px;font-size:12px" onclick="abrirModalObrigacao()">+ Adicionar</button>
-      </div>
-      <div class="cb" id="calDiaObrig"><div class="vazio">Selecione um dia no calendário</div></div>
-    </div>
-  </div>
-  <!-- LISTA COMPLETA DE OBRIGAÇÕES -->
-  <div class="card">
-    <div class="ch"><div class="ct">📋 Todas as Obrigações do Mês</div>
-      <select class="fi" id="calFiltroTipo" style="width:160px;margin:0" onchange="renderCalObrig()">
-        <option value="">Todos os tipos</option>
-        <option value="federal">Federal</option>
-        <option value="estadual">Estadual</option>
-        <option value="municipal">Municipal</option>
-        <option value="trabalhista">Trabalhista</option>
-        <option value="contabil">Contábil</option>
-      </select>
-    </div>
-    <div class="cb" id="calListaCompleta"><div class="loading">Carregando...</div></div>
-  </div>
-</div>
-
-<!-- BACKUP -->
-<div class="pg" id="pg-backup">
-  <div class="ph"><div><h1>💾 Backup do Sistema</h1><p>Exportar e restaurar dados do sistema</p></div></div>
-  
-  <!-- Backup automático status -->
-  <div class="card" style="margin-bottom:16px;background:var(--green-pale);border:1px solid rgba(5,150,105,.2)">
-    <div class="cb" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
-      <div>
-        <div style="font-weight:700;color:var(--green);font-size:14px">🔄 Backup Automático</div>
-        <div style="font-size:12px;color:var(--text3);margin-top:2px" id="autoBackupStatus">Último backup: verificando...</div>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <select class="fi" id="autoBackupFreq" style="width:140px;margin:0" onchange="salvarFreqBackup()">
-          <option value="0">Desativado</option>
-          <option value="1" selected>A cada 1 hora</option>
-          <option value="6">A cada 6 horas</option>
-          <option value="24">Diariamente</option>
-        </select>
-        <button class="btn btn-ok" onclick="fazerBackupAuto()">▶ Fazer agora</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="g2" style="margin-bottom:16px">
-    <div class="card">
-      <div class="ch"><div class="ct">⬇️ Exportar Dados</div></div>
-      <div class="cb">
-        <div style="display:flex;flex-direction:column;gap:10px">
-          <button class="btn btn-navy" style="justify-content:center" onclick="exportarRelatorioCompleto()">📊 Relatório Completo Excel</button>
-          <button class="btn btn-p" style="justify-content:center" onclick="backupCompleto()">⬇️ Backup Completo (JSON)</button>
-          <button class="btn btn-s" style="justify-content:center" onclick="backupClientes()">👥 Exportar Clientes (CSV)</button>
-          <button class="btn btn-s" style="justify-content:center" onclick="backupDemandas()">📋 Demandas (CSV)</button>
-          <button class="btn btn-s" style="justify-content:center" onclick="exportarExcelDemandas('')">📊 Demandas (Excel)</button>
-          <button class="btn btn-s" style="justify-content:center" onclick="backupColaboradores()">👤 Colaboradores (CSV)</button>
-          <button class="btn btn-s" style="justify-content:center" onclick="exportarExcelPendencias()">⏳ Pendências (Excel)</button>
-        </div>
-        <div id="backupStatus" style="margin-top:14px;font-size:13px;color:var(--text3)"></div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="ch"><div class="ct">📊 Resumo dos Dados</div></div>
-      <div class="cb" id="backupResumo"><div class="loading">Carregando...</div></div>
-    </div>
-  </div>
-  <div class="card">
-    <div class="ch"><div class="ct">📅 Histórico de Backups</div></div>
-    <div class="cb" id="backupHistorico">
-      <div class="vazio">Nenhum backup registrado ainda.</div>
+    <div class="cb" id="relatorioConteudo">
+      <div class="vazio" style="padding:3rem">Clique em um relatório acima para visualizar</div>
     </div>
   </div>
 </div>
-
-<!-- IMPRESSÃO PDF POR COLABORADOR -->
-<div class="pg" id="pg-impressao">
-  <div class="ph"><div><h1>🖨️ Impressão e PDF</h1><p>Relatórios para impressão por colaborador</p></div></div>
-  <div class="card" style="margin-bottom:16px">
-    <div class="ch"><div class="ct">⚙️ Filtros de Impressão</div></div>
-    <div class="cb">
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:14px">
-        <div class="fg" style="margin:0">
-          <label class="fl">Colaborador</label>
-          <select class="fi" id="impColaborador">
-            <option value="">Todos</option>
-          </select>
-        </div>
-        <div class="fg" style="margin:0">
-          <label class="fl">Status</label>
-          <select class="fi" id="impStatus">
-            <option value="">Todos</option>
-            <option value="aberta">Aberta</option>
-            <option value="em_andamento">Em andamento</option>
-            <option value="aguardando_cliente">Ag. cliente</option>
-            <option value="aguardando_conclusao">Ag. conclusão</option>
-            <option value="concluida">Concluída</option>
-          </select>
-        </div>
-        <div class="fg" style="margin:0">
-          <label class="fl">Período inicial</label>
-          <input type="date" class="fi" id="impDtInicio">
-        </div>
-        <div class="fg" style="margin:0">
-          <label class="fl">Período final</label>
-          <input type="date" class="fi" id="impDtFim">
-        </div>
-      </div>
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-p" style="flex:1;justify-content:center" onclick="gerarImpressao()">🔍 Gerar Preview</button>
-        <button class="btn btn-s" style="flex:1;justify-content:center" onclick="exportarExcelColaborador()">📊 Excel</button>
-        <button class="btn btn-navy" style="flex:1;justify-content:center" onclick="imprimirPDF()">🖨️ Imprimir / Salvar PDF</button>
-      </div>
-    </div>
-  </div>
-  <!-- PREVIEW DE IMPRESSÃO -->
-  <div class="card" id="impPreview" style="display:none">
-    <div class="ch">
-      <div class="ct" id="impPreviewTitulo">Preview</div>
-      <button class="btn btn-navy" onclick="imprimirPDF()">🖨️ Imprimir</button>
-    </div>
-    <div class="cb" id="impPreviewConteudo"></div>
-  </div>
-</div>
-
-<!-- KANBAN -->
 <div class="pg" id="pg-kanban">
   <div class="ph">
     <div><h1>🗂️ Kanban</h1><p>Visão por etapas de todas as demandas</p></div>
@@ -4378,7 +4110,7 @@ function ir(p,el){
   const pg=document.getElementById('pg-'+p);
   if(pg)pg.classList.add('on');
   const n=el||document.getElementById('nav-'+p);if(n)n.classList.add('active');
-  const titulos={dash:'Dashboard',caixa:'Minha Caixa',kanban:'Kanban',dem:'Central de Processos',
+  const titulos={dash:'Dashboard',caixa:'Minha Caixa',dem:'Central de Processos',
     det:'Detalhe da Demanda',cli:'Clientes',param:'Parâmetros',users:'Usuários',
     cal:'Calendário Fiscal',fiscal:'Escrita Fiscal',dp:'Departamento Pessoal',
     cont:'Contabilidade',rural:'Rural',irpf:'IRPF',financeiro:'Financeiro',
@@ -4412,7 +4144,6 @@ function ir(p,el){
   else if(p==='relatorios'){initRelatorios();}
   else if(p==='whatsapp')loadWAHistorico();
   else if(p==='cal')renderCalendario();
-  else if(p==='kanban')loadKanban();
   else if(p==='utilitarios'){trocarUtab('clientes');}
   else if(p==='backup'){loadBackupResumo();registrarHistoricoBackup();}
   else if(p==='impressao')loadImpressao();
@@ -9286,6 +9017,14 @@ function getRelPeriodo() {
 }
 
 async function gerarRelGerencial(tipo) {
+  _relAtual = tipo;
+  // Destacar aba ativa
+  document.querySelectorAll('[id^="relBtn_"]').forEach(b=>{
+    b.style.background=''; b.style.color=''; b.style.borderColor='';
+  });
+  const btnAtivo = document.getElementById('relBtn_'+tipo);
+  if(btnAtivo){ btnAtivo.style.background='var(--accent)'; btnAtivo.style.color='#fff'; btnAtivo.style.borderColor='var(--accent)'; }
+
   const el = document.getElementById('relatorioResultado');
   const conteudo = document.getElementById('relatorioConteudo');
   const titulo = document.getElementById('relatorioTitulo');
@@ -9296,6 +9035,7 @@ async function gerarRelGerencial(tipo) {
   const {ini, fim, label} = getRelPeriodo();
   const deptFiltro = document.getElementById('relDept')?.value || '';
   const userFiltro = document.getElementById('relUser')?.value || '';
+  const cliFiltro  = document.getElementById('relCli')?.value  || '';
 
   // Carregar todos os dados
   let dems = dbGet('demandas');
@@ -9471,22 +9211,30 @@ async function gerarRelGerencial(tipo) {
 }
 
 // Inicializar filtros do relatório
+let _relAtual = 'visao_geral';
+
+function toggleRelDatas() {
+  const show = document.getElementById('relPeriodo')?.value === 'custom';
+  ['relDataIniWrap','relDataFimWrap'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.style.display=show?'block':'none';
+  });
+}
+
 function initRelatorios() {
   const deptSel = document.getElementById('relDept');
   const userSel = document.getElementById('relUser');
-  if(deptSel) { deptSel.innerHTML='<option value="">Todos</option>'; deps.forEach(d=>deptSel.innerHTML+=`<option value="${d.id}">${d.nome}</option>`); }
-  if(userSel) { userSel.innerHTML='<option value="">Todos</option>'; cols.forEach(c=>userSel.innerHTML+=`<option value="${c.id}">${c.nome}</option>`); }
-  document.getElementById('relPeriodo')?.addEventListener('change', function(){
-    const show = this.value==='custom';
-    ['relDataIniWrap','relDataFimWrap'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display=show?'block':'none'; });
-  });
-  // Datas padrão
+  const cliSel  = document.getElementById('relCli');
+  if(deptSel) { deptSel.innerHTML='<option value="">Todos</option>'; dbGet('departamentos').forEach(d=>deptSel.innerHTML+=`<option value="${d.id}">${d.nome}</option>`); }
+  if(userSel) { userSel.innerHTML='<option value="">Todos</option>'; dbGet('profiles').filter(p=>p.ativo!==false).forEach(c=>userSel.innerHTML+=`<option value="${c.id}">${c.nome}</option>`); }
+  if(cliSel)  { cliSel.innerHTML='<option value="">Todos</option>';  dbGet('clientes').sort((a,b)=>a.nome.localeCompare(b.nome)).forEach(c=>cliSel.innerHTML+=`<option value="${c.id}">${c.nome}</option>`); }
   const hoje = new Date();
   const ini = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
   const fim = new Date(hoje.getFullYear(), hoje.getMonth()+1, 0);
   const fmt = d => d.toISOString().split('T')[0];
   const diEl = document.getElementById('relDataIni'); if(diEl) diEl.value = fmt(ini);
   const dfEl = document.getElementById('relDataFim'); if(dfEl) dfEl.value = fmt(fim);
+  // Gerar visão geral automaticamente
+  setTimeout(()=>gerarRelGerencial('visao_geral'), 300);
 }
 
 
@@ -9805,22 +9553,30 @@ async function carregarLembretesDet(demandaId) {
   }
   const statusIcon = {pendente:'⏳',concluido:'✅',reagendado:'🔄'};
   const statusCor  = {pendente:'var(--amber)',concluido:'var(--green)',reagendado:'var(--sky)'};
+  // Buscar número/cliente da demanda para o modal
+  const clis = dbGet('clientes');
+  const {data:demData} = await sbRest('demandas').select('numero,cliente_id').eq('id',demandaId).single();
+  const numDem = demData?.numero||'';
+  const cliNome = clis.find(c=>c.id===demData?.cliente_id)?.nome||'';
+
   el.innerHTML = lembretes.map(l=>{
     const resp = profs.find(p=>p.id===l.responsavel_id);
     const vencido = l.data_lembrete < hoje && l.status === 'pendente';
     const dtFmt = l.data_lembrete ? new Date(l.data_lembrete+'T12:00:00').toLocaleDateString('pt-BR') : '—';
+    const descEsc = (l.descricao||'').replace(/'/g,"\'").replace(/"/g,'\"');
     return `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">
-      <div style="font-size:20px;flex-shrink:0">${statusIcon[l.status]||'⏳'}</div>
-      <div style="flex:1">
+      <div style="font-size:20px;flex-shrink:0;cursor:pointer" onclick="abrirAcaoLembrete('${l.id}','${descEsc}','${l.demanda_id}','${numDem}','${cliNome}')">${statusIcon[l.status]||'⏳'}</div>
+      <div style="flex:1;cursor:pointer" onclick="abrirAcaoLembrete('${l.id}','${descEsc}','${l.demanda_id}','${numDem}','${cliNome}')">
         <div style="font-size:13px;font-weight:600;color:${vencido?'var(--red)':'var(--text)'}">${l.descricao}</div>
         <div style="font-size:11px;color:var(--text3);margin-top:3px">
           📅 ${dtFmt}${l.hora_lembrete?' às '+l.hora_lembrete.slice(0,5):''}
           · 👤 ${resp?.nome||'—'}
+          ${vencido?'· <strong style="color:var(--red)">Em Atraso</strong>':''}
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
-        ${l.status==='pendente'?`<button onclick="concluirLembrete('${l.id}')" style="background:none;border:1px solid var(--green);color:var(--green);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:11px">✓ OK</button>`:''}
-        <button onclick="excluirLembrete('${l.id}')" style="background:none;border:1px solid var(--border);color:var(--text3);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:11px">🗑</button>
+        ${l.status==='pendente'?`<button onclick="event.stopPropagation();abrirAcaoLembrete('${l.id}','${descEsc}','${l.demanda_id}','${numDem}','${cliNome}')" style="background:var(--accent);border:none;color:#fff;border-radius:6px;padding:3px 8px;cursor:pointer;font-size:11px">▶ Agir</button>`:''}
+        <button onclick="event.stopPropagation();excluirLembrete('${l.id}')" style="background:none;border:1px solid var(--border);color:var(--text3);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:11px">🗑</button>
       </div>
     </div>`;
   }).join('');
@@ -10089,5 +9845,183 @@ async function salvarAcaoLembrete() {
   } finally {
     if(btn){ btn.disabled=false; btn.textContent='💾 Confirmar'; }
   }
+}
+</script>
+<script>
+// ================================================================
+// RELATÓRIOS GERENCIAIS — NOVOS
+// ================================================================
+
+async function gerarRelVisaoGeral(ini, fim, label, deptFiltro, userFiltro, cliFiltro) {
+  const hj = new Date().toISOString().split('T')[0];
+  let q = sbRest('demandas').select('id,status,prioridade,prazo,created_at,data_conclusao,responsavel_atual_id,cliente_id,departamento_atual_id,tipo_demanda_id').gte('created_at',ini+'T00:00:00').lte('created_at',fim+'T23:59:59');
+  if(deptFiltro) q = q.eq('departamento_atual_id',deptFiltro);
+  if(userFiltro) q = q.eq('responsavel_atual_id',userFiltro);
+  if(cliFiltro)  q = q.eq('cliente_id',cliFiltro);
+  const {data:dems} = await q;
+  const todos = dems||[];
+
+  const conc = todos.filter(d=>d.status==='concluida');
+  const ativas = todos.filter(d=>!['concluida','cancelada'].includes(d.status));
+  const vencidas = ativas.filter(d=>d.prazo&&d.prazo<hj);
+  const urgentes = todos.filter(d=>d.prioridade==='urgente');
+  const taxaConc = todos.length ? Math.round(conc.length/todos.length*100) : 0;
+
+  // Tempo médio de conclusão
+  const tempos = conc.filter(d=>d.created_at&&d.data_conclusao).map(d=>
+    Math.floor((new Date(d.data_conclusao)-new Date(d.created_at))/86400000));
+  const tempoMedio = tempos.length ? Math.round(tempos.reduce((a,b)=>a+b,0)/tempos.length) : 0;
+
+  // Atualizar KPIs
+  document.getElementById('relK1').textContent = todos.length;
+  document.getElementById('relK2').textContent = conc.length;
+  document.getElementById('relK3').textContent = vencidas.length;
+  document.getElementById('relK4').textContent = taxaConc+'%';
+  document.getElementById('relK5').textContent = tempoMedio+'d';
+
+  const profs = dbGet('profiles');
+  const clis = dbGet('clientes');
+  const deps = dbGet('departamentos');
+
+  // Por status
+  const porStatus = {};
+  todos.forEach(d=>{ porStatus[d.status]=(porStatus[d.status]||0)+1; });
+  const SL = {aberta:'Aberta',em_andamento:'Em Andamento',aguardando_cliente:'Ag. Cliente',
+    aguardando_orgao:'Ag. Órgão',aguardando_conclusao:'Ag. Conclusão',concluida:'Concluída',cancelada:'Cancelada'};
+
+  // Por departamento
+  const porDep = {};
+  todos.forEach(d=>{ const n=deps.find(x=>x.id===d.departamento_atual_id)?.nome||'Sem depto'; porDep[n]=(porDep[n]||0)+1; });
+
+  // Por colaborador
+  const porUser = {};
+  todos.forEach(d=>{ const n=profs.find(p=>p.id===d.responsavel_atual_id)?.nome||'Sem resp.'; porUser[n]=(porUser[n]||0)+1; });
+
+  return `
+    <div style="margin-bottom:20px">
+      <div style="font-size:13px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:10px">Status das Demandas</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+        ${Object.entries(porStatus).sort((a,b)=>b[1]-a[1]).map(([s,n])=>`
+          <div style="background:var(--surface2);border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:22px;font-weight:700;color:var(--accent)">${n}</div>
+            <div style="font-size:11px;color:var(--text3)">${SL[s]||s}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:10px">Por Departamento</div>
+        <table style="width:100%"><thead><tr><th>Departamento</th><th style="text-align:right">Qtd</th><th style="text-align:right">%</th></tr></thead>
+        <tbody>${Object.entries(porDep).sort((a,b)=>b[1]-a[1]).map(([n,q])=>`
+          <tr><td style="font-size:13px">${n}</td>
+          <td style="text-align:right;font-weight:700">${q}</td>
+          <td style="text-align:right;font-size:12px;color:var(--text3)">${todos.length?Math.round(q/todos.length*100):0}%</td></tr>`).join('')}
+        </tbody></table>
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:10px">Por Colaborador</div>
+        <table style="width:100%"><thead><tr><th>Colaborador</th><th style="text-align:right">Qtd</th><th style="text-align:right">%</th></tr></thead>
+        <tbody>${Object.entries(porUser).sort((a,b)=>b[1]-a[1]).map(([n,q])=>`
+          <tr><td style="font-size:13px">${n.split(' ')[0]}</td>
+          <td style="text-align:right;font-weight:700">${q}</td>
+          <td style="text-align:right;font-size:12px;color:var(--text3)">${todos.length?Math.round(q/todos.length*100):0}%</td></tr>`).join('')}
+        </tbody></table>
+      </div>
+    </div>`;
+}
+
+async function gerarRelProdutividade(ini, fim, label, deptFiltro, userFiltro) {
+  const {data:dems} = await sbRest('demandas').select('id,status,data_conclusao,created_at,responsavel_atual_id,prioridade').gte('created_at',ini+'T00:00:00').lte('created_at',fim+'T23:59:59');
+  const {data:trams} = await sbRest('tramites').select('usuario_id,created_at').gte('created_at',ini+'T00:00:00').lte('created_at',fim+'T23:59:59');
+  const profs = dbGet('profiles');
+  const todos = dems||[];
+
+  const stats = {};
+  profs.filter(p=>p.ativo!==false).forEach(p=>{
+    const minhas = todos.filter(d=>d.responsavel_atual_id===p.id);
+    const conc = minhas.filter(d=>d.status==='concluida');
+    const meusTrams = (trams||[]).filter(t=>t.usuario_id===p.id);
+    const tempos = conc.filter(d=>d.data_conclusao).map(d=>Math.floor((new Date(d.data_conclusao)-new Date(d.created_at))/86400000));
+    const tmedio = tempos.length ? Math.round(tempos.reduce((a,b)=>a+b,0)/tempos.length) : 0;
+    stats[p.nome] = { total:minhas.length, conc:conc.length, trams:meusTrams.length, tmedio, taxa:minhas.length?Math.round(conc.length/minhas.length*100):0 };
+  });
+
+  document.getElementById('relK1').textContent = todos.length;
+  document.getElementById('relK2').textContent = todos.filter(d=>d.status==='concluida').length;
+  document.getElementById('relK3').textContent = (trams||[]).length;
+  document.getElementById('relK4').textContent = '—';
+  document.getElementById('relK5').textContent = '—';
+
+  return `<table style="width:100%">
+    <thead><tr>
+      <th>Colaborador</th>
+      <th style="text-align:center">Total</th>
+      <th style="text-align:center">Concluídas</th>
+      <th style="text-align:center">Tramitações</th>
+      <th style="text-align:center">Taxa</th>
+      <th style="text-align:center">T. Médio</th>
+      <th>Desempenho</th>
+    </tr></thead>
+    <tbody>${Object.entries(stats).filter(([,s])=>s.total>0||s.trams>0).sort((a,b)=>b[1].conc-a[1].conc).map(([nome,s])=>{
+      const cor = s.taxa>=80?'var(--green)':s.taxa>=50?'var(--amber)':'var(--red)';
+      return `<tr>
+        <td style="font-weight:600">${nome.split(' ').slice(0,2).join(' ')}</td>
+        <td style="text-align:center">${s.total}</td>
+        <td style="text-align:center;color:var(--green);font-weight:700">${s.conc}</td>
+        <td style="text-align:center;color:var(--accent)">${s.trams}</td>
+        <td style="text-align:center"><span style="background:${cor};color:#fff;padding:2px 8px;border-radius:10px;font-size:12px">${s.taxa}%</span></td>
+        <td style="text-align:center;font-size:12px">${s.tmedio?s.tmedio+'d':'—'}</td>
+        <td><div style="background:var(--surface2);border-radius:4px;height:8px;width:100%">
+          <div style="background:${cor};border-radius:4px;height:8px;width:${Math.min(s.taxa,100)}%"></div>
+        </div></td>
+      </tr>`;}).join('')}
+    </tbody></table>`;
+}
+
+// Override gerarRelGerencial para novos tipos
+const _gerarRelOriginal = gerarRelGerencial;
+gerarRelGerencial = async function(tipo) {
+  _relAtual = tipo;
+  document.querySelectorAll('[id^="relBtn_"]').forEach(b=>{ b.style.background=''; b.style.color=''; b.style.borderColor=''; });
+  const btnAtivo = document.getElementById('relBtn_'+tipo);
+  if(btnAtivo){ btnAtivo.style.background='var(--accent)'; btnAtivo.style.color='#fff'; btnAtivo.style.borderColor='var(--accent)'; }
+
+  const el = document.getElementById('relatorioResultado');
+  const conteudo = document.getElementById('relatorioConteudo');
+  const titulo = document.getElementById('relatorioTitulo');
+  if(!el||!conteudo) return;
+  el.style.display='block';
+  conteudo.innerHTML='<div class="loading">Gerando relatório...</div>';
+
+  const {ini, fim, label} = getRelPeriodo();
+  const deptFiltro = document.getElementById('relDept')?.value||'';
+  const userFiltro = document.getElementById('relUser')?.value||'';
+  const cliFiltro  = document.getElementById('relCli')?.value||'';
+
+  const titulos = {
+    visao_geral:'📋 Visão Geral', por_departamento:'🏢 Por Departamento',
+    por_usuario:'👤 Por Colaborador', por_cliente:'🧑‍💼 Por Cliente',
+    por_tipo:'📂 Por Tipo de Demanda', por_mes:'📅 Evolução Mensal',
+    sla:'⏱️ SLA e Prazos', pendencias:'⚠️ Pendências Abertas',
+    produtividade:'🚀 Produtividade da Equipe', demandas_mes:'📈 Demandas Abertas/Mês'
+  };
+  if(titulo) titulo.textContent = (titulos[tipo]||'Relatório') + ' — ' + label;
+
+  try {
+    if(tipo==='visao_geral') {
+      conteudo.innerHTML = await gerarRelVisaoGeral(ini,fim,label,deptFiltro,userFiltro,cliFiltro);
+    } else if(tipo==='produtividade') {
+      conteudo.innerHTML = await gerarRelProdutividade(ini,fim,label,deptFiltro,userFiltro);
+    } else {
+      // Chamar original para os demais
+      await _gerarRelOriginal(tipo);
+    }
+  } catch(e) {
+    conteudo.innerHTML = `<div class="vazio">Erro ao gerar relatório: ${e.message}</div>`;
+  }
+};
+
+function imprimirRel() {
+  window.print();
 }
 </script>
