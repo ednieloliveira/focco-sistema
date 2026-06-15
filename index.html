@@ -7330,7 +7330,7 @@ function filtDem() {
       <td><span class="tag ${SC[d.status]||'tgr'}">${SL[d.status]||d.status}</span></td>
       <td><span class="tag ${PC[d.prioridade]||'tgr'}">${d.prioridade||'—'}</span></td>
       <td style="font-size:12px">${d.profiles?.nome||'—'}</td>
-      <td style="font-size:11px;min-width:120px">${ultAt?`<div style="font-weight:600;color:var(--text)">${ultDt} ${ultHr}</div><div style="color:var(--text3)">${ultUser}</div><div style="color:var(--text3);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${ultDesc}</div>`:'<span style="color:var(--text3)">—</span>'}</td>
+      <td style="font-size:12px">${ultAt?`<div style="font-weight:600;color:var(--text)">${ultDt}</div><div style="color:var(--text3)">${ultHr}</div>`:'<span style="color:var(--text3)">—</span>'}</td>
       <td><span class="tag ${dc}">${isConcluida?'✅':diasReal+'d'}</span></td>
       <td style="font-size:12px;color:${pv?'var(--red)':'inherit'}">${d.prazo?new Date(d.prazo+'T12:00:00').toLocaleDateString('pt-BR'):'—'}</td>
     </tr>`;
