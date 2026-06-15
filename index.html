@@ -421,6 +421,10 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
       <div style="flex:1;min-width:0"><div class="u-name" id="sbNome">...</div><div class="u-role" id="sbPerfil">...</div></div>
       <span style="color:var(--text3);font-size:12px">↩</span>
     </div>
+    <!-- Versão do sistema -->
+    <div id="sbVersao" style="padding:6px 16px 10px;font-size:10px;color:var(--text3);text-align:center;border-top:1px solid var(--border);margin-top:4px">
+      Carregando versão...
+    </div>
   </div>
 </nav>
 
@@ -5208,6 +5212,31 @@ async function recusarDemandaDet(demandaId){
 }
 
 // ================================================================
+// VERSÃO DO SISTEMA — busca data do último commit no GitHub
+// ================================================================
+async function carregarVersaoSistema() {
+  const el = document.getElementById('sbVersao');
+  if(!el) return;
+  try {
+    const r = await fetch('https://api.github.com/repos/ednieloliveira/focco-sistema/commits?per_page=1');
+    if(!r.ok) throw new Error();
+    const data = await r.json();
+    const commit = data[0];
+    const dt = new Date(commit.commit.author.date);
+    const dtFmt = dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
+    const hrFmt = dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    const msg = (commit.commit.message||'').split('\n')[0].slice(0,30);
+    el.innerHTML = `<div style="line-height:1.5">
+      <div style="color:var(--accent);font-weight:600">${dtFmt}</div>
+      <div>Atualizado: ${dtFmt} ${hrFmt}</div>
+      <div style="opacity:.7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${commit.commit.message}">${msg}</div>
+    </div>`;
+  } catch(e) {
+    el.textContent = 'Focco v72 · 2026';
+  }
+}
+
+// ================================================================
 // ALTERAR PRIORIDADE
 // ================================================================
 let _alterarPrioDemId = null;
@@ -9617,6 +9646,7 @@ document.querySelectorAll('.nav').forEach(n=>n.addEventListener('click',_closeSi
 
 carregarConfigsWA();
 initCalendario();
+carregarVersaoSistema();
 // Força reset se versão mudou
 const DB_VERSION = '6.0';
 if(localStorage.getItem('focco_version') !== DB_VERSION) {
