@@ -328,6 +328,7 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:10px}
 ::-webkit-scrollbar-thumb:hover{background:var(--border2)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
 /* Bottom nav mobile */
 .mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);z-index:200;padding:0 0 env(safe-area-inset-bottom,0)}
 .mobile-nav-item{flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 4px;cursor:pointer;color:var(--text3);font-size:10px;font-weight:500;gap:3px;border:none;background:none;font-family:Inter,sans-serif}
@@ -577,6 +578,7 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
     <div class="card"><div class="ch"><div class="ct">🔔 Aguardando Meu Aceite</div></div><div class="cb" id="cAList"><div class="loading">Carregando...</div></div></div>
     <div class="card"><div class="ch"><div class="ct">⚡ Urgentes</div></div><div class="cb" id="cUList"><div class="loading">Carregando...</div></div></div>
   </div>
+  <div class="card"><div class="ch"><div class="ct">📌 Lembretes do Dia</div></div><div class="cb" id="cLembretes"><div class="loading">Carregando...</div></div></div>
   <div class="card"><div class="ch"><div class="ct">📋 Minhas Demandas Ativas</div></div><div class="cb" id="cMList"><div class="loading">Carregando...</div></div></div>
 </div>
 
@@ -637,7 +639,17 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
   <div class="card" style="margin-bottom:0">
     <div style="overflow-x:auto">
       <table>
-        <thead><tr><th>Número</th><th>Cliente</th><th>Resumo</th><th>Status</th><th>Prioridade</th><th>Responsável</th><th>Inatividade</th><th>Prazo</th></tr></thead>
+        <thead><tr>
+          <th>Número</th>
+          <th>Cliente</th>
+          <th>Resumo</th>
+          <th>Status</th>
+          <th>Prioridade</th>
+          <th>Responsável</th>
+          <th onclick="ordenarPor('tram')" style="cursor:pointer;user-select:none" title="Ordenar por último trâmite">Último Trâmite ↕</th>
+          <th onclick="ordenarPor('dias')" style="cursor:pointer;user-select:none" title="Ordenar por inatividade">Inatividade ↕</th>
+          <th>Prazo</th>
+        </tr></thead>
         <tbody id="demTabela"><tr><td colspan="8" class="loading">Carregando...</td></tr></tbody>
       </table>
     </div>
@@ -2284,6 +2296,44 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
     <div class="mf">
       <button class="btn btn-s" onclick="fm('mNewsletter')">Cancelar</button>
       <button class="btn btn-p" onclick="enviarNewsletter()">📧 Enviar Newsletter</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL LEMBRETE -->
+<div class="modal-ov" id="mLembrete">
+  <div class="modal" style="max-width:460px">
+    <div class="mh">
+      <div><div class="mt">📌 Novo Lembrete</div></div>
+      <button class="mc" onclick="fm('mLembrete')">×</button>
+    </div>
+    <div class="mb">
+      <div class="fg">
+        <label class="fl">Descrição *</label>
+        <textarea class="fi" id="lemDesc" rows="3" placeholder="Ex: Ligar para o Cristiano confirmar documentos..."></textarea>
+      </div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Data *</label><input type="date" class="fi" id="lemData"></div>
+        <div class="fg"><label class="fl">Hora</label><input type="time" class="fi" id="lemHora"></div>
+      </div>
+      <div class="fg">
+        <label class="fl">Responsável *</label>
+        <select class="fi" id="lemResp">
+          <option value="">Selecione...</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label class="fl">Status</label>
+        <select class="fi" id="lemStatus">
+          <option value="pendente">⏳ Pendente</option>
+          <option value="concluido">✅ Concluído</option>
+          <option value="reagendado">🔄 Reagendado</option>
+        </select>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-s" onclick="fm('mLembrete')">Cancelar</button>
+      <button class="btn btn-p" onclick="salvarLembrete()">💾 Salvar Lembrete</button>
     </div>
   </div>
 </div>
@@ -4414,6 +4464,9 @@ async function loadCaixa(){
   }).join('') : '<div class="vazio">Nenhuma urgente ✅</div>';
 
   // MINHAS DEMANDAS
+  // Lembretes do dia
+  carregarLembretesHoje();
+
   document.getElementById('cMList').innerHTML = mns.length ? `
     <div style="overflow-x:auto"><table>
       <thead><tr><th>Número</th><th>Cliente</th><th>Status</th><th>Inat.</th></tr></thead>
@@ -4648,6 +4701,8 @@ async function abrirDet(id, origem){
   document.getElementById('detConteudo').innerHTML='<div class="loading">Carregando...</div>';
   try {
     await renderDet();
+    // Carregar lembretes após detalhe
+    if(demId) await carregarLembretesDet(demId);
   } catch(e) {
     console.error('renderDet error:', e);
     mostrarErroDet('Erro ao carregar demanda', String(e.message));
@@ -4742,9 +4797,9 @@ async function renderDet(){
       <button class="btn btn-s" onclick="omDet('mTram')">+ Trâmite</button>
       <button class="btn btn-s" onclick="omDet('mPend')">+ Pendência</button>
       <button class="btn btn-s" onclick="omTransf()">↔ Transferir</button>
-      <button class="btn btn-s" onclick="abrirModalUpload()">📎 Anexar</button>
-      <button class="btn btn-s" onclick="om('mWA')">📱 WhatsApp</button>
-      ${iG ? `<button class="btn btn-er" onclick="excluirDemanda('${d.id}','${d.numero}')">🗑️ Excluir</button>` : ''}
+      ${U.usuario==='Gerente'||U.nome==='Edniel Oliveira'?`<button class="btn btn-s" onclick="abrirModalUpload()">📎 Anexar</button>`:''}
+      ${U.usuario==='Gerente'||U.nome==='Edniel Oliveira'?`<button class="btn btn-s" onclick="om('mWA')">📱 WhatsApp</button>`:''}
+      ${(U.usuario==='Gerente'||U.nome==='Edniel Oliveira')&&iG?`<button class="btn btn-er" onclick="excluirDemanda('${d.id}','${d.numero}')">🗑️ Excluir</button>`:''}
       ${d.status!=='aguardando_conclusao'?`<button class="btn btn-p" onclick="om('mConc')">✓ Solicitar conclusão</button>`:''}
       ${iG&&d.status==='aguardando_conclusao'?`<button class="btn btn-ok" onclick="aprovarConc()">✓ Aprovar conclusão</button>`:''}
       `}
@@ -4755,7 +4810,7 @@ async function renderDet(){
       <div class="card">
         <div class="ch"><div class="ct">📋 Linha do Tempo / Tramitação</div><span style="font-size:12px;color:var(--text3)">${tr.data?.length||0} registros</span></div>
         <div class="cb">
-          ${tr.data?.length?`<div class="tram-timeline-v2">${tr.data.map(t=>{
+          ${tr.data?.length?`<div id="tramitesLista" class="tram-timeline-v2">${tr.data.map(t=>{
             const tipoClass=t.tipo||'';
             const label=TL[t.tipo]||t.tipo;
             const dt=new Date(t.created_at).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
@@ -4764,10 +4819,20 @@ async function renderDet(){
               <div class="tram-desc-v2">${t.descricao||''}</div>
               <div class="tram-meta-v2">👤 ${t.profiles?.nome||'—'} &nbsp;·&nbsp; 🕐 ${dt}</div>
             </div>`;
-          }).join('')}</div>`:'<div class="vazio">Nenhum trâmite registrado.</div>'}
+          }).join('')}</div>`:'<div id="tramitesLista"><div class="vazio">Nenhum trâmite registrado.</div></div>'}
         </div>
       </div>
       <div class="card">
+        <div class="ch">
+          <div class="ct">📌 Lembretes</div>
+          <button class="btn btn-s" style="font-size:12px" onclick="abrirModalLembrete('${d.id}')">+ Novo</button>
+        </div>
+        <div class="cb" id="lembretesLista" style="max-height:220px;overflow-y:auto">
+          <div class="loading">Carregando...</div>
+        </div>
+      </div>
+
+      <div class="card" id="tramiteInlineBox">
         <div class="ch"><div class="ct">✏️ Registrar Tramite</div></div>
         <div class="cb">
           <div class="fg" style="margin-bottom:8px">
@@ -4914,14 +4979,72 @@ async function recusarDemandaDet(demandaId){
 
 // Tramite inline no detalhe da demanda
 async function salvarTramiteInline(){
-  delete _detCache[demId];
   const desc=document.getElementById('tramiteInline')?.value.trim();
   const tipo=document.getElementById('tTipoInline')?.value||'movimentacao_geral';
   if(!desc){toast('Informe a descricao do tramite','err');return;}
-  await sbRest('tramites').insert({demanda_id:demId,usuario_id:U.id,tipo,descricao:desc});
+
+  // Desabilitar botão durante o salvamento
+  const btn = document.querySelector('#tramiteInlineBox .btn-p');
+  if(btn){btn.disabled=true;btn.textContent='Salvando...';}
+
+  // Inserir trâmite no banco
+  const {error} = await sbRest('tramites').insert({demanda_id:demId,usuario_id:U.id,tipo,descricao:desc});
+  if(error){toast('Erro ao registrar trâmite','err');if(btn){btn.disabled=false;btn.textContent='📝 Registrar Tramite';}return;}
+
+  // Atualizar último trâmite na demanda
+  await sbRest('demandas').update({
+    ultimo_tramite_descricao: desc,
+    ultimo_tramite_usuario: U.nome,
+    ultimo_tramite_at: new Date().toISOString(),
+    ultima_movimentacao: new Date().toISOString()
+  }).eq('id',demId);
+
+  // Limpar campo e restaurar botão
   document.getElementById('tramiteInline').value='';
+  if(btn){btn.disabled=false;btn.textContent='📝 Registrar Tramite';}
+
+  // Adicionar trâmite instantaneamente na lista SEM recarregar tudo
+  const agora = new Date();
+  const novoTram = {
+    id: 'temp_'+Date.now(),
+    tipo,
+    descricao: desc,
+    usuario_id: U.id,
+    created_at: agora.toISOString(),
+    profiles: {nome: U.nome}
+  };
+  adicionarTramiteNaTela(novoTram);
+  delete _detCache[demId];
   toast('Tramite registrado!','ok');
-  await renderDet();
+}
+
+function adicionarTramiteNaTela(tram) {
+  const lista = document.getElementById('tramitesLista');
+  if(!lista) return;
+  const dt = new Date(tram.created_at);
+  const dtStr = dt.toLocaleDateString('pt-BR');
+  const hrStr = dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  const tipoLabel = {
+    abertura:'🔓 Abertura',movimentacao_geral:'📝 Movimentação',
+    documento_recebido:'📄 Doc. Recebido',documento_solicitado:'📋 Doc. Solicitado',
+    protocolo:'🏛️ Protocolo',exigencia_recebida:'⚠️ Exigência',
+    exigencia_respondida:'✅ Exigência Respondida',aceite:'✅ Aceite',
+    conclusao:'🏁 Conclusão',transferencia:'↔️ Transferência',
+    pendencia_criada:'⏳ Pendência',pendencia_resolvida:'✅ Pendência Resolvida'
+  }[tram.tipo] || '📝 Movimentação';
+
+  const novoEl = document.createElement('div');
+  novoEl.style.cssText = 'border-left:3px solid var(--accent);padding:12px 14px;margin-bottom:10px;background:var(--accent-pale);border-radius:0 8px 8px 0;animation:fadeIn .3s ease';
+  novoEl.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px">
+      <span style="font-size:12px;font-weight:700;color:var(--accent)">${tipoLabel}</span>
+      <span style="font-size:11px;color:var(--text3);flex-shrink:0">${dtStr} ${hrStr}</span>
+    </div>
+    <div style="font-size:13px;line-height:1.5;white-space:pre-line">${tram.descricao}</div>
+    <div style="font-size:11px;color:var(--text3);margin-top:6px">👤 ${tram.profiles?.nome||U.nome}</div>`;
+  
+  // Inserir no topo da lista
+  lista.insertBefore(novoEl, lista.firstChild);
 }
 
 function editarDescricao(id){
@@ -7104,7 +7227,7 @@ function trocarAba(aba) {
 async function loadDem() {
   document.getElementById('demTabela').innerHTML = '<tr><td colspan="8" class="loading">Carregando...</td></tr>';
   // Buscar do Supabase
-  let q = sbRest('demandas').select('id,numero,resumo,status,prioridade,prazo,ultima_movimentacao,created_at,responsavel_atual_id,departamento_atual_id,departamento_id,cliente_id').order('created_at',{ascending:false}).limit(200);
+  let q = sbRest('demandas').select('id,numero,resumo,status,prioridade,prazo,ultima_movimentacao,created_at,responsavel_atual_id,departamento_atual_id,departamento_id,cliente_id,ultimo_tramite_descricao,ultimo_tramite_usuario,ultimo_tramite_at').order('ultima_movimentacao',{ascending:false}).limit(200);
   if (U.perfil !== 'gestor' && U.perfil !== 'supervisor') {
     q = q.eq('responsavel_atual_id', U.id);
   }
@@ -7140,6 +7263,13 @@ async function loadDem() {
     });
   }
 
+  filtDem();
+}
+
+let _ordenacao = 'mov'; // mov, tram, dias
+
+function ordenarPor(campo) {
+  _ordenacao = campo;
   filtDem();
 }
 
@@ -7183,17 +7313,25 @@ function filtDem() {
 
   document.getElementById('demTabela').innerHTML = f.map(d => {
     const isConcluida = ['concluida','cancelada'].includes(d.status);
-    const dias = Math.floor((Date.now()-new Date(d.ultima_movimentacao||d.created_at))/86400000);
-    const dc = isConcluida?'tgr':dias>=10?'tr':dias>=5?'ta':'ts';
+    const refData = d.ultimo_tramite_at || d.ultima_movimentacao || d.created_at;
+    const diasReal = Math.floor((Date.now()-new Date(refData))/86400000);
+    const dc = isConcluida?'tgr':diasReal>=10?'tr':diasReal>=5?'ta':'ts';
     const pv = d.prazo && d.prazo < hj && !isConcluida;
-    return `<tr onclick="abrirDet('${d.id}')" style="${isConcluida?'opacity:.7;background:var(--surface2)':''}">
-      <td><strong style="color:${isConcluida?'var(--text3)':'var(--accent)'};font-family:monospace">${d.numero}</strong></td>
+    // Ultimo tramite
+    const ultAt = d.ultimo_tramite_at ? new Date(d.ultimo_tramite_at) : null;
+    const ultDt = ultAt ? ultAt.toLocaleDateString('pt-BR') : '—';
+    const ultHr = ultAt ? ultAt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '';
+    const ultUser = d.ultimo_tramite_usuario || '—';
+    const ultDesc = d.ultimo_tramite_descricao ? (d.ultimo_tramite_descricao.slice(0,35)+(d.ultimo_tramite_descricao.length>35?'...':'')) : '—';
+    return `<tr onclick="abrirDet('${d.id}','${_paginaAtual}')" style="${isConcluida?'opacity:.7;background:var(--surface2)':''}">
+      <td><strong style="font-family:monospace;color:${isConcluida?'var(--text3)':'var(--accent)'}">${d.numero}</strong></td>
       <td style="font-size:13px">${d.clientes?.nome||'—'}</td>
-      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px">${d.resumo||'—'}</td>
+      <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px">${d.resumo||'—'}</td>
       <td><span class="tag ${SC[d.status]||'tgr'}">${SL[d.status]||d.status}</span></td>
       <td><span class="tag ${PC[d.prioridade]||'tgr'}">${d.prioridade||'—'}</span></td>
       <td style="font-size:12px">${d.profiles?.nome||'—'}</td>
-      <td><span class="tag ${dc}">${isConcluida?'✅':dias+'d'}</span></td>
+      <td style="font-size:11px;min-width:120px">${ultAt?`<div style="font-weight:600;color:var(--text)">${ultDt} ${ultHr}</div><div style="color:var(--text3)">${ultUser}</div><div style="color:var(--text3);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${ultDesc}</div>`:'<span style="color:var(--text3)">—</span>'}</td>
+      <td><span class="tag ${dc}">${isConcluida?'✅':diasReal+'d'}</span></td>
       <td style="font-size:12px;color:${pv?'var(--red)':'inherit'}">${d.prazo?new Date(d.prazo+'T12:00:00').toLocaleDateString('pt-BR'):'—'}</td>
     </tr>`;
   }).join('');
@@ -8911,4 +9049,161 @@ if(localStorage.getItem('focco_version') !== DB_VERSION) {
 initDB().then(()=>{ init(); });
 </script>
 </body>
-</html>
+</html><script>
+// ================================================================
+// LEMBRETES
+// ================================================================
+let _lembretesDemandaId = null;
+
+async function abrirModalLembrete(demandaId) {
+  _lembretesDemandaId = demandaId || demId;
+  // Popular responsáveis
+  const sel = document.getElementById('lemResp');
+  if(sel && sel.options.length <= 1){
+    dbGet('profiles').filter(p=>p.ativo!==false).sort((a,b)=>a.nome.localeCompare(b.nome)).forEach(p=>{
+      const opt=document.createElement('option');
+      opt.value=p.id; opt.textContent=p.nome;
+      if(p.id===U.id) opt.selected=true;
+      sel.appendChild(opt);
+    });
+  }
+  // Data padrão hoje
+  document.getElementById('lemData').value = new Date().toISOString().split('T')[0];
+  document.getElementById('lemHora').value = '';
+  document.getElementById('lemDesc').value = '';
+  document.getElementById('lemStatus').value = 'pendente';
+  om('mLembrete');
+}
+
+async function salvarLembrete() {
+  const desc = document.getElementById('lemDesc').value.trim();
+  const data = document.getElementById('lemData').value;
+  const hora = document.getElementById('lemHora').value;
+  const resp = document.getElementById('lemResp').value;
+  const status = document.getElementById('lemStatus').value;
+  if(!desc){ toast('Informe a descrição do lembrete','err'); return; }
+  if(!data){ toast('Informe a data do lembrete','err'); return; }
+  const {error} = await sbRest('lembretes').insert({
+    demanda_id: _lembretesDemandaId,
+    usuario_id: U.id,
+    descricao: desc,
+    data_lembrete: data,
+    hora_lembrete: hora||null,
+    responsavel_id: resp||U.id,
+    status
+  });
+  if(error){ toast('Erro ao salvar lembrete: '+error.message,'err'); return; }
+  toast('Lembrete salvo!','ok');
+  fm('mLembrete');
+  await carregarLembretesDet(_lembretesDemandaId);
+}
+
+async function carregarLembretesDet(demandaId) {
+  const el = document.getElementById('lembretesLista');
+  if(!el) return;
+  const {data} = await sbRest('lembretes').select('*').eq('demanda_id', demandaId).order('data_lembrete',{ascending:true});
+  const lembretes = data||[];
+  const profs = dbGet('profiles');
+  const hoje = new Date().toISOString().split('T')[0];
+  if(!lembretes.length){
+    el.innerHTML='<div class="vazio" style="padding:1rem">Nenhum lembrete cadastrado.</div>';
+    return;
+  }
+  const statusIcon = {pendente:'⏳',concluido:'✅',reagendado:'🔄'};
+  const statusCor  = {pendente:'var(--amber)',concluido:'var(--green)',reagendado:'var(--sky)'};
+  el.innerHTML = lembretes.map(l=>{
+    const resp = profs.find(p=>p.id===l.responsavel_id);
+    const vencido = l.data_lembrete < hoje && l.status === 'pendente';
+    const dtFmt = l.data_lembrete ? new Date(l.data_lembrete+'T12:00:00').toLocaleDateString('pt-BR') : '—';
+    return `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">
+      <div style="font-size:20px;flex-shrink:0">${statusIcon[l.status]||'⏳'}</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:600;color:${vencido?'var(--red)':'var(--text)'}">${l.descricao}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:3px">
+          📅 ${dtFmt}${l.hora_lembrete?' às '+l.hora_lembrete.slice(0,5):''}
+          · 👤 ${resp?.nome||'—'}
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
+        ${l.status==='pendente'?`<button onclick="concluirLembrete('${l.id}')" style="background:none;border:1px solid var(--green);color:var(--green);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:11px">✓ OK</button>`:''}
+        <button onclick="excluirLembrete('${l.id}')" style="background:none;border:1px solid var(--border);color:var(--text3);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:11px">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function concluirLembrete(id) {
+  await sbRest('lembretes').update({status:'concluido'}).eq('id',id);
+  await carregarLembretesDet(_lembretesDemandaId||demId);
+  toast('Lembrete concluído!','ok');
+}
+
+async function excluirLembrete(id) {
+  if(!confirm('Excluir este lembrete?')) return;
+  await sbRest('lembretes').delete().eq('id',id);
+  await carregarLembretesDet(_lembretesDemandaId||demId);
+  toast('Lembrete removido.','ok');
+}
+
+// Chamar ao abrir detalhe — após renderDet
+const _renderDetOriginal = window.renderDet;
+
+// ================================================================
+// ITEM 5: Lembretes do dia na Minha Caixa
+// ================================================================
+async function carregarLembretesHoje() {
+  const hoje = new Date().toISOString().split('T')[0];
+  // Buscar lembretes pendentes de hoje ou vencidos
+  const {data} = await sbRest('lembretes')
+    .select('id,descricao,data_lembrete,hora_lembrete,status,demanda_id')
+    .eq('responsavel_id', U.id)
+    .eq('status','pendente')
+    .lte('data_lembrete', hoje)
+    .order('data_lembrete',{ascending:true})
+    .order('hora_lembrete',{ascending:true});
+
+  const lembretes = data||[];
+  const el = document.getElementById('cLembretes');
+  if(!el) return;
+
+  if(!lembretes.length){
+    el.innerHTML='<div class="vazio">Nenhum lembrete para hoje ✅</div>';
+    return;
+  }
+
+  // Buscar números das demandas
+  const demIds = [...new Set(lembretes.map(l=>l.demanda_id).filter(Boolean))];
+  let demsMap = {};
+  if(demIds.length){
+    const {data:demsData} = await sbRest('demandas').select('id,numero,resumo,cliente_id').in('id',demIds);
+    const clis = dbGet('clientes');
+    (demsData||[]).forEach(d=>{
+      const cli = clis.find(c=>c.id===d.cliente_id);
+      demsMap[d.id] = {...d, cli_nome: cli?.nome||''};
+    });
+  }
+
+  const hoje2 = new Date().toISOString().split('T')[0];
+  el.innerHTML = lembretes.map(l=>{
+    const dem = demsMap[l.demanda_id]||{};
+    const vencido = l.data_lembrete < hoje2;
+    const dtFmt = l.data_lembrete === hoje2 ? 'Hoje' : new Date(l.data_lembrete+'T12:00:00').toLocaleDateString('pt-BR');
+    const hora = l.hora_lembrete ? ' às '+l.hora_lembrete.slice(0,5) : '';
+    return `<div onclick="abrirDet('${l.demanda_id}','caixa')" style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer" onmouseover="this.style.background='var(--accent-pale)'" onmouseout="this.style.background=''">
+      <div style="font-size:20px;flex-shrink:0">${vencido?'🔴':'📞'}</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:600;color:${vencido?'var(--red)':'var(--text)'}">${l.descricao}</div>
+        ${dem.numero?`<div style="font-size:12px;color:var(--text3)">Processo: <strong>${dem.numero}</strong>${dem.cli_nome?' — '+dem.cli_nome:''}</div>`:''}
+        <div style="font-size:11px;color:${vencido?'var(--red)':'var(--text3)'};margin-top:2px">📅 ${dtFmt}${hora}</div>
+      </div>
+      <button onclick="event.stopPropagation();concluirLembreteRapido('${l.id}')" style="background:none;border:1px solid var(--green);color:var(--green);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:11px;flex-shrink:0">✓</button>
+    </div>`;
+  }).join('');
+}
+
+async function concluirLembreteRapido(id) {
+  await sbRest('lembretes').update({status:'concluido'}).eq('id',id);
+  toast('Lembrete concluído!','ok');
+  await carregarLembretesHoje();
+}
+</script>
