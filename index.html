@@ -4391,7 +4391,7 @@ async function loadDash(){
   // Mini kanban no dashboard (sem concluídas para compactar)
   const {data:kbData}=await sbRest('demandas').select('id,numero,resumo,status,prioridade,prazo,ultima_movimentacao,cliente_id,responsavel_atual_id,departamento_atual_id').not('status','in','(concluida,cancelada)').order('created_at',{ascending:false}).limit(150);
   // Render dashboard calendar
-  renderDashCal();
+  await renderDashCal();
 }
 
 async function loadCaixa(){
@@ -6137,6 +6137,13 @@ document.addEventListener('click', e => {
 // Polling de notificações a cada 60 segundos
 setInterval(() => { if (U) carregarNotificacoes(); }, 60000);
 
+// Polling de lembretes a cada 5 minutos
+setInterval(async () => {
+  if (U && document.getElementById('pg-caixa')?.classList.contains('on')) {
+    await carregarLembretesHoje();
+  }
+}, 5 * 60 * 1000);
+
 // ══════════════════════════════════════════
 // CALENDÁRIO FISCAL
 // ══════════════════════════════════════════
@@ -6508,7 +6515,8 @@ function mesAnterior() { calMes--; if (calMes < 0) { calMes = 11; calAno--; } re
 function mesProximo()  { calMes++; if (calMes > 11) { calMes = 0; calAno++; } renderCalendario(); }
 function mesAtual()    { calAno = new Date().getFullYear(); calMes = new Date().getMonth(); renderCalendario(); }
 
-function renderCalendario() {
+async function renderCalendario() {
+  if(!_compsMes.length && !_lemsMes.length) await carregarEventosMes(calAno, calMes);
   const nomesMes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
   document.getElementById('calMesAno').textContent = `${nomesMes[calMes]} de ${calAno}`;
 
@@ -6589,6 +6597,15 @@ function renderCalendario() {
       </div>
       ${obrigDia.slice(0,2).map(o=>`<div style="font-size:9px;background:${isSel?'rgba(255,255,255,.3)':o.cor||'var(--sky)'};color:#fff;border-radius:3px;padding:1px 3px;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.sigla||o.nome.slice(0,8)}</div>`).join('')}
       ${obrigDia.length>2?`<div style="font-size:9px;color:${isSel?'#fff':'var(--text3)'};text-align:center">+${obrigDia.length-2}</div>`:''}
+      ${(()=>{
+        const temComp = _compsMes.some(c=>new Date(c.data+'T12:00:00').getDate()===dia);
+        const temLem  = _lemsMes.some(l=>new Date(l.data_lembrete+'T12:00:00').getDate()===dia&&l.status==='pendente');
+        if(!temComp&&!temLem) return '';
+        return `<div style="display:flex;gap:2px;justify-content:center;margin-top:2px">
+          ${temComp?`<div style="width:6px;height:6px;border-radius:50%;background:${isSel?'#fff':'var(--accent)'}"></div>`:''}
+          ${temLem?`<div style="width:6px;height:6px;border-radius:50%;background:${isSel?'#fff':'var(--amber)'}"></div>`:''}
+        </div>`;
+      })()}
     </div>`;
   }
   grade += '</div>';
@@ -6596,7 +6613,7 @@ function renderCalendario() {
   renderCalObrig();
 }
 
-function selecionarDia(dia) {
+async function selecionarDia(dia) {
   calDiaSel = dia;
   renderCalendario();
 
@@ -6652,12 +6669,11 @@ function selecionarDia(dia) {
     }).join('');
   }
 
-  // ── 3. COMPROMISSOS ──────────────────────────────────────────────────────────
-  const todosComp = JSON.parse(localStorage.getItem('focco_compromissos')||'[]');
-  const compsNoDia = todosComp.filter(c => {
-    const cd = new Date(c.data+'T12:00:00');
-    return cd.getFullYear()===calAno && cd.getMonth()===calMes && cd.getDate()===dia && c.usuario_id===U?.id;
-  }).sort((a,b)=>(a.hora||'').localeCompare(b.hora||''));
+  // ── 3. COMPROMISSOS (Supabase) ───────────────────────────────────────────────
+  const [{data:compsNoDia=[]}, {data:lemNoDia=[]}] = await Promise.all([
+    sbRest('compromissos').select('*').eq('data',dataStr).eq('usuario_id',U.id).order('hora',{ascending:true}),
+    sbRest('lembretes').select('*,demandas(numero,resumo)').eq('data_lembrete',dataStr).eq('responsavel_id',U.id).order('hora_lembrete',{ascending:true})
+  ]);
 
   if(compsNoDia.length) {
     temAlgo = true;
@@ -6676,7 +6692,27 @@ function selecionarDia(dia) {
       </div>`).join('');
   }
 
-  // ── 4. Botão adicionar compromisso ───────────────────────────────────────────
+  // ── 4. LEMBRETES DO DIA ──────────────────────────────────────────────────────
+  if(lemNoDia && lemNoDia.length) {
+    temAlgo = true;
+    html += `<div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;padding:6px 0 4px">📌 Lembretes</div>`;
+    html += lemNoDia.map(l => {
+      const dem = l.demandas;
+      const statusIcon = {pendente:'⏳',concluido:'✅',reagendado:'🔄'}[l.status]||'⏳';
+      const statusCor = {pendente:'var(--amber)',concluido:'var(--green)',reagendado:'var(--sky)'}[l.status]||'var(--amber)';
+      return `<div style="display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border-radius:8px;border:1px solid ${statusCor};margin-bottom:4px;background:var(--surface);cursor:pointer" onclick="abrirDet('${l.demanda_id}','cal')">
+        <span style="font-size:18px">${statusIcon}</span>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600">${l.descricao}</div>
+          ${dem?`<div style="font-size:11px;color:var(--accent)">${dem.numero} — ${dem.resumo||''}</div>`:''}
+          ${l.hora_lembrete?`<div style="font-size:11px;color:var(--text3)">🕐 ${l.hora_lembrete.slice(0,5)}</div>`:''}
+        </div>
+        ${l.status==='pendente'?`<button onclick="event.stopPropagation();concluirLembreteRapido('${l.id}')" style="background:none;border:1px solid var(--green);color:var(--green);border-radius:4px;padding:2px 6px;cursor:pointer;font-size:11px">✓</button>`:''}
+      </div>`;
+    }).join('');
+  }
+
+  // ── 5. Botão adicionar compromisso ───────────────────────────────────────────
   html += `<div style="margin-top:8px">
     <button onclick="abrirCompCal(${dia})" class="btn btn-s" style="width:100%;justify-content:center;font-size:12px">
       + Adicionar compromisso neste dia
@@ -6710,13 +6746,10 @@ function abrirCompCal(dia) {
 }
 
 // Excluir compromisso e atualizar painel
-function excluirCompCal(id) {
+async function excluirCompCal(id) {
   if(!confirm('Excluir este compromisso?')) return;
-  let comps = JSON.parse(localStorage.getItem('focco_compromissos')||'[]');
-  comps = comps.filter(c=>c.id!==id);
-  localStorage.setItem('focco_compromissos', JSON.stringify(comps));
-  selecionarDia(calDiaSel);
-  renderCalendario();
+  await sbRest('compromissos').delete().eq('id',id);
+  await atualizarAgenda();
   toast('Compromisso excluído.','ok');
 }
 
@@ -8339,14 +8372,13 @@ function getObrigPorDia(ano, mes) {
   return mapa;
 }
 
-function dashCalMes(d) {
+async function dashCalMes(d) {
   dashCalMesAtual += d;
   if(dashCalMesAtual > 11) { dashCalMesAtual = 0; dashCalAno++; }
   if(dashCalMesAtual < 0)  { dashCalMesAtual = 11; dashCalAno--; }
-  // Sincronizar com Calendário Fiscal
   calAno = dashCalAno;
   calMes = dashCalMesAtual;
-  renderDashCal();
+  await renderDashCal();
 }
 
 
@@ -8411,7 +8443,7 @@ function abrirNovaObrigacao(id){
   om('mObrigacao');
 }
 
-function salvarObrigacao(){
+async function salvarObrigacao(){
   const nome=document.getElementById('obNome').value.trim();
   const sigla=document.getElementById('obSigla').value.trim().toUpperCase();
   const dia=parseInt(document.getElementById('obDia').value);
@@ -8442,17 +8474,17 @@ function salvarObrigacao(){
   lista.sort((a,b)=>a.dia_base-b.dia_base);
   localStorage.setItem('focco_obrigacoes',JSON.stringify(lista));
   fm('mObrigacao');
-  renderDashCal();
+  await renderDashCal();
   renderListaObrigacoes();
   if(typeof renderCalendario==='function') renderCalendario();
   toast('Obrigação "'+sigla+'" salva!','ok');
 }
 
-function excluirObrigacao(id){
+async function excluirObrigacao(id){
   if(!confirm('Excluir esta obrigação?')) return;
   const lista=getObrigacoes().filter(o=>o.id!==id);
   localStorage.setItem('focco_obrigacoes',JSON.stringify(lista));
-  renderDashCal();
+  await renderDashCal();
   renderListaObrigacoes();
   if(typeof renderCalendario==='function') renderCalendario();
   toast('Obrigação excluída.','ok');
@@ -8492,7 +8524,7 @@ function abrirFeriados(){
   renderListaFeriados();
   om('mFeriados');
 }
-function adicionarFeriado(){
+async function adicionarFeriado(){
   const data=document.getElementById('ferData').value;
   const nome=document.getElementById('ferNome').value.trim();
   const recorrente=document.getElementById('ferRecorrente').checked;
@@ -8504,14 +8536,14 @@ function adicionarFeriado(){
   document.getElementById('ferNome').value='';
   document.getElementById('ferRecorrente').checked=false;
   renderListaFeriados();
-  renderDashCal();
+  await renderDashCal();
   toast('Feriado adicionado!','ok');
 }
-function excluirFeriado(id){
+async function excluirFeriado(id){
   const lista=JSON.parse(localStorage.getItem('focco_feriados')||'[]').filter(f=>f.id!==id);
   localStorage.setItem('focco_feriados',JSON.stringify(lista));
   renderListaFeriados();
-  renderDashCal();
+  await renderDashCal();
 }
 function renderListaFeriados(){
   const el=document.getElementById('ferLista');
@@ -8540,49 +8572,73 @@ function abrirNovoCompromisso() {
   om('mCompromisso');
 }
 
-function salvarCompromisso() {
+async function salvarCompromisso() {
   const titulo = document.getElementById('compTitulo').value.trim();
   const data = document.getElementById('compData').value;
   if(!titulo || !data) { toast('Informe título e data','err'); return; }
   const comp = {
-    id: uuid(),
     titulo,
     data,
-    hora: document.getElementById('compHora').value || '',
+    hora: document.getElementById('compHora').value || null,
     tipo: document.getElementById('compTipo').value,
     participantes: document.getElementById('compPart').value.trim(),
     descricao: document.getElementById('compDesc').value.trim(),
     usuario_id: U.id,
-    created_at: new Date().toISOString()
   };
-  const comps = JSON.parse(localStorage.getItem('focco_compromissos')||'[]');
-  comps.push(comp);
-  localStorage.setItem('focco_compromissos', JSON.stringify(comps));
+  const {error} = await sbRest('compromissos').insert(comp);
+  if(error){ toast('Erro ao salvar: '+error.message,'err'); return; }
   fm('mCompromisso');
   toast('Compromisso salvo!','ok');
-  renderDashCal();
-  // Se estava no calendário fiscal, atualizar o painel do dia
-  if(window._compCalDia && calDiaSel===window._compCalDia) {
-    selecionarDia(calDiaSel);
-    renderCalendario();
-    window._compCalDia = null;
-  }
+  // Atualizar telas automaticamente
+  await atualizarAgenda();
+}
+
+let _compsMes = [];
+let _lemsMes = [];
+
+async function carregarEventosMes(ano, mes) {
+  const inicio = `${ano}-${String(mes+1).padStart(2,'0')}-01`;
+  const fim = `${ano}-${String(mes+1).padStart(2,'0')}-31`;
+  const [cr, lr] = await Promise.all([
+    sbRest('compromissos').select('data,hora,titulo,tipo,id').eq('usuario_id',U.id).gte('data',inicio).lte('data',fim),
+    sbRest('lembretes').select('data_lembrete,hora_lembrete,descricao,status,id').eq('responsavel_id',U.id).gte('data_lembrete',inicio).lte('data_lembrete',fim)
+  ]);
+  _compsMes = cr.data||[];
+  _lemsMes = lr.data||[];
 }
 
 function getCompromissosMes(ano, mes) {
-  const comps = JSON.parse(localStorage.getItem('focco_compromissos')||'[]');
-  return comps.filter(c => {
+  return _compsMes.filter(c => {
     const d = new Date(c.data+'T12:00:00');
-    return d.getFullYear()===ano && d.getMonth()===mes && c.usuario_id===U?.id;
+    return d.getFullYear()===ano && d.getMonth()===mes;
   });
 }
 
-function excluirCompromisso(id) {
+function getLembretesMes(ano, mes) {
+  return _lemsMes.filter(l => {
+    const d = new Date(l.data_lembrete+'T12:00:00');
+    return d.getFullYear()===ano && d.getMonth()===mes;
+  });
+}
+
+// Função central que atualiza agenda em todas as telas
+async function atualizarAgenda() {
+  await carregarEventosMes(calAno, calMes);
+  renderCalendario();
+  if(calDiaSel) selecionarDia(calDiaSel);
+  await renderDashCal();
+  // Atualizar lembretes na Minha Caixa se estiver ativa
+  if(document.getElementById('pg-caixa')?.classList.contains('on')) {
+    await carregarLembretesHoje();
+  }
+}
+
+async function excluirCompromisso(id) {
   if(!confirm('Excluir este compromisso?')) return;
   let comps = JSON.parse(localStorage.getItem('focco_compromissos')||'[]');
   comps = comps.filter(c=>c.id!==id);
   localStorage.setItem('focco_compromissos', JSON.stringify(comps));
-  renderDashCal();
+  await renderDashCal();
   toast('Compromisso excluído','ok');
 }
 
@@ -8867,18 +8923,19 @@ function isFeriadoDia(ano, mes, dia) {
   return !!getNomeFeriado(ano, mes, dia);
 }
 
-function renderDashCal() {
+async function renderDashCal() {
   const hoje = new Date();
-  // Usar as mesmas variáveis do Calendário Fiscal para sincronismo total
   const ano = dashCalAno, mes = dashCalMesAtual;
   const primeiroDia = new Date(ano, mes, 1).getDay();
   const totalDias = new Date(ano, mes + 1, 0).getDate();
   const nomesMes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
                     'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
-  document.getElementById('dashCalTitulo').textContent = nomesMes[mes] + ' de ' + ano;
+  const el = document.getElementById('dashCalTitulo');
+  if(!el) return;
+  el.textContent = nomesMes[mes] + ' de ' + ano;
 
-  // MESMA FONTE DO CALENDÁRIO FISCAL: getObrigacoesMes → convertido em mapa por dia
+  // Obrigações do mês
   const obrigLista = getObrigacoesMes(ano, mes);
   const obrigPorDia = {};
   obrigLista.forEach(o => {
@@ -8886,20 +8943,29 @@ function renderDashCal() {
     obrigPorDia[o.dia].push(o);
   });
 
-  // Compromissos do mês — calculado ANTES do loop do grid
-  const todosCompDash = JSON.parse(localStorage.getItem('focco_compromissos')||'[]')
-    .filter(c=>{
-      const cd=new Date(c.data+'T12:00:00');
-      return cd.getFullYear()===ano && cd.getMonth()===mes && c.usuario_id===U?.id;
-    });
-  const compPorDia = {};
-  todosCompDash.forEach(c=>{
-    const d=new Date(c.data+'T12:00:00').getDate();
-    if(!compPorDia[d]) compPorDia[d]=[];
-    compPorDia[d].push(c);
-  });
+  // Compromissos e lembretes — só busca se usuário logado
+  let compPorDia = {}, lemPorDia = {};
+  if(U?.id) {
+    try {
+      const inicio = `${ano}-${String(mes+1).padStart(2,'0')}-01`;
+      const fim = `${ano}-${String(mes+1).padStart(2,'0')}-31`;
+      const [compRes, lemRes] = await Promise.all([
+        sbRest('compromissos').select('id,titulo,data,hora,tipo').eq('usuario_id',U.id).gte('data',inicio).lte('data',fim),
+        sbRest('lembretes').select('id,descricao,data_lembrete,status').eq('responsavel_id',U.id).eq('status','pendente').gte('data_lembrete',inicio).lte('data_lembrete',fim)
+      ]);
+      (compRes.data||[]).forEach(c=>{
+        const d=new Date(c.data+'T12:00:00').getDate();
+        if(!compPorDia[d]) compPorDia[d]=[];
+        compPorDia[d].push(c);
+      });
+      (lemRes.data||[]).forEach(l=>{
+        const d=new Date(l.data_lembrete+'T12:00:00').getDate();
+        if(!lemPorDia[d]) lemPorDia[d]=[];
+        lemPorDia[d].push(l);
+      });
+    } catch(e) { console.warn('renderDashCal fetch error:', e); }
+  }
 
-  // Feriados — calculado ANTES do loop do grid
   const feriadosAnoD = getFeriadosAno(ano);
 
   // Gerar grade do calendário
@@ -8925,9 +8991,11 @@ function renderDashCal() {
     else if(fimSem)  { textColor = 'var(--text3)'; }
     else if(isPassado && temObrig) { bg = 'var(--surface2)'; }
 
-    // Compromissos do dia
+    // Compromissos e lembretes do dia
     const compsDoD = (compPorDia[d]||[]);
+    const lemsDoD = (lemPorDia[d]||[]);
     const compDot = compsDoD.length ? `<span style="width:5px;height:5px;border-radius:50%;background:#0F9B6E;display:inline-block;margin-left:1px"></span>` : '';
+    const lemDot = lemsDoD.length ? `<span style="width:5px;height:5px;border-radius:50%;background:var(--amber);display:inline-block;margin-left:1px"></span>` : '';
     const dots = cores.slice(0,2).map(c =>
       `<span style="width:4px;height:4px;border-radius:50%;background:${c};display:inline-block"></span>`
     ).join('');
@@ -8941,7 +9009,7 @@ function renderDashCal() {
     cells += `<div onclick="dashCalDiaClick(${d})" title="${tooltip}" style="padding:3px 2px;min-height:44px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:4px;cursor:pointer;border-radius:6px;background:${bg};border:${border};transition:all .12s">
       <span style="font-size:11px;font-weight:${isHoje||temObrig||isFer?'700':'400'};color:${textColor};line-height:1">${d}</span>
       ${isFer&&!isHoje ? `<span style="font-size:7px;color:#D97706;font-weight:700;line-height:1">FER</span>` : ''}
-      ${(dots||compDot) && !isFer ? `<div style="display:flex;gap:1px;margin-top:1px">${dots}${compDot}</div>` : ''}
+      ${(dots||compDot||lemDot) && !isFer ? `<div style="display:flex;gap:1px;margin-top:1px">${dots}${compDot}${lemDot}</div>` : ''}
       ${temObrig&&isFer ? `<div style="display:flex;gap:1px;margin-top:1px">${dots}</div>` : ''}
     </div>`;
   }
@@ -9020,8 +9088,38 @@ function renderDashCal() {
   }
 }
 
-function dashCalDiaClick(d) {
+async function dashCalDiaClick(d) {
   mostrarCompromissosDia(d);
+  // Mostrar compromissos e lembretes no painel lateral do dashboard
+  const dataStr = `${dashCalAno}-${String(dashCalMesAtual+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  const panelEl = document.getElementById('dashDiaPanel');
+  if(!panelEl) return;
+  const [{data:comps},{data:lems}] = await Promise.all([
+    sbRest('compromissos').select('*').eq('data',dataStr).eq('usuario_id',U.id).order('hora',{ascending:true}),
+    sbRest('lembretes').select('*,demandas(numero,resumo)').eq('data_lembrete',dataStr).eq('responsavel_id',U.id).order('hora_lembrete',{ascending:true})
+  ]);
+  const tipoIcon={reuniao:'🤝',prazo:'⏰',visita:'🏢',ligacao:'📞',treinamento:'📚',interno:'📋',outro:'📌'};
+  let html = '';
+  if(comps?.length){
+    html += `<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:6px">📅 Compromissos</div>`;
+    html += comps.map(c=>`<div style="padding:8px;background:var(--surface2);border-radius:6px;margin-bottom:6px">
+      <div style="font-size:13px;font-weight:600">${tipoIcon[c.tipo]||'📌'} ${c.titulo}</div>
+      ${c.hora?`<div style="font-size:11px;color:var(--accent)">🕐 ${c.hora.slice(0,5)}</div>`:''}
+      ${c.participantes?`<div style="font-size:11px;color:var(--text3)">👤 ${c.participantes}</div>`:''}
+      <button onclick="excluirCompCal('${c.id}')" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px;margin-top:4px">🗑 Excluir</button>
+    </div>`).join('');
+  }
+  if(lems?.length){
+    html += `<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:6px;margin-top:8px">📌 Lembretes</div>`;
+    html += lems.map(l=>`<div style="padding:8px;background:var(--amber-pale);border:1px solid #FCD34D;border-radius:6px;margin-bottom:6px;cursor:pointer" onclick="abrirDet('${l.demanda_id}','dash')">
+      <div style="font-size:13px;font-weight:600">${l.descricao}</div>
+      ${l.demandas?`<div style="font-size:11px;color:var(--accent)">${l.demandas.numero}</div>`:''}
+      ${l.hora_lembrete?`<div style="font-size:11px;color:var(--text3)">🕐 ${l.hora_lembrete.slice(0,5)}</div>`:''}
+      <button onclick="event.stopPropagation();concluirLembreteRapido('${l.id}')" style="background:none;border:1px solid var(--green);color:var(--green);border-radius:4px;padding:1px 6px;cursor:pointer;font-size:11px;margin-top:4px">✓ OK</button>
+    </div>`).join('');
+  }
+  if(!html) html = '<div class="vazio" style="padding:1rem">Nenhum evento neste dia.</div>';
+  panelEl.innerHTML = html;
   const el = document.getElementById('dashObrig_' + d);
   if(el) el.scrollIntoView({behavior:'smooth', block:'nearest'});
 }
@@ -9096,6 +9194,9 @@ async function salvarLembrete() {
   toast('Lembrete salvo!','ok');
   fm('mLembrete');
   await carregarLembretesDet(_lembretesDemandaId);
+  // Atualizar Minha Caixa e calendário automaticamente
+  if(document.getElementById('pg-caixa')?.classList.contains('on')) await carregarLembretesHoje();
+  _lemsMes = []; // Forçar recarregamento no próximo renderCalendario
 }
 
 async function carregarLembretesDet(demandaId) {
@@ -9205,5 +9306,7 @@ async function concluirLembreteRapido(id) {
   await sbRest('lembretes').update({status:'concluido'}).eq('id',id);
   toast('Lembrete concluído!','ok');
   await carregarLembretesHoje();
+  _lemsMes = []; // Forçar recarregamento do calendário
+  if(calDiaSel) await selecionarDia(calDiaSel);
 }
 </script>
