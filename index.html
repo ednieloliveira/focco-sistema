@@ -2446,6 +2446,79 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
   </div>
 </div>
 
+<!-- MODAL AÇÃO DO LEMBRETE -->
+<div class="modal-ov" id="mAcaoLembrete">
+  <div class="modal" style="max-width:560px">
+    <div class="mh">
+      <div>
+        <div class="mt" id="mAcaoLemTit">📌 Lembrete</div>
+        <div style="font-size:12px;color:var(--text3)" id="mAcaoLemSub"></div>
+      </div>
+      <button class="mc" onclick="fm('mAcaoLembrete')">×</button>
+    </div>
+    <div class="mb">
+      <!-- Info do lembrete -->
+      <div id="mAcaoLemInfo" style="background:var(--surface2);border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px"></div>
+      <!-- Opções -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+        <div id="optConcluir" onclick="selecionarAcaoLem('concluir')" style="border:2px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;text-align:center;transition:all .15s">
+          <div style="font-size:28px;margin-bottom:6px">✅</div>
+          <div style="font-size:13px;font-weight:700;color:var(--text)">Concluir sem Tramitar</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px">Atividade simples sem registro no processo</div>
+        </div>
+        <div id="optTramitar" onclick="selecionarAcaoLem('tramitar')" style="border:2px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;text-align:center;transition:all .15s">
+          <div style="font-size:28px;margin-bottom:6px">📝</div>
+          <div style="font-size:13px;font-weight:700;color:var(--text)">Tramitar no Processo</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px">Registrar no histórico da demanda</div>
+        </div>
+      </div>
+
+      <!-- Área de tramitação (aparece quando Tramitar selecionado) -->
+      <div id="areaTramitacao" style="display:none;border:1px solid var(--border);border-radius:10px;padding:14px">
+        <div style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:12px">📋 Tramitação no Processo</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;font-size:12px;background:var(--surface2);border-radius:6px;padding:8px">
+          <div><span style="color:var(--text3)">Data:</span> <strong id="tramDataAuto"></strong></div>
+          <div><span style="color:var(--text3)">Hora:</span> <strong id="tramHoraAuto"></strong></div>
+          <div><span style="color:var(--text3)">Usuário:</span> <strong id="tramUserAuto"></strong></div>
+        </div>
+        <div class="fg">
+          <label class="fl">Descrição da Tramitação *</label>
+          <textarea class="fi" id="alTramDesc" rows="3" placeholder="Ex: Contato realizado com Cristiano. Informou que os documentos serão enviados até sexta-feira."></textarea>
+        </div>
+        <div class="fg">
+          <label class="fl">Próxima Ação (opcional)</label>
+          <input type="text" class="fi" id="alProxAcao" placeholder="Ex: Aguardar envio da documentação">
+        </div>
+        <div class="fg">
+          <label class="fl">Criar novo lembrete?</label>
+          <div style="display:flex;gap:12px;margin-top:4px">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px">
+              <input type="radio" name="alNovoLem" id="alNovoLemSim" value="sim" onchange="toggleNovoLembrete()"> Sim
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px">
+              <input type="radio" name="alNovoLem" id="alNovoLemNao" value="nao" checked onchange="toggleNovoLembrete()"> Não
+            </label>
+          </div>
+        </div>
+        <div id="areaNovoLembrete" style="display:none;background:var(--sky-pale);border-radius:8px;padding:12px;border:1px solid rgba(14,165,233,.2)">
+          <div style="font-size:12px;font-weight:700;color:var(--sky);margin-bottom:8px">📌 Novo Lembrete</div>
+          <div class="fg">
+            <input type="text" class="fi" id="alNovoDesc" placeholder="Descrição do novo lembrete...">
+          </div>
+          <div class="fr" style="gap:8px">
+            <div class="fg"><label class="fl">Data *</label><input type="date" class="fi" id="alNovoData"></div>
+            <div class="fg"><label class="fl">Hora</label><input type="time" class="fi" id="alNovoHora"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-s" onclick="fm('mAcaoLembrete')">Cancelar</button>
+      <button class="btn btn-p" id="alBtnSalvar" onclick="salvarAcaoLembrete()" style="display:none">💾 Confirmar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL LEMBRETE -->
 <div class="modal-ov" id="mLembrete">
   <div class="modal" style="max-width:460px">
@@ -9116,7 +9189,8 @@ let _lemsMes = [];
 
 async function carregarEventosMes(ano, mes) {
   const inicio = `${ano}-${String(mes+1).padStart(2,'0')}-01`;
-  const fim = `${ano}-${String(mes+1).padStart(2,'0')}-31`;
+  const ultimoDiaMes3 = new Date(ano, mes+1, 0).getDate();
+  const fim = `${ano}-${String(mes+1).padStart(2,'0')}-${String(ultimoDiaMes3).padStart(2,'0')}`;
   const [cr, lr] = await Promise.all([
     sbRest('compromissos').select('data,hora,titulo,tipo,id').eq('usuario_id',U.id).gte('data',inicio).lte('data',fim),
     sbRest('lembretes').select('data_lembrete,hora_lembrete,descricao,status,id').eq('responsavel_id',U.id).gte('data_lembrete',inicio).lte('data_lembrete',fim)
@@ -9814,18 +9888,18 @@ async function carregarLembretesHoje() {
     const dtFmt = l.data_lembrete === hoje2 ? 'Hoje' : new Date(l.data_lembrete+'T12:00:00').toLocaleDateString('pt-BR');
     const hora = l.hora_lembrete ? ' às '+l.hora_lembrete.slice(0,5) : '';
     return `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);${jaVisto?'opacity:.6':''}" >
-      <div style="font-size:20px;flex-shrink:0">${vencido?'🔴':jaVisto?'👁':'📞'}</div>
-      <div style="flex:1;cursor:pointer" onclick="abrirDet('${l.demanda_id}','caixa')">
+      <div style="font-size:20px;flex-shrink:0;cursor:pointer" onclick="abrirAcaoLembrete('${l.id}','${l.descricao.replace(/'/g,'\'').replace(/"/g,'\"')}','${l.demanda_id}','${dem.numero||''}','${dem.cli_nome||''}')">${vencido?'🔴':jaVisto?'👁':'📞'}</div>
+      <div style="flex:1;cursor:pointer" onclick="abrirAcaoLembrete('${l.id}','${l.descricao.replace(/'/g,'\'').replace(/"/g,'\"')}','${l.demanda_id}','${dem.numero||''}','${dem.cli_nome||''}')">
         <div style="display:flex;align-items:center;gap:6px">
           <div style="font-size:13px;font-weight:${jaVisto?400:600};color:${vencido?'var(--red)':'var(--text)'}">${l.descricao}</div>
           ${jaVisto?'<span style="font-size:10px;background:var(--surface2);color:var(--text3);padding:1px 6px;border-radius:10px">Visto</span>':''}
         </div>
-        ${dem.numero?`<div style="font-size:12px;color:var(--text3)">Processo: <strong>${dem.numero}</strong>${dem.cli_nome?' — '+dem.cli_nome:''}</div>`:''}
-        <div style="font-size:11px;color:${vencido?'var(--red)':'var(--text3)'};margin-top:2px">📅 ${dtFmt}${hora}</div>
+        ${dem.numero?`<div style="font-size:12px;color:var(--accent)">📋 ${dem.numero}${dem.cli_nome?' — '+dem.cli_nome:''}</div>`:''}
+        <div style="font-size:11px;color:${vencido?'var(--red)':'var(--text3)'};margin-top:2px">📅 ${dtFmt}${hora}${vencido?' · <strong style=color:var(--red)>Em Atraso</strong>':''}</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
-        <button onclick="concluirLembreteRapido('${l.id}')" style="background:none;border:1px solid var(--green);color:var(--green);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:11px">✓ OK</button>
-        ${!jaVisto?`<button onclick="marcarLembreteVisto('${l.id}')" style="background:none;border:1px solid var(--border);color:var(--text3);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:11px">👁 Visto</button>`:''}
+        <button onclick="event.stopPropagation();abrirAcaoLembrete('${l.id}','${l.descricao.replace(/'/g,'\'').replace(/"/g,'\"')}','${l.demanda_id}','${dem.numero||''}','${dem.cli_nome||''}')" style="background:var(--accent);border:none;color:#fff;border-radius:6px;padding:3px 8px;cursor:pointer;font-size:11px">▶ Agir</button>
+        ${!jaVisto?`<button onclick="event.stopPropagation();marcarLembreteVisto('${l.id}')" style="background:none;border:1px solid var(--border);color:var(--text3);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:11px">👁 Visto</button>`:''}
       </div>
     </div>`;
   }).join('');
@@ -9849,5 +9923,171 @@ async function concluirLembreteRapido(id) {
   await carregarLembretesHoje();
   _lemsMes = []; // Forçar recarregamento do calendário
   if(calDiaSel) await selecionarDia(calDiaSel);
+}
+</script>
+<script>
+// ================================================================
+// MÓDULO LEMBRETES — AÇÃO COMPLETA
+// ================================================================
+let _acaoLem = { id:null, demandaId:null, descricao:null, numero:null, cliente:null, tipo:null };
+
+function abrirAcaoLembrete(id, descricao, demandaId, numero, cliente) {
+  _acaoLem = {id, demandaId, descricao, numero, cliente, tipo: null};
+
+  document.getElementById('mAcaoLemTit').textContent = '📌 ' + descricao;
+  document.getElementById('mAcaoLemSub').textContent = numero ? '📋 Processo: ' + numero + (cliente?' — '+cliente:'') : '';
+  document.getElementById('mAcaoLemInfo').innerHTML =
+    '<div style="font-weight:600;margin-bottom:4px">' + descricao + '</div>' +
+    (numero ? '<div style="font-size:12px;color:var(--accent)">📋 ' + numero + (cliente?' — '+cliente:'') + '</div>' : '');
+
+  // Resetar seleção
+  ['optConcluir','optTramitar'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el){ el.style.border='2px solid var(--border)'; el.style.background=''; }
+  });
+  document.getElementById('areaTramitacao').style.display = 'none';
+  document.getElementById('alBtnSalvar').style.display = 'none';
+  document.getElementById('alTramDesc').value = '';
+  document.getElementById('alProxAcao').value = '';
+  document.getElementById('alNovoLemNao').checked = true;
+  document.getElementById('areaNovoLembrete').style.display = 'none';
+
+  // Preencher data/hora/usuário automáticos
+  const agora = new Date();
+  document.getElementById('tramDataAuto').textContent = agora.toLocaleDateString('pt-BR');
+  document.getElementById('tramHoraAuto').textContent = agora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  document.getElementById('tramUserAuto').textContent = U?.nome || '—';
+
+  // Data padrão para novo lembrete (amanhã)
+  const amanha = new Date(Date.now() + 86400000);
+  document.getElementById('alNovoData').value = amanha.toISOString().split('T')[0];
+  document.getElementById('alNovoHora').value = '09:00';
+
+  om('mAcaoLembrete');
+}
+
+function selecionarAcaoLem(tipo) {
+  _acaoLem.tipo = tipo;
+  const cores = {concluir:'var(--green)', tramitar:'var(--accent)'};
+  ['concluir','tramitar'].forEach(t=>{
+    const el = document.getElementById('opt'+t.charAt(0).toUpperCase()+t.slice(1));
+    if(el){
+      el.style.border = t===tipo ? '2px solid '+cores[t] : '2px solid var(--border)';
+      el.style.background = t===tipo ? (t==='concluir'?'var(--green-pale)':'var(--sky-pale)') : '';
+    }
+  });
+  document.getElementById('areaTramitacao').style.display = tipo==='tramitar' ? 'block' : 'none';
+  document.getElementById('alBtnSalvar').style.display = 'inline-flex';
+}
+
+function toggleNovoLembrete() {
+  const sim = document.getElementById('alNovoLemSim').checked;
+  document.getElementById('areaNovoLembrete').style.display = sim ? 'block' : 'none';
+}
+
+async function salvarAcaoLembrete() {
+  if(!_acaoLem.tipo){ toast('Selecione uma opção','err'); return; }
+
+  const btn = document.getElementById('alBtnSalvar');
+  if(btn){ btn.disabled=true; btn.textContent='Salvando...'; }
+
+  try {
+    const agora = new Date().toISOString();
+
+    if(_acaoLem.tipo === 'concluir') {
+      // Opção 1: Concluir sem tramitar
+      await sbRest('lembretes').update({
+        status:'concluido',
+        updated_at: agora
+      }).eq('id',_acaoLem.id);
+
+      toast('Lembrete concluído!','ok');
+      fm('mAcaoLembrete');
+
+    } else {
+      // Opção 2: Tramitar no processo
+      const desc = document.getElementById('alTramDesc').value.trim();
+      if(!desc){ toast('Informe a descrição da tramitação','err'); if(btn){btn.disabled=false;btn.textContent='💾 Confirmar';}return; }
+
+      const proxAcao = document.getElementById('alProxAcao').value.trim();
+      const criarNovoLem = document.getElementById('alNovoLemSim').checked;
+      const novoDesc = document.getElementById('alNovoDesc').value.trim();
+      const novoData = document.getElementById('alNovoData').value;
+      const novoHora = document.getElementById('alNovoHora').value;
+
+      // Texto completo da tramitação
+      let descTramite = desc;
+      if(proxAcao) descTramite += '\n\nPróxima ação: ' + proxAcao;
+      if(criarNovoLem && novoDesc) descTramite += '\n\nNovo lembrete criado: ' + novoDesc + (novoData?' para '+new Date(novoData+'T12:00:00').toLocaleDateString('pt-BR'):'');
+
+      // 1. Registrar tramitação
+      await sbRest('tramites').insert({
+        demanda_id: _acaoLem.demandaId,
+        usuario_id: U.id,
+        tipo: 'movimentacao_geral',
+        descricao: descTramite
+      });
+
+      // 2. Atualizar ultimo_tramite na demanda
+      await sbRest('demandas').update({
+        ultima_movimentacao: agora,
+        ultimo_tramite_at: agora,
+        ultimo_tramite_usuario: U.nome,
+        ultimo_tramite_descricao: desc
+      }).eq('id', _acaoLem.demandaId);
+
+      // 3. Concluir lembrete atual
+      await sbRest('lembretes').update({status:'concluido', updated_at:agora}).eq('id',_acaoLem.id);
+
+      // 4. Criar novo lembrete se solicitado
+      if(criarNovoLem && novoDesc && novoData) {
+        await sbRest('lembretes').insert({
+          demanda_id: _acaoLem.demandaId,
+          usuario_id: U.id,
+          responsavel_id: U.id,
+          descricao: novoDesc,
+          data_lembrete: novoData,
+          hora_lembrete: novoHora||null,
+          status: 'pendente'
+        });
+      }
+
+      // 5. Adicionar tramite na tela se detalhe estiver aberto
+      if(demId === _acaoLem.demandaId) {
+        adicionarTramiteNaTela({
+          tipo:'movimentacao_geral',
+          descricao:descTramite,
+          usuario_id:U.id,
+          created_at:agora,
+          profiles:{nome:U.nome}
+        });
+        delete _detCache[_acaoLem.demandaId];
+      }
+
+      toast('Tramitação registrada e lembrete concluído!','ok');
+      fm('mAcaoLembrete');
+
+      // 6. Atualizar Central de Processos em background
+      if(typeof allDem !== 'undefined' && allDem.length) {
+        const idx = allDem.findIndex(d=>d.id===_acaoLem.demandaId);
+        if(idx>=0){
+          allDem[idx].ultima_movimentacao = agora;
+          allDem[idx].ultimo_tramite_at = agora;
+          allDem[idx].ultimo_tramite_usuario = U.nome;
+          allDem[idx].ultimo_tramite_descricao = desc;
+          filtDem();
+        }
+      }
+    }
+
+    // 7. Atualizar Minha Caixa se estiver ativa
+    await carregarLembretesHoje();
+    _lemsMes = [];
+
+  } catch(e) {
+    toast('Erro: '+e.message,'err');
+  } finally {
+    if(btn){ btn.disabled=false; btn.textContent='💾 Confirmar'; }
+  }
 }
 </script>
