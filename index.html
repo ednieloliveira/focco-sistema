@@ -4098,6 +4098,7 @@ function fillGlobSelects(){
 }
 
 let _paginaAtual = 'dash';
+let _paginaAntesDet = 'dem';
 
 function ir(p,el){
   // Salvar página anterior antes de mudar (exceto detalhe)
@@ -7126,6 +7127,18 @@ async function loadDem() {
   const cE  = document.getElementById('cntEncerrada'); if(cE)  cE.textContent  = enc.length;
   const tot = document.getElementById('demTotal');
   if(tot) tot.textContent = allDem.length + ' total · ' + ativas.length + ' ativas · ' + enc.length + ' concluídas';
+
+  // Popular filtro de responsáveis
+  const fResp = document.getElementById('fResp');
+  if(fResp && fResp.options.length <= 1){
+    const profs = dbGet('profiles').filter(p=>p.ativo!==false).sort((a,b)=>a.nome.localeCompare(b.nome));
+    profs.forEach(p=>{
+      const opt=document.createElement('option');
+      opt.value=p.id; opt.textContent=p.nome;
+      fResp.appendChild(opt);
+    });
+  }
+
   filtDem();
 }
 
