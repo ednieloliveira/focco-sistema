@@ -4765,7 +4765,13 @@ async function renderDet(){
   <div style="display:grid;grid-template-columns:1fr 340px;gap:20px">
     <div>
       <div class="card">
-        <div class="ch"><div class="ct">📋 Linha do Tempo / Tramitação</div><span style="font-size:12px;color:var(--text3)">${tr.data?.length||0} registros</span></div>
+        <div class="ch">
+          <div class="ct">📋 Linha do Tempo / Tramitação</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:12px;color:var(--text3)">${tr.data?.length||0} registros</span>
+            <button onclick="imprimirTramites()" class="btn btn-s" style="font-size:11px">🖨️ Imprimir PDF</button>
+          </div>
+        </div>
         <div class="cb">
           ${tr.data?.length?`<div id="tramitesLista" class="tram-timeline-v2">${tr.data.map(t=>{
             const tipoClass=t.tipo||'';
@@ -4811,7 +4817,13 @@ async function renderDet(){
       <div class="card">
         <div class="ch"><div class="ct">ℹ️ Informações</div></div>
         <div class="cb">
-          <div style="margin-bottom:12px"><div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px">Cliente</div><div style="font-size:13px;font-weight:500">${d.clientes?.nome}</div>${d.clientes?.whatsapp?`<a href="https://wa.me/55${d.clientes.whatsapp}" target="_blank" style="font-size:12px;color:var(--green)">📱 WhatsApp</a>`:''}</div>
+          <div style="margin-bottom:12px">
+            <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px">Cliente</div>
+            <div style="font-size:11px;color:var(--text3);margin-bottom:2px">CPF/CNPJ</div>
+            <div style="font-size:13px;font-weight:600;margin-bottom:4px">${d.clientes?.cpf_cnpj||'—'}</div>
+            <div style="font-size:13px;font-weight:600;margin-bottom:4px">${d.clientes?.nome||'—'}</div>
+            <div style="font-size:12px;color:var(--green)">${d.clientes?.whatsapp?`<a href="https://wa.me/55${d.clientes.whatsapp.replace(/\D/g,'')}" target="_blank" style="color:var(--green)">📱 ${d.clientes.whatsapp}</a>`:'📱 —'}</div>
+          </div>
           <hr class="hr">
           <div style="margin-bottom:12px"><div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px">Responsável</div><div style="font-size:13px;font-weight:500">${d.profiles?.nome}</div></div>
           <hr class="hr">
@@ -5349,6 +5361,12 @@ async function salvarTramiteInline(){
 function adicionarTramiteNaTela(tram) {
   const lista = document.getElementById('tramitesLista');
   if(!lista) return;
+  // Atualizar contador
+  const contador = lista.closest('.card')?.querySelector('.ct + div span, span[style*="text3"]');
+  if(contador) {
+    const atual = parseInt(contador.textContent)||0;
+    contador.textContent = (atual+1)+' registros';
+  }
   const dt = new Date(tram.created_at);
   const dtStr = dt.toLocaleDateString('pt-BR');
   const hrStr = dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
@@ -10045,5 +10063,112 @@ gerarRelGerencial = async function(tipo) {
 
 function imprimirRel() {
   window.print();
+}
+</script>
+<script>
+// ================================================================
+// IMPRIMIR TRAMITES EM PDF
+// ================================================================
+async function imprimirTramites() {
+  // Buscar dados da demanda atual
+  const {data:d} = await sbRest('demandas').select('id,numero,resumo,status,prioridade,prazo,created_at,cliente_id,responsavel_atual_id').eq('id',demId).single();
+  const {data:trams} = await sbRest('tramites').select('id,tipo,descricao,created_at,usuario_id').eq('demanda_id',demId).order('created_at',{ascending:false});
+  
+  const clis = dbGet('clientes');
+  const profs = dbGet('profiles');
+  const cli = clis.find(c=>c.id===d?.cliente_id);
+  const resp = profs.find(p=>p.id===d?.responsavel_atual_id);
+
+  const TL = {
+    abertura:'🔓 Abertura', movimentacao_geral:'📝 Movimentação',
+    documento_recebido:'📄 Doc. Recebido', documento_solicitado:'📋 Doc. Solicitado',
+    protocolo:'🏛️ Protocolo', exigencia_recebida:'⚠️ Exigência',
+    exigencia_respondida:'✅ Exigência Respondida', aprovacao_concedida:'✅ Aprovado',
+    aprovacao_devolvida:'⚠️ Devolvido', conclusao:'🏁 Conclusão'
+  };
+  const SL = {
+    aberta:'Aberta', em_andamento:'Em Andamento', aguardando_cliente:'Ag. Cliente',
+    aguardando_orgao:'Ag. Órgão', aguardando_conclusao:'Ag. Conclusão',
+    concluida:'Concluída', cancelada:'Cancelada'
+  };
+
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Tramitações — ${d?.numero}</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: Arial, sans-serif; font-size: 12px; color: #1B2A4A; padding: 20px; }
+  .header { border-bottom: 3px solid #2563EB; padding-bottom: 16px; margin-bottom: 20px; display:flex; justify-content:space-between; align-items:flex-start; }
+  .logo { font-size:20px; font-weight:800; color:#2563EB; }
+  .logo span { display:block; font-size:11px; font-weight:400; color:#64748B; }
+  .numero { font-size:22px; font-weight:700; color:#1B2A4A; margin-bottom:4px; }
+  .info-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; padding:14px; margin-bottom:20px; }
+  .info-item label { font-size:10px; color:#64748B; text-transform:uppercase; font-weight:600; display:block; margin-bottom:2px; }
+  .info-item span { font-size:13px; font-weight:600; color:#1B2A4A; }
+  .resumo-box { background:#EBF4FF; border-left:4px solid #2563EB; padding:10px 14px; border-radius:0 6px 6px 0; margin-bottom:20px; font-size:13px; }
+  .section-title { font-size:13px; font-weight:700; color:#64748B; text-transform:uppercase; letter-spacing:.05em; margin-bottom:12px; padding-bottom:6px; border-bottom:1px solid #E2E8F0; }
+  .tram-item { display:flex; gap:12px; padding:12px 0; border-bottom:1px solid #F1F5F9; page-break-inside:avoid; }
+  .tram-dot { width:10px; height:10px; border-radius:50%; background:#2563EB; flex-shrink:0; margin-top:4px; }
+  .tram-body { flex:1; }
+  .tram-badge { display:inline-block; font-size:10px; font-weight:700; background:#EBF4FF; color:#2563EB; padding:2px 8px; border-radius:10px; margin-bottom:6px; }
+  .tram-desc { font-size:12px; line-height:1.6; color:#1B2A4A; white-space:pre-line; }
+  .tram-meta { font-size:10px; color:#94A3B8; margin-top:6px; }
+  .footer { margin-top:30px; padding-top:12px; border-top:1px solid #E2E8F0; font-size:10px; color:#94A3B8; display:flex; justify-content:space-between; }
+  @media print { body { padding:10px; } }
+</style>
+</head>
+<body>
+<div class="header">
+  <div>
+    <div class="logo">Focco <span>Contabilidade & Assessoria</span></div>
+    <div style="font-size:11px;color:#64748B;margin-top:4px">Patrocínio — MG</div>
+  </div>
+  <div style="text-align:right">
+    <div class="numero">${d?.numero||'—'}</div>
+    <div style="font-size:11px;color:#64748B">Histórico de Tramitações</div>
+    <div style="font-size:11px;color:#64748B">Emitido em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</div>
+  </div>
+</div>
+
+<div class="info-grid">
+  <div class="info-item"><label>Cliente</label><span>${cli?.nome||'—'}</span></div>
+  <div class="info-item"><label>Responsável</label><span>${resp?.nome||'—'}</span></div>
+  <div class="info-item"><label>Status</label><span>${SL[d?.status]||d?.status||'—'}</span></div>
+  <div class="info-item"><label>Prioridade</label><span>${d?.prioridade||'—'}</span></div>
+  <div class="info-item"><label>Prazo</label><span>${d?.prazo?new Date(d.prazo+'T12:00:00').toLocaleDateString('pt-BR'):'—'}</span></div>
+  <div class="info-item"><label>Abertura</label><span>${d?.created_at?new Date(d.created_at).toLocaleDateString('pt-BR'):'—'}</span></div>
+</div>
+
+<div class="resumo-box"><strong>Resumo:</strong> ${d?.resumo||'—'}</div>
+
+<div class="section-title">📋 Histórico de Tramitações (${(trams||[]).length} registros)</div>
+
+${(trams||[]).map(t=>{
+  const dt = new Date(t.created_at).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  const usuario = profs.find(p=>p.id===t.usuario_id)?.nome||'—';
+  const label = TL[t.tipo]||t.tipo||'Movimentação';
+  return `<div class="tram-item">
+    <div class="tram-dot"></div>
+    <div class="tram-body">
+      <div class="tram-badge">${label}</div>
+      <div class="tram-desc">${(t.descricao||'').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+      <div class="tram-meta">👤 ${usuario} &nbsp;·&nbsp; 🕐 ${dt}</div>
+    </div>
+  </div>`;
+}).join('')}
+
+<div class="footer">
+  <span>Focco Contabilidade & Assessoria Empresarial — Patrocínio/MG</span>
+  <span>Documento gerado pelo sistema Focco em ${new Date().toLocaleDateString('pt-BR')}</span>
+</div>
+</body>
+</html>`;
+
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  win.onload = () => { win.print(); };
 }
 </script>
