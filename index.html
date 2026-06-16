@@ -4286,7 +4286,7 @@ async function loadDash(){
   // PAINEL URGENTE HOJE
   const urgenteItems = [];
   if(u>0) urgenteItems.push({label:`${u} demanda(s) urgente(s) em aberto`,badge:u,fn:`ir('dem')`});
-  const {data:venc}=await sb.from('demandas').select('id,numero').not('status','in','(concluida,cancelada)').lte('prazo',hj);
+  const {data:venc}=await sbRest('demandas').select('id,numero').not('status','in','(concluida,cancelada)').not('prazo','is','null').lt('prazo',hj);
   if(venc?.length) urgenteItems.push({label:`${venc.length} demanda(s) com prazo vencido`,badge:venc.length,fn:`ir('dem')`});
   if(pe>0) urgenteItems.push({label:`${pe} pendência(s) em aberto aguardando resolução`,badge:pe,fn:`ir('dem')`});
   if(co>0) urgenteItems.push({label:`${co} demanda(s) aguardando aprovação de conclusão`,badge:co,fn:`ir('dem')`});
@@ -5123,6 +5123,7 @@ let _dadosUrgentes = {};
 
 async function abrirPainelUrgentes() {
   om('mUrgentes');
+  document.getElementById('urgentesCorpo').innerHTML = '<div class="loading">Carregando...</div>';
   await carregarDadosUrgentes();
   abaUrgente('vencidas');
 }
@@ -5134,26 +5135,31 @@ async function carregarDadosUrgentes() {
   const clis = dbGet('clientes');
   const depts = dbGet('departamentos');
 
-  const [vencRes, urgRes, paradaRes, concRes] = await Promise.all([
-    sbRest('demandas').select('id,numero,resumo,prazo,status,prioridade,responsavel_atual_id,cliente_id,departamento_atual_id,ultima_movimentacao').not('status','in','(concluida,cancelada)').lt('prazo',hj).order('prazo',{ascending:true}),
-    sbRest('demandas').select('id,numero,resumo,prazo,status,prioridade,responsavel_atual_id,cliente_id,departamento_atual_id,ultima_movimentacao').eq('prioridade','urgente').not('status','in','(concluida,cancelada)').order('ultima_movimentacao',{ascending:true}),
-    sbRest('demandas').select('id,numero,resumo,prazo,status,prioridade,responsavel_atual_id,cliente_id,departamento_atual_id,ultima_movimentacao').not('status','in','(concluida,cancelada)').lt('ultima_movimentacao',cincoD).order('ultima_movimentacao',{ascending:true}).limit(50),
-    sbRest('demandas').select('id,numero,resumo,prazo,status,prioridade,responsavel_atual_id,cliente_id,departamento_atual_id').eq('status','aguardando_conclusao').order('created_at',{ascending:true})
-  ]);
+  try {
+    const [vencRes, urgRes, paradaRes, concRes] = await Promise.all([
+      sbRest('demandas').select('id,numero,resumo,prazo,status,prioridade,responsavel_atual_id,cliente_id,departamento_atual_id,ultima_movimentacao,created_at').not('status','in','(concluida,cancelada)').not('prazo','is','null').lt('prazo',hj).order('prazo',{ascending:true}),
+      sbRest('demandas').select('id,numero,resumo,prazo,status,prioridade,responsavel_atual_id,cliente_id,departamento_atual_id,ultima_movimentacao,created_at').eq('prioridade','urgente').not('status','in','(concluida,cancelada)').order('ultima_movimentacao',{ascending:true}),
+      sbRest('demandas').select('id,numero,resumo,prazo,status,prioridade,responsavel_atual_id,cliente_id,departamento_atual_id,ultima_movimentacao,created_at').not('status','in','(concluida,cancelada)').lt('ultima_movimentacao',cincoD).order('ultima_movimentacao',{ascending:true}).limit(50),
+      sbRest('demandas').select('id,numero,resumo,prazo,status,prioridade,responsavel_atual_id,cliente_id,departamento_atual_id,created_at').eq('status','aguardando_conclusao').order('created_at',{ascending:true})
+    ]);
 
-  const enrich = (list) => (list||[]).map(d=>({
-    ...d,
-    cli: clis.find(c=>c.id===d.cliente_id),
-    resp: profs.find(p=>p.id===d.responsavel_atual_id),
-    dept: depts.find(x=>x.id===d.departamento_atual_id)
-  }));
+    const enrich = (list) => (list||[]).map(d=>({
+      ...d,
+      cli:  clis.find(c=>c.id===d.cliente_id),
+      resp: profs.find(p=>p.id===d.responsavel_atual_id),
+      dept: depts.find(x=>x.id===d.departamento_atual_id)
+    }));
 
-  _dadosUrgentes = {
-    vencidas: enrich(vencRes.data),
-    urgentes: enrich(urgRes.data),
-    paradas:  enrich(paradaRes.data),
-    conclusao: enrich(concRes.data)
-  };
+    _dadosUrgentes = {
+      vencidas:  enrich(vencRes.data||[]),
+      urgentes:  enrich(urgRes.data||[]),
+      paradas:   enrich(paradaRes.data||[]),
+      conclusao: enrich(concRes.data||[])
+    };
+  } catch(e) {
+    console.error('carregarDadosUrgentes error:', e);
+    _dadosUrgentes = {vencidas:[],urgentes:[],paradas:[],conclusao:[]};
+  }
 
   // Atualizar badges nas abas
   document.getElementById('abaUrg_vencidas').textContent  = `⏰ Prazo Vencido (${_dadosUrgentes.vencidas.length})`;
