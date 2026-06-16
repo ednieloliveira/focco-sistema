@@ -4631,8 +4631,8 @@ async function salvarDem(){
     // Resetar formulário para nova demanda sem recarregar
     ['ndDesc','ndPrazo'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
     ['ndCli','ndCat','ndTipo'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML='<option value="">Selecione...</option>';});
-    document.getElementById('ndPrio').value='normal';
-    document.getElementById('ndProtocolo').textContent='Protocolo: ...';
+    const ndPrioEl = document.getElementById('ndPrio'); if(ndPrioEl) ndPrioEl.value='normal';
+    const ndProt = document.getElementById('ndProtocolo'); if(ndProt) ndProt.textContent='Protocolo: ...';
     const btnAbrir3=document.querySelector('#mNovaDem .btn-p[onclick="salvarDem()"]');
     if(btnAbrir3){btnAbrir3.disabled=false;btnAbrir3.textContent='Abrir Demanda';}
     fm('mNovaDem');
