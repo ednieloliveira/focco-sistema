@@ -491,28 +491,39 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
       </div>
 
 
-      <!-- Central de atenção -->
-      <div style="margin-bottom:16px">
-        <div class="card"><div class="ch"><div class="ct">⚠️ Central de Atenção</div><button class="btn btn-s" style="padding:4px 10px;font-size:12px" onclick="ir('dem')">Ver todas</button></div><div class="cb" id="dAtenc"><div class="loading">Carregando...</div></div></div>
-      </div>
+      <!-- 4 cards em grid 2x2 — mesmo layout e estrutura -->
+      <div class="g2" style="margin-bottom:0;align-items:start">
 
-      <!-- Lembretes — todos os pendentes do sistema -->
-      <div class="card" style="margin-bottom:16px">
-        <div class="ch">
-          <div class="ct">📌 Lembretes Pendentes</div>
-          <div style="display:flex;align-items:center;gap:8px">
-            <span id="dLembretesLabel" style="font-size:11px;color:var(--text3)"></span>
-            <button class="btn btn-s" style="padding:3px 10px;font-size:11px" onclick="agendaAbrirLembrete()">+ Novo</button>
+        <!-- Linha 1, Col 1: Central de Atenção -->
+        <div class="card" style="margin-bottom:0">
+          <div class="ch"><div class="ct">⚠️ Central de Atenção</div><button class="btn btn-s" style="padding:4px 10px;font-size:12px" onclick="ir('dem')">Ver todas</button></div>
+          <div class="cb" id="dAtenc"><div class="loading">Carregando...</div></div>
+        </div>
+
+        <!-- Linha 1, Col 2: Lembretes Pendentes -->
+        <div class="card" style="margin-bottom:0">
+          <div class="ch">
+            <div class="ct">📌 Lembretes Pendentes</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span id="dLembretesLabel" style="font-size:11px;color:var(--text3)"></span>
+              <button class="btn btn-s" style="padding:3px 10px;font-size:11px" onclick="agendaAbrirLembrete()">+ Novo</button>
+            </div>
           </div>
+          <div class="cb" id="dLembretes"><div class="loading">Carregando...</div></div>
         </div>
-        <div id="dLembretes" style="max-height:380px;overflow-y:auto">
-          <div class="loading">Carregando...</div>
-        </div>
-      </div>
 
-      <div class="g2" style="margin-bottom:0">
-        <div class="card"><div class="ch"><div class="ct">✅ Aprovações Pendentes</div></div><div class="cb" id="dAprov"><div class="loading">Carregando...</div></div></div>
-        <div class="card"><div class="ch"><div class="ct">📌 Próximas Ações Vencidas</div></div><div class="cb" id="dProx"><div class="loading">Carregando...</div></div></div>
+        <!-- Linha 2, Col 1: Aprovações Pendentes -->
+        <div class="card" style="margin-bottom:0">
+          <div class="ch"><div class="ct">✅ Aprovações Pendentes</div></div>
+          <div class="cb" id="dAprov"><div class="loading">Carregando...</div></div>
+        </div>
+
+        <!-- Linha 2, Col 2: Próximas Ações Vencidas -->
+        <div class="card" style="margin-bottom:0">
+          <div class="ch"><div class="ct">📌 Próximas Ações Vencidas</div></div>
+          <div class="cb" id="dProx"><div class="loading">Carregando...</div></div>
+        </div>
+
       </div>
     </div>
 
@@ -4467,7 +4478,7 @@ async function loadCaixa(){
     sbRest('demanda_responsaveis').select('id,demanda_id,observacao').eq('responsavel_id',U.id).eq('aceite_status','pendente'),
     sbRest('demandas').select('id,numero,cliente_id,ultima_movimentacao').eq('responsavel_atual_id',U.id).eq('prioridade','urgente').not('status','in','(concluida,cancelada)'),
     sbRest('proximas_acoes').select('id').eq('responsavel_id',U.id).eq('concluida',false).lt('data_prevista',hj),
-    sbRest('demandas').select('id,numero,status,prioridade,ultima_movimentacao,cliente_id,ultimo_tramite_descricao,ultimo_tramite_usuario,ultimo_tramite_at').eq('responsavel_atual_id',U.id).not('status','in','(concluida,cancelada,aguardando_aceite)').order('ultimo_tramite_at',{ascending:true}),
+    sbRest('demandas').select('id,numero,status,prioridade,ultima_movimentacao,cliente_id,ultimo_tramite_descricao,ultimo_tramite_usuario,ultimo_tramite_at').eq('responsavel_atual_id',U.id).not('status','in','(concluida,cancelada,aguardando_aceite)').order('ultima_movimentacao',{ascending:true}),
   ]);
 
   const dems = demRes.data||[];
@@ -4530,14 +4541,44 @@ async function loadCaixa(){
   // Lembretes do dia
   carregarLembretesHoje();
 
-  // Ordenar por ultimo_tramite_at mais antigo primeiro (sem mov. por mais tempo = topo)
+  // Ordenar por ultima_movimentacao — mesmo critério da tela de Demandas
+  // Mais antigo primeiro = ficou mais tempo sem movimentação = precisa de atenção
   const mnsOrd = [...mns].sort((a,b)=>{
-    const ta = a.ultimo_tramite_at||a.ultima_movimentacao||a.created_at||'';
-    const tb = b.ultimo_tramite_at||b.ultima_movimentacao||b.created_at||'';
+    const ta = a.ultima_movimentacao||a.created_at||'';
+    const tb = b.ultima_movimentacao||b.created_at||'';
     return ta.localeCompare(tb);
   });
-  document.getElementById('cMList').innerHTML = mnsOrd.length ? `
-    <div style="overflow-x:auto"><table>
+
+  try {
+    const elCM = document.getElementById('cMList');
+    if(!elCM) return;
+    if(!mnsOrd.length){ elCM.innerHTML='<div class="vazio">Sem demandas ativas.</div>'; return; }
+
+    const linhas = mnsOrd.map(d=>{
+      const cli = todasCli.find(c=>c.id===d.cliente_id);
+      const refData = d.ultima_movimentacao||d.created_at;
+      const dias = refData ? Math.floor((Date.now()-new Date(refData))/86400000) : 0;
+      const dc = dias>=5?'tr':dias>=2?'ta':'ts';
+      const tramDescRaw = d.ultimo_tramite_descricao||'—';
+      const tramDesc = tramDescRaw.length>60 ? tramDescRaw.slice(0,57)+'...' : tramDescRaw;
+      const tramDescEsc = tramDescRaw.replace(/"/g,'&quot;').replace(/</g,'&lt;');
+      const tramUser = d.ultimo_tramite_usuario ? ' · '+d.ultimo_tramite_usuario.split(' ')[0] : '';
+      const tramData = refData ? new Date(refData).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}) : '';
+      const cliNome = (cli?.nome||'—').replace(/</g,'&lt;');
+      const num = (d.numero||'—').replace(/</g,'&lt;');
+      return `<tr onclick="abrirDet('${d.id}','caixa')" style="cursor:pointer">
+        <td><strong style="color:var(--sky)">${num}</strong></td>
+        <td style="font-size:12px">${cliNome}</td>
+        <td><span class="tag ${SC[d.status]||''}">${SL[d.status]||d.status}</span></td>
+        <td><span class="tag ${dc}">${dias}d</span></td>
+        <td style="font-size:11px;color:var(--text2)">
+          <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px" title="${tramDescEsc}">${tramDesc}</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:1px">${tramData}${tramUser}</div>
+        </td>
+      </tr>`;
+    }).join('');
+
+    elCM.innerHTML = `<div style="overflow-x:auto"><table>
       <thead><tr>
         <th style="white-space:nowrap">Número</th>
         <th>Cliente</th>
@@ -4545,28 +4586,12 @@ async function loadCaixa(){
         <th style="white-space:nowrap">Sem mov.</th>
         <th>Último Trâmite</th>
       </tr></thead>
-      <tbody>${mnsOrd.map(d=>{
-        const cli = todasCli.find(c=>c.id===d.cliente_id);
-        const refData = d.ultimo_tramite_at||d.ultima_movimentacao||d.created_at;
-        const dias = Math.floor((Date.now()-new Date(refData))/86400000);
-        const dc = dias>=5?'tr':dias>=2?'ta':'ts';
-        const tramDesc = d.ultimo_tramite_descricao
-          ? (d.ultimo_tramite_descricao.length>60 ? d.ultimo_tramite_descricao.slice(0,57)+'...' : d.ultimo_tramite_descricao)
-          : '—';
-        const tramUser = d.ultimo_tramite_usuario ? ' · '+d.ultimo_tramite_usuario.split(' ')[0] : '';
-        const tramData = refData ? new Date(refData).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}) : '';
-        return `<tr onclick="abrirDet('\${d.id}','caixa')" style="cursor:pointer">
-          <td><strong style="color:var(--sky)">\${d.numero}</strong></td>
-          <td style="font-size:12px">\${cli?.nome||'—'}</td>
-          <td><span class="tag \${SC[d.status]||''}">\${SL[d.status]||d.status}</span></td>
-          <td><span class="tag \${dc}">\${dias}d</span></td>
-          <td style="font-size:11px;color:var(--text2);max-width:200px">
-            <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px" title="\${d.ultimo_tramite_descricao||''}">\${tramDesc}</div>
-            <div style="font-size:10px;color:var(--text3);margin-top:1px">\${tramData}\${tramUser}</div>
-          </td>
-        </tr>`;
-      }).join('')}</tbody>
-    </table></div>` : '<div class="vazio">Sem demandas ativas.</div>';
+      <tbody>${linhas}</tbody>
+    </table></div>`;
+  } catch(e) {
+    console.error('cMList render erro:', e);
+    document.getElementById('cMList').innerHTML = '<div class="vazio">Erro ao exibir demandas: '+e.message+'</div>';
+  }
 }
 
 // Aceitar demanda transferida
@@ -7809,6 +7834,23 @@ function filtDem() {
     return;
   }
 
+  // Aplicar ordenação igual ao critério da tela (padrão: ultima_movimentacao)
+  f.sort((a,b) => {
+    if (_ordenacao === 'tram') {
+      const ta = a.ultimo_tramite_at||a.ultima_movimentacao||a.created_at||'';
+      const tb = b.ultimo_tramite_at||b.ultima_movimentacao||b.created_at||'';
+      return ta.localeCompare(tb); // mais antigo primeiro
+    } else if (_ordenacao === 'dias') {
+      const da = Math.floor((Date.now()-new Date(a.ultima_movimentacao||a.created_at))/86400000);
+      const db = Math.floor((Date.now()-new Date(b.ultima_movimentacao||b.created_at))/86400000);
+      return db - da; // mais dias sem mov primeiro
+    } else { // 'mov' — padrão
+      const ta = a.ultima_movimentacao||a.created_at||'';
+      const tb = b.ultima_movimentacao||b.created_at||'';
+      return ta.localeCompare(tb); // mais antigo primeiro
+    }
+  });
+
   document.getElementById('demTabela').innerHTML = f.map(d => {
     const isConcluida = ['concluida','cancelada'].includes(d.status);
     const refData = d.ultimo_tramite_at || d.ultima_movimentacao || d.created_at;
@@ -9706,17 +9748,22 @@ async function loadAgenda() {
 // ── CARREGAR EVENTOS DO SUPABASE ──────────────────────────────
 async function agCarregarEventos() {
   const isGestor = U.usuario === 'Gerente' || U.nome === 'Edniel Oliveira';
-  const inicio = new Date(); inicio.setDate(inicio.getDate() - 30);
-  const fim    = new Date(); fim.setDate(fim.getDate() + 90);
+  // Janela reduzida: 7 dias atrás até 60 dias à frente para carregamento mais rápido
+  const inicio = new Date(); inicio.setDate(inicio.getDate() - 7);
+  const fim    = new Date(); fim.setDate(fim.getDate() + 60);
   const dtInicio = inicio.toISOString().split('T')[0];
   const dtFim    = fim.toISOString().split('T')[0];
 
+  // Mostrar loading na lista
+  const agEl = document.getElementById('agLista');
+  if(agEl) agEl.innerHTML = '<div class="loading" style="padding:24px;text-align:center">Carregando agenda...</div>';
+
   try {
-    // Compromissos (avulsos — não ligados a demandas)
+    // Compromissos e lembretes em paralelo com limite por usuário
     let qComp = sbRest('compromissos')
       .select('id,titulo,data,hora,tipo,descricao,participantes,usuario_id')
       .gte('data', dtInicio).lte('data', dtFim)
-      .order('data').order('hora');
+      .order('data').order('hora').limit(200);
     if (!isGestor) qComp = qComp.eq('usuario_id', U.id);
 
     // Lembretes (dentro e fora de processos)
@@ -9724,7 +9771,7 @@ async function agCarregarEventos() {
       .select('id,descricao,data_lembrete,hora_lembrete,status,demanda_id,responsavel_id')
       .in('status', ['pendente','reagendado'])
       .gte('data_lembrete', dtInicio).lte('data_lembrete', dtFim)
-      .order('data_lembrete').order('hora_lembrete');
+      .order('data_lembrete').order('hora_lembrete').limit(200);
     if (!isGestor) qLem = qLem.eq('responsavel_id', U.id);
 
     const [rComp, rLem] = await Promise.all([qComp, qLem]);
@@ -10237,13 +10284,24 @@ const _renderDetOriginal = window.renderDet;
 // ITEM 5: Lembretes do dia na Minha Caixa
 // ================================================================
 async function carregarLembretesHoje() {
+  const el = document.getElementById('cLembretes');
+  if(!U || !U.id){ if(el) el.innerHTML='<div class="vazio">Aguardando autenticação...</div>'; return; }
   const hoje = new Date().toISOString().split('T')[0];
-  const {data} = await sbRest('lembretes')
-    .select('id,descricao,data_lembrete,hora_lembrete,status,demanda_id')
-    .eq('responsavel_id', U.id)
-    .eq('status','pendente')
-    .order('data_lembrete',{ascending:true})
-    .order('hora_lembrete',{ascending:true});
+  let data = [];
+  try {
+    const res = await sbRest('lembretes')
+      .select('id,descricao,data_lembrete,hora_lembrete,status,demanda_id')
+      .eq('responsavel_id', U.id)
+      .in('status',['pendente','reagendado'])
+      .order('data_lembrete',{ascending:true})
+      .order('hora_lembrete',{ascending:true});
+    if(res.error) throw res.error;
+    data = res.data||[];
+  } catch(e) {
+    console.error('carregarLembretesHoje:', e);
+    if(el) el.innerHTML='<div class="vazio">Erro ao carregar lembretes.</div>';
+    return;
+  }
 
   // Separar: vencidos/hoje (aparecem primeiro) e futuros (aparecem depois)
   const lembretes = (data||[]).sort((a,b)=>{
@@ -10254,7 +10312,6 @@ async function carregarLembretesHoje() {
     return (a.data_lembrete||'').localeCompare(b.data_lembrete||'');
   });
 
-  const el = document.getElementById('cLembretes');
   if(!el) return;
 
   // IDs já vistos hoje (resetar a cada dia)
@@ -10316,10 +10373,14 @@ async function carregarLembretesDash() {
   const el = document.getElementById('dLembretes');
   const lblEl = document.getElementById('dLembretesLabel');
   if(!el) return;
+  if(!U || !U.id){ el.innerHTML='<div class="vazio" style="padding:18px">Aguardando autenticação...</div>'; return; }
 
   const isGestor = U.usuario === 'Gerente' || U.nome === 'Edniel Oliveira';
   if(lblEl) lblEl.textContent = isGestor ? 'todos os usuários' : 'apenas os seus';
 
+  el.innerHTML = '<div class="loading" style="padding:18px">Carregando...</div>';
+
+  try {
   // Query simples sem joins complexos de FK
   let query = sbRest('lembretes')
     .select('id,descricao,data_lembrete,hora_lembrete,status,demanda_id,responsavel_id')
@@ -10330,7 +10391,7 @@ async function carregarLembretesDash() {
   if(!isGestor) query = query.eq('responsavel_id', U.id);
 
   const {data, error} = await query;
-  if(error){ console.error('lembretes dash:', error); el.innerHTML='<div class="vazio">Erro ao carregar lembretes: '+error.message+'</div>'; return; }
+  if(error){ console.error('lembretes dash:', error); el.innerHTML='<div class="vazio" style="padding:18px">Erro ao carregar lembretes: '+error.message+'</div>'; return; }
 
   // Resolver responsáveis e demandas pelo cache local
   const profs = dbGet('profiles');
@@ -10355,58 +10416,51 @@ async function carregarLembretesDash() {
   const ordenados = [...atrasados, ...deHoje, ...futuros];
 
   el.innerHTML = ordenados.map(l => {
-    // Resolver demanda e cliente pelo cache local
-    const demCache  = demsCache.find(d => d.id === l.demanda_id) || {};
-    const cliCache  = clisCache.find(c => c.id === demCache.cliente_id) || {};
-    const cliNome   = cliCache.nome || '';
-    const demNum    = demCache.numero || '';
-    const respProf  = profs.find(p => p.id === l.responsavel_id) || {};
-    const vencido   = l.data_lembrete < hoje;
-    const futuro    = l.data_lembrete > hoje;
-    const jaVisto   = vistos.has(l.id);
-    const dtFmt     = l.data_lembrete === hoje ? 'Hoje'
-                    : new Date(l.data_lembrete+'T12:00:00').toLocaleDateString('pt-BR');
-    const hora      = l.hora_lembrete ? ' '+l.hora_lembrete.slice(0,5) : '';
-    const respNome  = respProf.nome || '—';
-
-    // Visual por estado
-    const icone     = vencido ? '🔴' : futuro ? '🔔' : jaVisto ? '👁' : '📌';
-    const corBorda  = vencido ? 'var(--red)' : futuro ? 'var(--border)' : 'var(--amber)';
-    const corData   = vencido ? 'var(--red)' : futuro ? 'var(--sky)' : 'var(--text3)';
-    const opacity   = jaVisto || futuro ? 'opacity:.75;' : '';
-
-    const tagVenc = vencido
-      ? '<span style="font-size:10px;background:var(--red);color:#fff;padding:1px 6px;border-radius:10px">Em atraso</span>'
-      : l.status==='reagendado'
-        ? '<span style="font-size:10px;background:var(--sky-pale);color:var(--sky);padding:1px 6px;border-radius:10px">Reagendado</span>'
-        : '';
-
-    const descEsc = (l.descricao||'').replace(/'/g,"\'").replace(/"/g,'&quot;');
-
-    // Clicar na linha: se tiver demanda, abre o processo; senão, abre ação do lembrete
+    const demCache = demsCache.find(d => d.id === l.demanda_id) || {};
+    const cliCache = clisCache.find(c => c.id === demCache.cliente_id) || {};
+    const cliNome  = cliCache.nome || '';
+    const demNum   = demCache.numero || '';
+    const respProf = profs.find(p => p.id === l.responsavel_id) || {};
+    const respNome = respProf.nome || '—';
+    const vencido  = l.data_lembrete < hoje;
+    const futuro   = l.data_lembrete > hoje;
+    const jaVisto  = vistos.has(l.id);
+    const dtFmt    = l.data_lembrete === hoje ? 'Hoje'
+                   : new Date(l.data_lembrete+'T12:00:00').toLocaleDateString('pt-BR');
+    const hora     = l.hora_lembrete ? ' '+l.hora_lembrete.slice(0,5) : '';
+    const corUC    = vencido ? 'var(--red)' : futuro ? 'var(--sky)' : 'var(--amber)';
+    const opacity  = jaVisto || futuro ? 'opacity:.7;' : '';
+    const descEsc  = (l.descricao||'').replace(/'/g,"\'").replace(/"/g,'&quot;');
     const clicavel = l.demanda_id
       ? `onclick="abrirDet('${l.demanda_id}')"`
       : `onclick="abrirAcaoLembrete('${l.id}','${descEsc}','','','')"`;
+    const tagVenc = vencido
+      ? '<span style="font-size:10px;background:var(--red);color:#fff;padding:1px 6px;border-radius:10px;margin-left:4px">Em atraso</span>'
+      : l.status==='reagendado'
+        ? '<span style="font-size:10px;background:var(--sky-pale);color:var(--sky);padding:1px 6px;border-radius:10px;margin-left:4px">Reagendado</span>'
+        : '';
+    const meta = [
+      dtFmt+hora,
+      demNum ? '📋 '+demNum+(cliNome?' — '+cliNome:'') : '📌 Avulso',
+      isGestor ? '👤 '+respNome : ''
+    ].filter(Boolean).join(' · ');
 
-    return `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-left:3px solid ${corBorda};border-bottom:1px solid var(--border);${opacity}cursor:pointer;transition:background .1s" ${clicavel} onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">
-      <div style="font-size:18px;flex-shrink:0;margin-top:1px">${icone}</div>
-      <div style="flex:1;min-width:0">
-        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px">
-          <span style="font-size:13px;font-weight:600;color:var(--text)">${l.descricao}</span>
-          ${tagVenc}
-        </div>
-        ${demNum ? `<div style="font-size:11px;color:var(--accent);margin-bottom:2px">📋 ${demNum}${cliNome?' — '+cliNome:''}</div>` : '<div style="font-size:11px;color:var(--text3);margin-bottom:2px">📌 Lembrete avulso</div>'}
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <span style="font-size:11px;color:${corData}">📅 ${dtFmt}${hora}</span>
-          ${isGestor ? `<span style="font-size:11px;color:var(--text3)">👤 ${respNome}</span>` : ''}
-        </div>
+    return `<div class="ui" ${clicavel} style="${opacity}">
+      <div class="uc" style="background:${corUC}"></div>
+      <div class="uinfo">
+        <div class="utit">${l.descricao}${tagVenc}</div>
+        <div class="umeta">${meta}</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:3px;flex-shrink:0" onclick="event.stopPropagation()">
         <button onclick="abrirAcaoLembrete('${l.id}','${descEsc}','${l.demanda_id||''}','${demNum}','${cliNome}')" style="background:var(--accent);border:none;color:#fff;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:11px;white-space:nowrap">▶ Agir</button>
-        ${!jaVisto && !futuro ? `<button onclick="dashMarcarVisto('${l.id}')" style="background:none;border:1px solid var(--border);color:var(--text3);border-radius:5px;padding:3px 8px;cursor:pointer;font-size:11px">👁</button>` : ''}
+        ${!jaVisto && !futuro ? `<button onclick="dashMarcarVisto('${l.id}')" style="background:none;border:1px solid var(--border);color:var(--text3);border-radius:5px;padding:2px 7px;cursor:pointer;font-size:11px">👁</button>` : ''}
       </div>
     </div>`;
   }).join('');
+  } catch(e) {
+    console.error('carregarLembretesDash erro:', e);
+    el.innerHTML = '<div class="vazio" style="padding:18px">Erro inesperado ao carregar lembretes.</div>';
+  }
 }
 
 function dashMarcarVisto(id) {
