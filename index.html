@@ -394,7 +394,8 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
   <div class="nav" id="nav-caixa" onclick="ir('caixa',this)"><span class="ni">📥</span> Minha Caixa <span class="nb" id="badgeAceite" style="display:none">0</span></div>
 
   <div class="nav" id="nav-dem" onclick="ir('dem',this)"><span class="ni">☰</span> Demandas</div>
-  <div class="nav" id="nav-cal" onclick="ir('cal',this)"><span class="ni">📅</span> Calendário Fiscal</div>
+  <div class="nav" id="nav-agenda" onclick="ir('agenda',this)"><span class="ni">📅</span> Agenda</div>
+  <div class="nav" id="nav-cal" onclick="ir('cal',this)"><span class="ni">🗓️</span> Calendário Fiscal</div>
   <div class="sb-section">Cadastros</div>
   <div class="nav" id="nav-cli" onclick="ir('cli',this)"><span class="ni">👥</span> Clientes</div>
   <div class="nav" id="nav-depts" onclick="ir('depts',this)"><span class="ni">🏢</span> Departamentos</div>
@@ -403,13 +404,7 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
     <div class="nav" id="nav-relatorios" onclick="ir('relatorios',this)"><span class="ni">📊</span> Relatórios</div>
     <div class="nav" id="nav-param" onclick="ir('param',this)"><span class="ni">⚙</span> Parâmetros</div>
     <div class="nav" id="nav-users" onclick="ir('users',this)"><span class="ni">👤</span> Usuários</div>
-    <div class="nav" id="nav-whatsapp" onclick="ir('whatsapp',this)"><span class="ni">💬</span> WhatsApp</div>
-    <div class="nav" onclick="abrirConfigEmail()"><span class="ni">📧</span> Email</div>
-    <div class="nav" onclick="abrirFiltroIA()"><span class="ni">🧠</span> Filtro IA</div>
     <div class="nav" onclick="abrirAuditoria()"><span class="ni">🔍</span> Auditoria</div>
-    <div class="nav" onclick="om('mNewsletter')"><span class="ni">📰</span> Newsletter</div>
-    <div class="nav" onclick="abrirProcuracao()"><span class="ni">📄</span> Procuração</div>
-    <div class="nav" onclick="abrirPrevisaoIA()"><span class="ni">📈</span> Previsão IA</div>
     <div class="nav" onclick="om('mPushConfig')"><span class="ni">🔔</span> Push</div>
     <div class="nav" id="nav-utilitarios" onclick="ir('utilitarios',this)"><span class="ni">🔧</span> Utilitários</div>
     <div class="nav" id="nav-backup" onclick="ir('backup',this)"><span class="ni">💾</span> Backup</div>
@@ -496,11 +491,25 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
       </div>
 
 
-      <!-- Central de atenção + Carga -->
-      <div class="g2" style="margin-bottom:16px">
+      <!-- Central de atenção -->
+      <div style="margin-bottom:16px">
         <div class="card"><div class="ch"><div class="ct">⚠️ Central de Atenção</div><button class="btn btn-s" style="padding:4px 10px;font-size:12px" onclick="ir('dem')">Ver todas</button></div><div class="cb" id="dAtenc"><div class="loading">Carregando...</div></div></div>
-
       </div>
+
+      <!-- Lembretes — todos os pendentes do sistema -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="ch">
+          <div class="ct">📌 Lembretes Pendentes</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span id="dLembretesLabel" style="font-size:11px;color:var(--text3)"></span>
+            <button class="btn btn-s" style="padding:3px 10px;font-size:11px" onclick="agendaAbrirLembrete()">+ Novo</button>
+          </div>
+        </div>
+        <div id="dLembretes" style="max-height:380px;overflow-y:auto">
+          <div class="loading">Carregando...</div>
+        </div>
+      </div>
+
       <div class="g2" style="margin-bottom:0">
         <div class="card"><div class="ch"><div class="ct">✅ Aprovações Pendentes</div></div><div class="cb" id="dAprov"><div class="loading">Carregando...</div></div></div>
         <div class="card"><div class="ch"><div class="ct">📌 Próximas Ações Vencidas</div></div><div class="cb" id="dProx"><div class="loading">Carregando...</div></div></div>
@@ -556,6 +565,19 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
         <!-- Lista combinada: compromissos + obrigações -->
         <div id="dashObrigLista" style="max-height:none;overflow-y:visible"></div>
 
+        <!-- PAINEL DO DIA — aparece ao clicar em um dia -->
+        <div id="dashDiaPanel" style="display:none;border-top:2px solid var(--accent)">
+          <div style="padding:10px 14px;background:var(--accent-pale);display:flex;align-items:center;justify-content:space-between">
+            <div style="font-size:12px;font-weight:700;color:var(--accent)" id="dashDiaPanelTit">Eventos do dia</div>
+            <button onclick="dashFecharPainelDia()" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px;line-height:1">×</button>
+          </div>
+          <div id="dashDiaPanelBody" style="max-height:280px;overflow-y:auto;padding:10px 14px"></div>
+          <div style="padding:8px 14px;border-top:1px solid var(--border)">
+            <button onclick="agendaAbrirCompromisso()" style="background:var(--accent);color:#fff;border:none;border-radius:6px;padding:5px 12px;cursor:pointer;font-size:11px;font-weight:600;margin-right:6px">+ Compromisso</button>
+            <button onclick="agendaAbrirLembrete()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:11px;color:var(--text2)">+ Lembrete</button>
+          </div>
+        </div>
+
         <!-- Rodapé com link -->
         <div style="padding:10px 14px;border-top:1px solid var(--border);text-align:center">
           <a href="https://www.gov.br/receitafederal/pt-br/assuntos/meu-imposto-de-renda/agenda" target="_blank" style="font-size:11px;color:var(--accent);text-decoration:none;font-weight:500">Agenda Receita Federal ↗</a>
@@ -587,6 +609,93 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
 </div>
 
 <!-- DEMANDAS -->
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- CENTRAL DE AGENDA                                           -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="pg" id="pg-agenda">
+  <div class="ph" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+    <div><h1>📅 Central de Agenda</h1><p>Compromissos, lembretes e prazos em um só lugar</p></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-s" onclick="agendaAbrirLembrete()">📌 + Lembrete</button>
+      <button class="btn btn-p" onclick="agendaAbrirCompromisso()">📅 + Compromisso</button>
+    </div>
+  </div>
+
+  <!-- FILTRO DE VISUALIZAÇÃO -->
+  <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
+    <div style="display:flex;gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden">
+      <button id="agFiltTodos" onclick="agFiltrar('todos')" style="padding:6px 14px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-size:12px;font-weight:600;font-family:Inter,sans-serif">Todos</button>
+      <button id="agFiltCompromissos" onclick="agFiltrar('compromissos')" style="padding:6px 14px;border:none;background:none;color:var(--text2);cursor:pointer;font-size:12px;font-weight:500;font-family:Inter,sans-serif;border-left:1px solid var(--border)">📅 Compromissos</button>
+      <button id="agFiltLembretes" onclick="agFiltrar('lembretes')" style="padding:6px 14px;border:none;background:none;color:var(--text2);cursor:pointer;font-size:12px;font-weight:500;font-family:Inter,sans-serif;border-left:1px solid var(--border)">📌 Lembretes</button>
+
+    </div>
+    <select id="agFiltPeriodo" class="fi" style="width:160px;margin:0" onchange="renderAgenda()">
+      <option value="7">Próximos 7 dias</option>
+      <option value="15">Próximos 15 dias</option>
+      <option value="30" selected>Próximos 30 dias</option>
+      <option value="60">Próximos 60 dias</option>
+      <option value="0">Todos pendentes</option>
+    </select>
+    <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);cursor:pointer">
+      <input type="checkbox" id="agMostrarPassados" onchange="renderAgenda()"> Incluir passados
+    </label>
+  </div>
+
+  <!-- LAYOUT: CALENDÁRIO + LISTA -->
+  <div style="display:grid;grid-template-columns:300px 1fr;gap:20px;align-items:start">
+
+    <!-- MINI CALENDÁRIO -->
+    <div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="ch" style="padding:12px 14px">
+          <button onclick="agCalMes(-1)" style="background:none;border:1px solid var(--border);border-radius:5px;width:26px;height:26px;cursor:pointer;font-size:14px">‹</button>
+          <div id="agCalTitulo" style="font-size:13px;font-weight:700;color:var(--text);flex:1;text-align:center"></div>
+          <button onclick="agCalMes(1)"  style="background:none;border:1px solid var(--border);border-radius:5px;width:26px;height:26px;cursor:pointer;font-size:14px">›</button>
+        </div>
+        <div style="padding:0 12px 12px">
+          <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;margin-bottom:4px">
+            <div style="font-size:10px;font-weight:700;color:var(--text3);padding:4px 0">D</div>
+            <div style="font-size:10px;font-weight:700;color:var(--text3);padding:4px 0">S</div>
+            <div style="font-size:10px;font-weight:700;color:var(--text3);padding:4px 0">T</div>
+            <div style="font-size:10px;font-weight:700;color:var(--text3);padding:4px 0">Q</div>
+            <div style="font-size:10px;font-weight:700;color:var(--text3);padding:4px 0">Q</div>
+            <div style="font-size:10px;font-weight:700;color:var(--text3);padding:4px 0">S</div>
+            <div style="font-size:10px;font-weight:700;color:var(--text3);padding:4px 0">S</div>
+          </div>
+          <div id="agCalGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px"></div>
+        </div>
+        <!-- Legenda -->
+        <div style="display:flex;gap:10px;padding:8px 12px;border-top:1px solid var(--border);flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)"><span style="width:7px;height:7px;border-radius:50%;background:var(--accent);display:inline-block"></span>Compromisso</div>
+          <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)"><span style="width:7px;height:7px;border-radius:50%;background:var(--amber);display:inline-block"></span>Lembrete</div>
+
+        </div>
+      </div>
+
+      <!-- PAINEL DO DIA SELECIONADO -->
+      <div class="card" id="agPainelDia" style="display:none">
+        <div class="ch">
+          <div class="ct" id="agPainelDiaTit">Eventos do dia</div>
+          <button onclick="document.getElementById('agPainelDia').style.display='none'" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px">×</button>
+        </div>
+        <div class="cb" id="agPainelDiaConteudo"></div>
+      </div>
+    </div>
+
+    <!-- LISTA DE EVENTOS -->
+    <div class="card">
+      <div class="ch">
+        <div class="ct" id="agListaTitulo">Agenda</div>
+        <span id="agListaTotal" style="font-size:12px;color:var(--text3)"></span>
+      </div>
+      <div class="cb" id="agLista" style="padding:0">
+        <div class="loading">Carregando...</div>
+      </div>
+    </div>
+
+  </div>
+</div>
 <div class="pg" id="pg-dem">
   <div class="ph"><div><h1>Central de Processos</h1><p id="demTotal">...</p></div><button class="btn btn-p" onclick="abrirNovaDemanda()">+ Nova Demanda</button></div>
 
@@ -3872,7 +3981,7 @@ let demId=null,pDepSel=null,pCatSel=null,editUser=false;
 const SL={aberta:'Aberta',em_andamento:'Em andamento',aguardando_aceite:'Ag. aceite',aguardando_cliente:'Ag. cliente',aguardando_orgao:'Ag. órgão',aguardando_gestor:'Ag. gestor',aguardando_conclusao:'Ag. conclusão',concluida:'Concluída',cancelada:'Cancelada'};
 const SC={aberta:'ts',em_andamento:'tg',aguardando_aceite:'ta',aguardando_cliente:'ta',aguardando_orgao:'tp',aguardando_gestor:'tn',aguardando_conclusao:'tg',concluida:'tgr',cancelada:'tr'};
 const PC={baixa:'tgr',normal:'ts',alta:'ta',urgente:'tr'};
-const TL={abertura:'Abertura',documento_recebido:'Doc. recebido',documento_solicitado:'Doc. solicitado',protocolo:'Protocolo',exigencia_recebida:'Exigência recebida',exigencia_respondida:'Exigência respondida',transferencia:'Transferência',aceite:'Aceite',pendencia_criada:'Pendência criada',pendencia_resolvida:'Pendência resolvida',aprovacao_solicitada:'Aprox. solicitada',aprovacao_concedida:'✅ Aprovado',aprovacao_devolvida:'⚠️ Devolvido',conclusao:'Conclusão',cancelamento:'Cancelamento',movimentacao_geral:'Movimentação'};
+const TL={abertura:'Abertura',documento_recebido:'Recebimento de Documento',documento_solicitado:'Solicitação de Documento',protocolo:'Protocolo Efetuado',exigencia_recebida:'Exigência Recebida',exigencia_respondida:'Exigência Respondida',transferencia:'Transferência',aceite:'Aceite',pendencia_criada:'Pendência criada',pendencia_resolvida:'Pendência resolvida',aprovacao_solicitada:'Aprox. solicitada',aprovacao_concedida:'✅ Aprovado',aprovacao_devolvida:'⚠️ Devolvido',conclusao:'Conclusão',cancelamento:'Cancelamento',movimentacao_geral:'Atualização do Processo'};
 
 async function init(){
   const {data:{session}}=await sb.auth.getSession();
@@ -4112,7 +4221,7 @@ function ir(p,el){
   const n=el||document.getElementById('nav-'+p);if(n)n.classList.add('active');
   const titulos={dash:'Dashboard',caixa:'Minha Caixa',dem:'Central de Processos',
     det:'Detalhe da Demanda',cli:'Clientes',param:'Parâmetros',users:'Usuários',
-    cal:'Calendário Fiscal',fiscal:'Escrita Fiscal',dp:'Departamento Pessoal',
+    agenda:'Agenda',cal:'Calendário Fiscal',fiscal:'Escrita Fiscal',dp:'Departamento Pessoal',
     cont:'Contabilidade',rural:'Rural',irpf:'IRPF',financeiro:'Financeiro',
     relatorios:'Relatórios',whatsapp:'WhatsApp'};
   document.getElementById('pgTitle').textContent=titulos[p]||p;
@@ -4143,6 +4252,7 @@ function ir(p,el){
   else if(p==='financeiro')loadFinanceiro();
   else if(p==='relatorios'){initRelatorios();}
   else if(p==='whatsapp')loadWAHistorico();
+  else if(p==='agenda'){loadAgenda();}
   else if(p==='cal')renderCalendario();
   else if(p==='utilitarios'){trocarUtab('clientes');}
   else if(p==='backup'){loadBackupResumo();registrarHistoricoBackup();}
@@ -4315,6 +4425,7 @@ async function loadDash(){
     nivel_inatividade: Math.floor((Date.now()-new Date(d.ultima_movimentacao))/86400000)>=15?'prioridade_maxima':'critico'
   }))};
   document.getElementById('dAtenc').innerHTML=at?.data?.length?at.data.map(d=>`<div class="ui" onclick="abrirDet('${d.id}')"><div class="uc" style="background:${d.nivel_inatividade==='prioridade_maxima'?'#501313':'var(--red)'}"></div><div class="uinfo"><div class="utit">${d.numero} — ${d.cliente_nome}</div><div class="umeta">${d.responsavel_nome} · ${d.departamento_nome}</div></div><span class="ud tr">${d.dias_sem_movimentacao}d</span></div>`).join(''):'<div class="vazio">Nenhuma crítica ✅</div>';
+  carregarLembretesDash();
 
   const {data:cr}=await sbRest('demandas').select('responsavel_atual_id').not('status','in','(concluida,cancelada)').limit(500);
   const eC=document.getElementById('dCarga');
@@ -4356,7 +4467,7 @@ async function loadCaixa(){
     sbRest('demanda_responsaveis').select('id,demanda_id,observacao').eq('responsavel_id',U.id).eq('aceite_status','pendente'),
     sbRest('demandas').select('id,numero,cliente_id,ultima_movimentacao').eq('responsavel_atual_id',U.id).eq('prioridade','urgente').not('status','in','(concluida,cancelada)'),
     sbRest('proximas_acoes').select('id').eq('responsavel_id',U.id).eq('concluida',false).lt('data_prevista',hj),
-    sbRest('demandas').select('id,numero,status,prioridade,ultima_movimentacao,cliente_id').eq('responsavel_atual_id',U.id).not('status','in','(concluida,cancelada,aguardando_aceite)').order('ultima_movimentacao',{ascending:true}),
+    sbRest('demandas').select('id,numero,status,prioridade,ultima_movimentacao,cliente_id,ultimo_tramite_descricao,ultimo_tramite_usuario,ultimo_tramite_at').eq('responsavel_atual_id',U.id).not('status','in','(concluida,cancelada,aguardando_aceite)').order('ultimo_tramite_at',{ascending:true}),
   ]);
 
   const dems = demRes.data||[];
@@ -4419,18 +4530,40 @@ async function loadCaixa(){
   // Lembretes do dia
   carregarLembretesHoje();
 
-  document.getElementById('cMList').innerHTML = mns.length ? `
+  // Ordenar por ultimo_tramite_at mais antigo primeiro (sem mov. por mais tempo = topo)
+  const mnsOrd = [...mns].sort((a,b)=>{
+    const ta = a.ultimo_tramite_at||a.ultima_movimentacao||a.created_at||'';
+    const tb = b.ultimo_tramite_at||b.ultima_movimentacao||b.created_at||'';
+    return ta.localeCompare(tb);
+  });
+  document.getElementById('cMList').innerHTML = mnsOrd.length ? `
     <div style="overflow-x:auto"><table>
-      <thead><tr><th>Número</th><th>Cliente</th><th>Status</th><th>Inat.</th></tr></thead>
-      <tbody>${mns.map(d=>{
+      <thead><tr>
+        <th style="white-space:nowrap">Número</th>
+        <th>Cliente</th>
+        <th>Status</th>
+        <th style="white-space:nowrap">Sem mov.</th>
+        <th>Último Trâmite</th>
+      </tr></thead>
+      <tbody>${mnsOrd.map(d=>{
         const cli = todasCli.find(c=>c.id===d.cliente_id);
-        const dias=Math.floor((Date.now()-new Date(d.ultima_movimentacao))/86400000);
-        const dc=dias>=5?'tr':dias>=2?'ta':'ts';
-        return `<tr onclick="abrirDet('${d.id}','caixa')">
-          <td><strong style="color:var(--sky)">${d.numero}</strong></td>
-          <td>${cli?.nome||'—'}</td>
-          <td><span class="tag ${SC[d.status]||''}">${SL[d.status]||d.status}</span></td>
-          <td><span class="tag ${dc}">${dias}d</span></td>
+        const refData = d.ultimo_tramite_at||d.ultima_movimentacao||d.created_at;
+        const dias = Math.floor((Date.now()-new Date(refData))/86400000);
+        const dc = dias>=5?'tr':dias>=2?'ta':'ts';
+        const tramDesc = d.ultimo_tramite_descricao
+          ? (d.ultimo_tramite_descricao.length>60 ? d.ultimo_tramite_descricao.slice(0,57)+'...' : d.ultimo_tramite_descricao)
+          : '—';
+        const tramUser = d.ultimo_tramite_usuario ? ' · '+d.ultimo_tramite_usuario.split(' ')[0] : '';
+        const tramData = refData ? new Date(refData).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}) : '';
+        return `<tr onclick="abrirDet('\${d.id}','caixa')" style="cursor:pointer">
+          <td><strong style="color:var(--sky)">\${d.numero}</strong></td>
+          <td style="font-size:12px">\${cli?.nome||'—'}</td>
+          <td><span class="tag \${SC[d.status]||''}">\${SL[d.status]||d.status}</span></td>
+          <td><span class="tag \${dc}">\${dias}d</span></td>
+          <td style="font-size:11px;color:var(--text2);max-width:200px">
+            <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px" title="\${d.ultimo_tramite_descricao||''}">\${tramDesc}</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:1px">\${tramData}\${tramUser}</div>
+          </td>
         </tr>`;
       }).join('')}</tbody>
     </table></div>` : '<div class="vazio">Sem demandas ativas.</div>';
@@ -4746,19 +4879,17 @@ async function renderDet(){
         <button class="btn btn-ok" style="font-size:13px" onclick="aceitarDemandaDet('${d.id}')">✅ Aceitar Demanda</button>
         <button class="btn btn-er" style="font-size:13px" onclick="recusarDemandaDet('${d.id}')">❌ Recusar</button>
       `:`
-      <button class="btn btn-s" onclick="omDet('mTram')">+ Trâmite</button>
-      <button class="btn btn-s" onclick="omDet('mPend')">+ Pendência</button>
-      <button class="btn btn-s" onclick="omTransf()">↔ Transferir</button>
-      ${U.usuario==='Gerente'||U.nome==='Edniel Oliveira'?`<button class="btn btn-s" onclick="abrirModalUpload()">📎 Anexar</button>`:''}
-      ${U.usuario==='Gerente'||U.nome==='Edniel Oliveira'?`<button class="btn btn-s" onclick="om('mWA')">📱 WhatsApp</button>`:''}
-      ${(U.usuario==='Gerente'||U.nome==='Edniel Oliveira')&&iG?`<button class="btn btn-er" onclick="excluirDemanda('${d.id}','${d.numero}')">🗑️ Excluir</button>`:''}
-      ${d.status!=='aguardando_conclusao'?`<button class="btn btn-p" onclick="om('mConc')">✓ Solicitar conclusão</button>`:''}
+      <button class="btn btn-s" onclick="omDet('mTram')" title="Registrar Trâmite" style="display:inline-flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg> Trâmite</button>
+      <button class="btn btn-s" onclick="omDet('mPend')" title="Nova Pendência" style="display:inline-flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Pendência</button>
+      <button class="btn btn-s" onclick="omTransf()" title="Transferir Demanda" style="display:inline-flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> Transferir</button>
+      <button class="btn btn-s" onclick="abrirDilatarPrazo('${d.id}','${d.prazo||''}','${d.numero}')" title="Prorrogar Prazo" style="display:inline-flex;align-items:center;gap:6px;border-color:var(--amber);color:var(--amber)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="12 14 12 18"/><line x1="10" y1="16" x2="14" y2="16"/></svg> Prorrogar Prazo</button>
+      ${iG?`<button class="btn btn-s" onclick="abrirAlterarPrioridade('${d.id}','${d.prioridade}','${d.numero}')" title="Alterar Prioridade" style="display:inline-flex;align-items:center;gap:6px;border-color:var(--sky);color:var(--sky)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Prioridade</button>`:''}
+      ${d.status!=='aguardando_conclusao'?`<button class="btn btn-p" onclick="om('mConc')" title="Solicitar Conclusão" style="display:inline-flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Solicitar Conclusão</button>`:''}
       ${iG&&d.status==='aguardando_conclusao'?`
-        <button class="btn btn-ok" onclick="aprovarConc()">✓ Aprovar conclusão</button>
-        <button class="btn btn-er" onclick="om('mRecusarConc')" style="font-size:13px">✗ Recusar</button>
+        <button class="btn btn-ok" onclick="aprovarConc()" style="display:inline-flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Aprovar Conclusão</button>
+        <button class="btn btn-er" onclick="om('mRecusarConc')" style="font-size:13px;display:inline-flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Recusar</button>
       `:''}
-      <button class="btn btn-s" onclick="abrirDilatarPrazo('${d.id}','${d.prazo||''}','${d.numero}')" style="border-color:var(--amber);color:var(--amber)">📅 Dilatar Prazo</button>
-      ${iG?`<button class="btn btn-s" onclick="abrirAlterarPrioridade('${d.id}','${d.prioridade}','${d.numero}')" style="border-color:var(--sky);color:var(--sky)">⚡ Prioridade</button>`:''}
+      ${(U.usuario==='Gerente'||U.nome==='Edniel Oliveira')&&iG?`<button class="btn btn-er" onclick="excluirDemanda('${d.id}','${d.numero}')" title="Excluir Demanda" style="display:inline-flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg> Excluir</button>`:''}
       `}
     </div>`:''}
   </div>
@@ -4785,30 +4916,21 @@ async function renderDet(){
           }).join('')}</div>`:'<div id="tramitesLista"><div class="vazio">Nenhum trâmite registrado.</div></div>'}
         </div>
       </div>
-      <div class="card">
-        <div class="ch">
-          <div class="ct">📌 Lembretes</div>
-          <button class="btn btn-s" style="font-size:12px" onclick="abrirModalLembrete('${d.id}')">+ Novo</button>
-        </div>
-        <div class="cb" id="lembretesLista" style="max-height:220px;overflow-y:auto">
-          <div class="loading">Carregando...</div>
-        </div>
-      </div>
 
       <div class="card" id="tramiteInlineBox">
-        <div class="ch"><div class="ct">✏️ Registrar Tramite</div></div>
+        <div class="ch"><div class="ct">✏️ Registrar Trâmite</div></div>
         <div class="cb">
           <div class="fg" style="margin-bottom:8px">
+            <textarea class="fi" id="tramiteInline" rows="3" placeholder="Descreva a movimentação..." style="resize:vertical;margin-bottom:8px"></textarea>
             <select class="fi" id="tTipoInline" style="margin-bottom:8px">
-              <option value="movimentacao_geral">Movimentacao geral</option>
-              <option value="documento_recebido">Documento recebido</option>
-              <option value="documento_solicitado">Documento solicitado</option>
-              <option value="protocolo">Protocolo realizado</option>
-              <option value="exigencia_recebida">Exigencia recebida</option>
-              <option value="exigencia_respondida">Exigencia respondida</option>
+              <option value="movimentacao_geral">Atualização do Processo</option>
+              <option value="documento_recebido">Recebimento de Documento</option>
+              <option value="documento_solicitado">Solicitação de Documento</option>
+              <option value="protocolo">Protocolo Efetuado</option>
+              <option value="exigencia_recebida">Exigência Recebida</option>
+              <option value="exigencia_respondida">Exigência Respondida</option>
             </select>
-            <textarea class="fi" id="tramiteInline" rows="3" placeholder="Descreva a movimentacao..." style="resize:vertical;margin-bottom:8px"></textarea>
-            <button class="btn btn-p" style="width:100%;justify-content:center" onclick="salvarTramiteInline()">📝 Registrar Tramite</button>
+            <button class="btn btn-p" style="width:100%;justify-content:center" onclick="salvarTramiteInline()">✏️ Registrar Trâmite</button>
           </div>
         </div>
       </div>
@@ -4846,15 +4968,12 @@ async function renderDet(){
         </div>
       </div>
       <div class="card">
-        <div class="ch"><div class="ct">⚡ Próxima Ação</div>${pE?`<button class="btn btn-s" style="padding:4px 10px;font-size:12px" onclick="omDet('mAcao')">+ Nova</button>`:''}</div>
-        <div class="cb">
-          ${pA?`<div style="background:var(--sky-pale);border:1px solid rgba(0,153,229,.2);border-radius:8px;padding:12px;margin-bottom:10px"><div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:4px">${pA.descricao}</div><div style="font-size:12px;color:${pV?'var(--red)':'var(--sky)'}">${pV?'⚠️ Vencida: ':'📅 '}${new Date(pA.data_prevista+'T12:00:00').toLocaleDateString('pt-BR')}</div><div style="font-size:11px;color:var(--text3);margin-top:4px">${pA.profiles?.nome}</div></div>${pE?'<button class=\"btn btn-ok\" style=\"width:100%;justify-content:center\" onclick=\"concAcao(\'' + pA.id + '\')\">✓ Marcar concluída</button>':''}` : '<div class="vazio">Sem próxima ação.</div>'}
+        <div class="ch">
+          <div class="ct">📌 Lembretes</div>
+          <button class="btn btn-s" style="font-size:12px" onclick="abrirModalLembrete('${d.id}')">+ Novo</button>
         </div>
-      </div>
-      <div class="card">
-        <div class="ch"><div class="ct">⏳ Pendências (${pe.data?.length||0})</div>${pE?`<button class="btn btn-s" style="padding:4px 10px;font-size:12px" onclick="omDet('mPend')">+ Nova</button>`:''}</div>
-        <div class="cb">
-          ${pe.data?.length?pe.data.map(p=>`<div class="pend-row"><div class="pend-dot" style="background:${p.tipo==='cliente'?'var(--amber)':p.tipo==='orgao_publico'?'var(--purple)':p.tipo==='gestor'?'var(--navy)':'var(--sky)'}"></div><div style="flex:1"><div style="font-size:13px">${p.descricao}</div><div style="font-size:11px;color:var(--text3)">${p.tipo.replace(/_/g,' ')}</div></div>${pE?`<button onclick="resolPend('${p.id}')" style="background:none;border:none;cursor:pointer;color:var(--green);font-size:12px;font-weight:600;padding:2px 6px">✓</button>`:''}</div>`).join(''):'<div class="vazio">Sem pendências.</div>'}
+        <div class="cb" id="lembretesLista" style="max-height:320px;overflow-y:auto">
+          <div class="loading">Carregando...</div>
         </div>
       </div>
     </div>
@@ -8918,26 +9037,6 @@ function abrirNovoCompromisso() {
   om('mCompromisso');
 }
 
-async function salvarCompromisso() {
-  const titulo = document.getElementById('compTitulo').value.trim();
-  const data = document.getElementById('compData').value;
-  if(!titulo || !data) { toast('Informe título e data','err'); return; }
-  const comp = {
-    titulo,
-    data,
-    hora: document.getElementById('compHora').value || null,
-    tipo: document.getElementById('compTipo').value,
-    participantes: document.getElementById('compPart').value.trim(),
-    descricao: document.getElementById('compDesc').value.trim(),
-    usuario_id: U.id,
-  };
-  const {error} = await sbRest('compromissos').insert(comp);
-  if(error){ toast('Erro ao salvar: '+error.message,'err'); return; }
-  fm('mCompromisso');
-  toast('Compromisso salvo!','ok');
-  // Atualizar telas automaticamente
-  await atualizarAgenda();
-}
 
 let _compsMes = [];
 let _lemsMes = [];
@@ -9453,39 +9552,105 @@ async function renderDashCal() {
 }
 
 async function dashCalDiaClick(d) {
-  mostrarCompromissosDia(d);
-  // Mostrar compromissos e lembretes no painel lateral do dashboard
+  const isGestor = U.usuario === 'Gerente' || U.nome === 'Edniel Oliveira';
   const dataStr = `${dashCalAno}-${String(dashCalMesAtual+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-  const panelEl = document.getElementById('dashDiaPanel');
-  if(!panelEl) return;
-  const [{data:comps},{data:lems}] = await Promise.all([
-    sbRest('compromissos').select('*').eq('data',dataStr).eq('usuario_id',U.id).order('hora',{ascending:true}),
-    sbRest('lembretes').select('*,demandas(numero,resumo)').eq('data_lembrete',dataStr).eq('responsavel_id',U.id).order('hora_lembrete',{ascending:true})
-  ]);
-  const tipoIcon={reuniao:'🤝',prazo:'⏰',visita:'🏢',ligacao:'📞',treinamento:'📚',interno:'📋',outro:'📌'};
-  let html = '';
-  if(comps?.length){
-    html += `<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:6px">📅 Compromissos</div>`;
-    html += comps.map(c=>`<div style="padding:8px;background:var(--surface2);border-radius:6px;margin-bottom:6px">
-      <div style="font-size:13px;font-weight:600">${tipoIcon[c.tipo]||'📌'} ${c.titulo}</div>
-      ${c.hora?`<div style="font-size:11px;color:var(--accent)">🕐 ${c.hora.slice(0,5)}</div>`:''}
-      ${c.participantes?`<div style="font-size:11px;color:var(--text3)">👤 ${c.participantes}</div>`:''}
-      <button onclick="excluirCompCal('${c.id}')" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px;margin-top:4px">🗑 Excluir</button>
-    </div>`).join('');
+  const nomesMes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const dt = new Date(dataStr+'T12:00:00');
+  const diaFmt = `${d} de ${nomesMes[dashCalMesAtual]}`;
+
+  // Mostrar painel
+  const painelEl  = document.getElementById('dashDiaPanel');
+  const painelTit = document.getElementById('dashDiaPanelTit');
+  const painelBody= document.getElementById('dashDiaPanelBody');
+  if(!painelEl) return;
+
+  painelTit.textContent = `📅 ${diaFmt}`;
+  painelBody.innerHTML = '<div class="loading">Carregando...</div>';
+  painelEl.style.display = 'block';
+
+  // Pré-preencher botão "novo compromisso" com o dia selecionado
+  _agDiaSel = dataStr;
+
+  try {
+    // Compromissos: gestor vê todos, usuário vê só os seus
+    let qComp = sbRest('compromissos')
+      .select('id,titulo,hora,tipo,participantes,usuario_id')
+      .eq('data', dataStr).order('hora',{ascending:true});
+    if(!isGestor) qComp = qComp.eq('usuario_id', U.id);
+
+    // Lembretes: gestor vê todos, usuário vê só os seus
+    let qLem = sbRest('lembretes')
+      .select('id,descricao,hora_lembrete,status,demanda_id,responsavel_id')
+      .eq('data_lembrete', dataStr).in('status',['pendente','reagendado']).order('hora_lembrete',{ascending:true});
+    if(!isGestor) qLem = qLem.eq('responsavel_id', U.id);
+
+    const [{data:comps},{data:lems}] = await Promise.all([qComp, qLem]);
+
+    // Resolver nomes via cache local
+    const profs2     = dbGet('profiles');
+    const demsCache2 = dbGet('demandas');
+    const clisCache2 = dbGet('clientes');
+
+    const tipoIcon = {reuniao:'🤝',prazo:'⏰',visita:'🏢',ligacao:'📞',treinamento:'📚',interno:'📋',outro:'📌'};
+    let html = '';
+
+    if(comps?.length) {
+      html += `<div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;padding:6px 0 4px">📅 Compromissos</div>`;
+      html += comps.map(comp => {
+        const respNome = profs2.find(p=>p.id===comp.usuario_id)?.nome||'—';
+        return `<div style="background:var(--accent-pale);border-radius:8px;padding:9px 11px;margin-bottom:6px;display:flex;align-items:flex-start;gap:8px">
+          <span style="font-size:16px">${tipoIcon[comp.tipo]||'📌'}</span>
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:600;color:var(--text)">${comp.titulo}</div>
+            ${comp.hora ? `<div style="font-size:11px;color:var(--accent)">🕐 ${comp.hora.slice(0,5)}</div>` : ''}
+            ${comp.participantes ? `<div style="font-size:11px;color:var(--text3)">👤 ${comp.participantes}</div>` : ''}
+            ${isGestor ? `<div style="font-size:11px;color:var(--text3)">Responsável: ${respNome}</div>` : ''}
+          </div>
+          <button onclick="agExcluirCompromisso('${comp.id}')" title="Excluir" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:13px;padding:2px">🗑</button>
+        </div>`;
+      }).join('');
+    }
+
+    if(lems?.length) {
+      html += `<div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;padding:6px 0 4px${comps?.length?';margin-top:4px':''}">📌 Lembretes</div>`;
+      html += lems.map(l => {
+        const demCache  = demsCache2.find(d=>d.id===l.demanda_id)||{};
+        const cliCache  = clisCache2.find(c=>c.id===demCache.cliente_id)||{};
+        const demNum    = demCache.numero||'';
+        const cliNome   = cliCache.nome||'';
+        const respNome  = profs2.find(p=>p.id===l.responsavel_id)?.nome||'—';
+        const descEsc   = (l.descricao||'').replace(/'/g,"\'").replace(/"/g,'&quot;');
+        return `<div style="background:var(--amber-pale);border:1px solid #FCD34D;border-radius:8px;padding:9px 11px;margin-bottom:6px">
+          <div style="font-size:13px;font-weight:600;color:var(--text)">${l.descricao}</div>
+          ${demNum ? `<div style="font-size:11px;color:var(--accent);margin-top:2px;cursor:pointer" onclick="abrirDet('${l.demanda_id}')">📋 ${demNum}${cliNome?' — '+cliNome:''}</div>` : '<div style="font-size:11px;color:var(--text3);margin-top:2px">Lembrete avulso</div>'}
+          ${l.hora_lembrete ? `<div style="font-size:11px;color:var(--text3);margin-top:2px">🕐 ${l.hora_lembrete.slice(0,5)}</div>` : ''}
+          ${isGestor ? `<div style="font-size:11px;color:var(--text3);margin-top:2px">👤 ${respNome}</div>` : ''}
+          <div style="margin-top:6px;display:flex;gap:6px">
+            <button onclick="abrirAcaoLembrete('${l.id}','${descEsc}','${l.demanda_id||''}','${demNum}','${cliNome}')" style="background:var(--accent);border:none;color:#fff;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:11px">▶ Agir</button>
+            ${l.demanda_id ? `<button onclick="abrirDet('${l.demanda_id}')" style="background:none;border:1px solid var(--accent);color:var(--accent);border-radius:5px;padding:3px 8px;cursor:pointer;font-size:11px">Abrir →</button>` : ''}
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    if(!html) html = '<div class="vazio" style="padding:16px 0">Nenhum evento neste dia.</div>';
+    painelBody.innerHTML = html;
+
+    // Scroll suave para o painel
+    setTimeout(() => painelEl.scrollIntoView({behavior:'smooth', block:'nearest'}), 100);
+  } catch(e) {
+    painelBody.innerHTML = '<div class="vazio">Erro ao carregar eventos.</div>';
+    console.error('dashCalDiaClick:', e);
   }
-  if(lems?.length){
-    html += `<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:6px;margin-top:8px">📌 Lembretes</div>`;
-    html += lems.map(l=>`<div style="padding:8px;background:var(--amber-pale);border:1px solid #FCD34D;border-radius:6px;margin-bottom:6px;cursor:pointer" onclick="abrirDet('${l.demanda_id}','dash')">
-      <div style="font-size:13px;font-weight:600">${l.descricao}</div>
-      ${l.demandas?`<div style="font-size:11px;color:var(--accent)">${l.demandas.numero}</div>`:''}
-      ${l.hora_lembrete?`<div style="font-size:11px;color:var(--text3)">🕐 ${l.hora_lembrete.slice(0,5)}</div>`:''}
-      <button onclick="event.stopPropagation();concluirLembreteRapido('${l.id}')" style="background:none;border:1px solid var(--green);color:var(--green);border-radius:4px;padding:1px 6px;cursor:pointer;font-size:11px;margin-top:4px">✓ OK</button>
-    </div>`).join('');
-  }
-  if(!html) html = '<div class="vazio" style="padding:1rem">Nenhum evento neste dia.</div>';
-  panelEl.innerHTML = html;
-  const el = document.getElementById('dashObrig_' + d);
-  if(el) el.scrollIntoView({behavior:'smooth', block:'nearest'});
+
+  // Manter compatibilidade com mostrarCompromissosDia (calendário fiscal)
+  mostrarCompromissosDia(d);
+}
+
+function dashFecharPainelDia() {
+  const el = document.getElementById('dashDiaPanel');
+  if(el) el.style.display = 'none';
+  _agDiaSel = null;
 }
 
 document.querySelectorAll('.nav').forEach(n=>n.addEventListener('click',_closeSidebarMobile));
@@ -9509,10 +9674,481 @@ if(localStorage.getItem('focco_version') !== DB_VERSION) {
   if(cliBackup && cliBackup !== '[]') localStorage.setItem('focco_db_clientes', cliBackup);
   if(profBackup && profBackup !== '[]') localStorage.setItem('focco_db_profiles', profBackup);
 }
+
+// ═══════════════════════════════════════════════════════════════
+// CENTRAL DE AGENDA — loadAgenda, renderAgenda, calendário, etc.
+// ═══════════════════════════════════════════════════════════════
+
+let _agAno  = new Date().getFullYear();
+let _agMes  = new Date().getMonth(); // 0–11
+let _agFiltro = 'todos';
+let _agDiaSel = null;
+let _agEventos = []; // cache de todos os eventos carregados
+
+const AG_NOMES_MES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                      'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+const AG_TIPO_ICON = {
+  reuniao:'🤝', prazo:'⏰', visita:'🏢', ligacao:'📞',
+  treinamento:'📚', interno:'📋', outro:'📌',
+  lembrete:'📌', prazo_demanda:'⏰'
+};
+
+// ── ENTRADA PRINCIPAL ─────────────────────────────────────────
+async function loadAgenda() {
+  _agDiaSel = null;
+  document.getElementById('agPainelDia').style.display = 'none';
+  agRenderCal();
+  await agCarregarEventos();
+  renderAgenda();
+}
+
+// ── CARREGAR EVENTOS DO SUPABASE ──────────────────────────────
+async function agCarregarEventos() {
+  const isGestor = U.usuario === 'Gerente' || U.nome === 'Edniel Oliveira';
+  const inicio = new Date(); inicio.setDate(inicio.getDate() - 30);
+  const fim    = new Date(); fim.setDate(fim.getDate() + 90);
+  const dtInicio = inicio.toISOString().split('T')[0];
+  const dtFim    = fim.toISOString().split('T')[0];
+
+  try {
+    // Compromissos (avulsos — não ligados a demandas)
+    let qComp = sbRest('compromissos')
+      .select('id,titulo,data,hora,tipo,descricao,participantes,usuario_id')
+      .gte('data', dtInicio).lte('data', dtFim)
+      .order('data').order('hora');
+    if (!isGestor) qComp = qComp.eq('usuario_id', U.id);
+
+    // Lembretes (dentro e fora de processos)
+    let qLem = sbRest('lembretes')
+      .select('id,descricao,data_lembrete,hora_lembrete,status,demanda_id,responsavel_id')
+      .in('status', ['pendente','reagendado'])
+      .gte('data_lembrete', dtInicio).lte('data_lembrete', dtFim)
+      .order('data_lembrete').order('hora_lembrete');
+    if (!isGestor) qLem = qLem.eq('responsavel_id', U.id);
+
+    const [rComp, rLem] = await Promise.all([qComp, qLem]);
+
+    // Resolver nomes pelo cache local
+    const profs     = dbGet('profiles');
+    const demsCache = dbGet('demandas');
+    const clisCache = dbGet('clientes');
+
+    _agEventos = [];
+
+    (rComp.data||[]).forEach(comp => {
+      const respProf = profs.find(p => p.id === comp.usuario_id) || {};
+      _agEventos.push({
+        _tipo: 'compromisso',
+        id: comp.id,
+        data: comp.data,
+        hora: comp.hora,
+        titulo: comp.titulo,
+        descricao: comp.descricao,
+        participantes: comp.participantes,
+        subtipo: comp.tipo,
+        responsavel: respProf.nome || '—',
+        usuario_id: comp.usuario_id
+      });
+    });
+
+    (rLem.data||[]).forEach(l => {
+      const demCache = demsCache.find(d => d.id === l.demanda_id) || {};
+      const cliCache = clisCache.find(c => c.id === demCache.cliente_id) || {};
+      const respProf = profs.find(p => p.id === l.responsavel_id) || {};
+      _agEventos.push({
+        _tipo: 'lembrete',
+        id: l.id,
+        data: l.data_lembrete,
+        hora: l.hora_lembrete,
+        titulo: l.descricao,
+        status: l.status,
+        demanda_id: l.demanda_id,
+        demanda_num: demCache.numero || '',
+        demanda_cli: cliCache.nome || '',
+        responsavel: respProf.nome || '—',
+        responsavel_id: l.responsavel_id
+      });
+    });
+
+    _agEventos.sort((a,b) => {
+      const da = (a.data||'') + (a.hora||'00:00');
+      const db = (b.data||'') + (b.hora||'00:00');
+      return da.localeCompare(db);
+    });
+
+    agRenderCal();
+  } catch(e) {
+    console.error('agCarregarEventos erro:', e);
+    toast('Erro ao carregar agenda: ' + e.message, 'err');
+  }
+}
+
+// ── RENDER LISTA PRINCIPAL ────────────────────────────────────
+function renderAgenda() {
+  const el = document.getElementById('agLista');
+  const tituloEl = document.getElementById('agListaTitulo');
+  const totalEl  = document.getElementById('agListaTotal');
+  if (!el) return;
+
+  const hoje = new Date().toISOString().split('T')[0];
+  const periodo = parseInt(document.getElementById('agFiltPeriodo')?.value || '30');
+  const mostrarPassados = document.getElementById('agMostrarPassados')?.checked;
+
+  // Calcular limite de data
+  const limFim = new Date();
+  if (periodo > 0) limFim.setDate(limFim.getDate() + periodo);
+  const dtFim = periodo > 0 ? limFim.toISOString().split('T')[0] : '9999-99-99';
+
+  let eventos = _agEventos.filter(e => {
+    if (!mostrarPassados && e.data < hoje) return false;
+    if (periodo > 0 && e.data > dtFim) return false;
+    if (_agFiltro === 'compromissos' && e._tipo !== 'compromisso') return false;
+    if (_agFiltro === 'lembretes'    && e._tipo !== 'lembrete') return false;
+    return true;
+  });
+
+  // Aplicar filtro de dia selecionado se houver
+  if (_agDiaSel) {
+    eventos = eventos.filter(e => e.data === _agDiaSel);
+  }
+
+  const nomeFiltros = {todos:'Agenda Completa',compromissos:'Compromissos',lembretes:'Lembretes',prazos:'Prazos de Demandas'};
+  tituloEl.textContent = nomeFiltros[_agFiltro] || 'Agenda';
+  totalEl.textContent  = eventos.length + ' evento(s)';
+
+  if (!eventos.length) {
+    el.innerHTML = '<div class="vazio" style="padding:28px">Nenhum evento encontrado para o período ✅</div>';
+    return;
+  }
+
+  // Agrupar por data
+  const grupos = {};
+  eventos.forEach(e => {
+    if (!grupos[e.data]) grupos[e.data] = [];
+    grupos[e.data].push(e);
+  });
+
+  let html = '';
+  const diasOrdenados = Object.keys(grupos).sort();
+
+  diasOrdenados.forEach(data => {
+    const dt = new Date(data + 'T12:00:00');
+    const ehHoje    = data === hoje;
+    const passado   = data < hoje;
+    const diasDiff  = Math.round((dt - new Date()) / 86400000);
+    const semana    = dt.toLocaleDateString('pt-BR', {weekday:'long'});
+    const dataFmt   = dt.toLocaleDateString('pt-BR', {day:'2-digit',month:'2-digit'});
+
+    const headerBg  = ehHoje ? 'var(--accent)' : passado ? 'var(--surface2)' : 'var(--accent-pale)';
+    const headerTxt = ehHoje ? '#fff' : passado ? 'var(--text3)' : 'var(--accent)';
+    const badge     = ehHoje
+      ? '<span style="background:rgba(255,255,255,.25);color:#fff;font-size:10px;font-weight:700;padding:1px 8px;border-radius:10px">HOJE</span>'
+      : passado
+        ? '<span style="font-size:10px;color:var(--text3)">Passou</span>'
+        : `<span style="font-size:10px;font-weight:600;color:${diasDiff<=3?'var(--red)':diasDiff<=7?'var(--amber)':'var(--sky)'}">em ${diasDiff}d</span>`;
+
+    html += `<div style="border-bottom:1px solid var(--border)">
+      <div style="padding:8px 16px;background:${headerBg};display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:1">
+        <div style="width:38px;height:38px;border-radius:9px;background:${ehHoje?'rgba(255,255,255,.2)':'rgba(37,99,235,.08)'};display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0">
+          <span style="font-size:14px;font-weight:800;color:${headerTxt};line-height:1">${dt.getDate()}</span>
+          <span style="font-size:8px;font-weight:700;color:${ehHoje?'rgba(255,255,255,.7)':headerTxt};opacity:.7;line-height:1">${dataFmt.split('/')[1]>0?'':''}${dt.toLocaleDateString('pt-BR',{month:'short'}).toUpperCase()}</span>
+        </div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700;color:${headerTxt}">${dataFmt} · ${semana.charAt(0).toUpperCase()+semana.slice(1)}</div>
+          <div style="font-size:11px;color:${ehHoje?'rgba(255,255,255,.7)':passado?'var(--text3)':'var(--accent)'}">${grupos[data].length} evento(s)</div>
+        </div>
+        ${badge}
+      </div>`;
+
+    grupos[data].forEach(ev => {
+      const icone = ev._tipo==='compromisso' ? (AG_TIPO_ICON[ev.subtipo]||'📅')
+                  : ev._tipo==='lembrete' ? '📌' : '⏰';
+      const corBorda = ev._tipo==='compromisso' ? 'var(--accent)' : ev._tipo==='lembrete' ? 'var(--amber)' : 'var(--red)';
+      const hora = ev.hora ? ev.hora.slice(0,5) : '';
+
+      // Badge de tipo
+      const tipoBadge = ev._tipo==='compromisso'
+        ? `<span style="font-size:10px;background:var(--accent-pale);color:var(--accent);padding:1px 7px;border-radius:10px;font-weight:600">Compromisso</span>`
+        : ev._tipo==='lembrete'
+          ? `<span style="font-size:10px;background:var(--amber-pale);color:var(--amber);padding:1px 7px;border-radius:10px;font-weight:600">${ev.status==='reagendado'?'🔄 Reagendado':'Lembrete'}</span>`
+          : `<span style="font-size:10px;background:var(--red-pale);color:var(--red);padding:1px 7px;border-radius:10px;font-weight:600">Prazo</span>`;
+
+      const acoes = ev._tipo==='compromisso'
+        ? `<button onclick="agExcluirCompromisso('${ev.id}')" title="Excluir" style="background:none;border:1px solid var(--border);border-radius:5px;padding:3px 8px;cursor:pointer;font-size:11px;color:var(--text3)">🗑</button>`
+        : ev._tipo==='lembrete'
+          ? `<button onclick="abrirAcaoLembrete('${ev.id}','${(ev.titulo||'').replace(/'/g,"\\'")}','${ev.demanda_id||''}','${ev.demanda_num||''}','${ev.demanda_cli||''}')" style="background:var(--accent);border:none;color:#fff;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:11px">▶ Agir</button>
+             <button onclick="agConcluirLembrete('${ev.id}')" title="Concluir" style="background:none;border:1px solid var(--green);border-radius:5px;padding:3px 8px;cursor:pointer;font-size:11px;color:var(--green)">✓</button>`
+          : `<button onclick="abrirDet('${ev.demanda_id}')" style="background:var(--accent);border:none;color:#fff;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:11px">Abrir →</button>`;
+
+      html += `<div style="display:flex;align-items:flex-start;gap:12px;padding:12px 16px;border-left:3px solid ${corBorda};border-bottom:1px solid var(--border);transition:background .1s" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">
+        <div style="font-size:22px;flex-shrink:0;margin-top:2px">${icone}</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">
+            <div style="font-size:13px;font-weight:600;color:var(--text)">${ev.titulo}</div>
+            ${tipoBadge}
+          </div>
+          ${ev.demanda_num ? `<div style="font-size:12px;color:var(--accent);cursor:pointer" onclick="abrirDet('${ev.demanda_id}')">📋 ${ev.demanda_num}${ev.demanda_cli?' — '+ev.demanda_cli:''}</div>` : ''}
+          ${ev.participantes ? `<div style="font-size:11px;color:var(--text3)">👤 ${ev.participantes}</div>` : ''}
+          ${ev.descricao ? `<div style="font-size:11px;color:var(--text3);margin-top:2px">${ev.descricao}</div>` : ''}
+          <div style="display:flex;align-items:center;gap:10px;margin-top:4px;flex-wrap:wrap">
+            ${hora ? `<span style="font-size:11px;color:var(--accent);font-weight:600">🕐 ${hora}</span>` : ''}
+            <span style="font-size:11px;color:var(--text3)">👤 ${ev.responsavel}</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:4px;flex-shrink:0;align-items:flex-start;margin-top:2px">
+          ${acoes}
+        </div>
+      </div>`;
+    });
+
+    html += '</div>';
+  });
+
+  el.innerHTML = html;
+}
+
+// ── FILTRO DE TIPO ────────────────────────────────────────────
+function agFiltrar(tipo) {
+  _agFiltro = tipo;
+  _agDiaSel = null;
+  document.getElementById('agPainelDia').style.display = 'none';
+  // Botões visuais
+  ['todos','compromissos','lembretes','prazos'].forEach(t => {
+    const btn = document.getElementById('agFilt' + t.charAt(0).toUpperCase() + t.slice(1));
+    if (!btn) return;
+    btn.style.background = t === tipo ? 'var(--accent)' : 'none';
+    btn.style.color      = t === tipo ? '#fff' : 'var(--text2)';
+  });
+  renderAgenda();
+}
+
+// ── CALENDÁRIO MINI ───────────────────────────────────────────
+function agCalMes(d) {
+  _agMes += d;
+  if (_agMes > 11) { _agMes = 0; _agAno++; }
+  if (_agMes < 0)  { _agMes = 11; _agAno--; }
+  _agDiaSel = null;
+  agRenderCal();
+  agCarregarEventos().then(() => renderAgenda());
+}
+
+function agRenderCal() {
+  const tituloEl = document.getElementById('agCalTitulo');
+  const gridEl   = document.getElementById('agCalGrid');
+  if (!tituloEl || !gridEl) return;
+
+  tituloEl.textContent = AG_NOMES_MES[_agMes] + ' ' + _agAno;
+
+  const hoje        = new Date().toISOString().split('T')[0];
+  const primeiroDia = new Date(_agAno, _agMes, 1).getDay();
+  const totalDias   = new Date(_agAno, _agMes + 1, 0).getDate();
+
+  // Mapear eventos por dia do mês atual
+  const eventosPorDia = {};
+  _agEventos.forEach(e => {
+    const d = new Date((e.data||'') + 'T12:00:00');
+    if (d.getFullYear() === _agAno && d.getMonth() === _agMes) {
+      const dia = d.getDate();
+      if (!eventosPorDia[dia]) eventosPorDia[dia] = {comp:0, lem:0, praz:0};
+      if (e._tipo==='compromisso')  eventosPorDia[dia].comp++;
+      if (e._tipo==='lembrete')     eventosPorDia[dia].lem++;
+
+    }
+  });
+
+  let cells = '';
+  for (let i = 0; i < primeiroDia; i++) cells += '<div></div>';
+
+  for (let d = 1; d <= totalDias; d++) {
+    const dataStr = `${_agAno}-${String(_agMes+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isHoje  = dataStr === hoje;
+    const isSel   = dataStr === _agDiaSel;
+    const evs     = eventosPorDia[d] || {};
+    const temEv   = evs.comp || evs.lem || evs.praz;
+    const isSab   = (primeiroDia + d - 1) % 7 === 6;
+    const isDom   = (primeiroDia + d - 1) % 7 === 0;
+
+    let bg = 'transparent', txtCor = 'var(--text)', border = 'none', fw = '400';
+    if (isSel)       { bg = 'var(--navy)';   txtCor = '#fff'; fw = '700'; border = '2px solid var(--navy)'; }
+    else if (isHoje) { bg = 'var(--accent)'; txtCor = '#fff'; fw = '700'; border = '2px solid var(--accent)'; }
+    else if (isSab||isDom) { txtCor = 'var(--text3)'; }
+    if (temEv && !isHoje && !isSel) border = '1.5px solid var(--border2)';
+
+    const dots = [
+      evs.comp  ? `<span style="width:4px;height:4px;border-radius:50%;background:var(--accent);display:inline-block"></span>` : '',
+      evs.lem   ? `<span style="width:4px;height:4px;border-radius:50%;background:var(--amber);display:inline-block"></span>` : '',
+      evs.praz  ? `<span style="width:4px;height:4px;border-radius:50%;background:var(--red);display:inline-block"></span>` : ''
+    ].join('');
+
+    cells += `<div onclick="agDiaClick('${dataStr}')" style="padding:3px 1px;min-height:42px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:4px;cursor:pointer;border-radius:7px;background:${bg};border:${border};transition:all .12s" onmouseover="if(!this.dataset.sel)this.style.background='var(--surface2)'" onmouseout="if(!this.dataset.sel)this.style.background='${bg}'" ${isSel?'data-sel="1"':''}>
+      <span style="font-size:11px;font-weight:${fw};color:${txtCor};line-height:1">${d}</span>
+      ${dots ? `<div style="display:flex;gap:1px;margin-top:2px">${dots}</div>` : ''}
+    </div>`;
+  }
+  gridEl.innerHTML = cells;
+}
+
+// ── CLIQUE NO DIA ─────────────────────────────────────────────
+function agDiaClick(dataStr) {
+  const painelEl = document.getElementById('agPainelDia');
+  const painelTit = document.getElementById('agPainelDiaTit');
+  const painelCont = document.getElementById('agPainelDiaConteudo');
+
+  if (_agDiaSel === dataStr) {
+    // Deselecionar
+    _agDiaSel = null;
+    painelEl.style.display = 'none';
+    renderAgenda();
+    agRenderCal();
+    return;
+  }
+
+  _agDiaSel = dataStr;
+  agRenderCal();
+
+  const dt = new Date(dataStr + 'T12:00:00');
+  painelTit.textContent = dt.toLocaleDateString('pt-BR', {weekday:'long', day:'2-digit', month:'long'});
+
+  const evsDia = _agEventos.filter(e => e.data === dataStr);
+  if (!evsDia.length) {
+    painelCont.innerHTML = '<div class="vazio">Nenhum evento neste dia.</div>';
+  } else {
+    painelCont.innerHTML = evsDia.map(ev => {
+      const icone = ev._tipo==='compromisso' ? (AG_TIPO_ICON[ev.subtipo]||'📅') : ev._tipo==='lembrete' ? '📌' : '⏰';
+      const corBg = ev._tipo==='compromisso' ? 'var(--accent-pale)' : ev._tipo==='lembrete' ? 'var(--amber-pale)' : 'var(--red-pale)';
+      const hora = ev.hora ? ' · 🕐 ' + ev.hora.slice(0,5) : '';
+      return `<div style="background:${corBg};border-radius:8px;padding:10px 12px;margin-bottom:8px">
+        <div style="font-size:13px;font-weight:600">${icone} ${ev.titulo}</div>
+        ${ev.demanda_num ? `<div style="font-size:11px;color:var(--accent);margin-top:3px;cursor:pointer" onclick="abrirDet('${ev.demanda_id}')">📋 ${ev.demanda_num}${ev.demanda_cli?' — '+ev.demanda_cli:''}</div>` : ''}
+        <div style="font-size:11px;color:var(--text3);margin-top:3px">👤 ${ev.responsavel}${hora}</div>
+      </div>`;
+    }).join('');
+  }
+  painelEl.style.display = 'block';
+
+  // Atualizar lista filtrada pelo dia
+  renderAgenda();
+}
+
+// ── ABRIR COMPROMISSO / LEMBRETE AVULSO ──────────────────────
+function agendaAbrirCompromisso() {
+  const hoje = new Date().toISOString().split('T')[0];
+  document.getElementById('compTitulo').value = '';
+  document.getElementById('compData').value   = _agDiaSel || hoje;
+  document.getElementById('compHora').value   = '09:00';
+  document.getElementById('compTipo').value   = 'reuniao';
+  document.getElementById('compPart').value   = '';
+  document.getElementById('compDesc').value   = '';
+  om('mCompromisso');
+}
+
+function agendaAbrirLembrete() {
+  _lembretesDemandaId = null; // lembrete avulso
+  const sel = document.getElementById('lemResp');
+  if (sel) {
+    sel.innerHTML = '<option value="">Selecione...</option>';
+    dbGet('profiles').filter(p=>p.ativo!==false).sort((a,b)=>a.nome.localeCompare(b.nome)).forEach(p=>{
+      const opt = document.createElement('option');
+      opt.value = p.id; opt.textContent = p.nome;
+      if (p.id === U.id) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  }
+  document.getElementById('lemData').value   = _agDiaSel || new Date().toISOString().split('T')[0];
+  document.getElementById('lemHora').value   = '';
+  document.getElementById('lemDesc').value   = '';
+  document.getElementById('lemStatus').value = 'pendente';
+  om('mLembrete');
+}
+
+// ── AÇÕES ─────────────────────────────────────────────────────
+async function agExcluirCompromisso(id) {
+  if (!confirm('Excluir este compromisso?')) return;
+  const {error} = await sbRest('compromissos').delete().eq('id', id);
+  if (error) { toast('Erro ao excluir: ' + error.message, 'err'); return; }
+  toast('Compromisso excluído!', 'ok');
+  await agCarregarEventos();
+  renderAgenda();
+  await atualizarAgenda(); // Sincroniza calendário fiscal tb
+}
+
+async function agConcluirLembrete(id) {
+  const {error} = await sbRest('lembretes').update({status:'concluido'}).eq('id', id);
+  if (error) { toast('Erro: ' + error.message, 'err'); return; }
+  toast('Lembrete concluído! ✅', 'ok');
+  await agCarregarEventos();
+  renderAgenda();
+  await carregarLembretesHoje();
+  await carregarLembretesDash();
+}
+
+// ── PATCH: sobrescrever salvarCompromisso para recarregar agenda ──
+const _salvarCompromissoOrig = typeof salvarCompromisso === 'function' ? salvarCompromisso : null;
+async function salvarCompromisso() {
+  const titulo = document.getElementById('compTitulo')?.value.trim();
+  const data   = document.getElementById('compData')?.value;
+  const hora   = document.getElementById('compHora')?.value || null;
+  const tipo   = document.getElementById('compTipo')?.value || 'outro';
+  const part   = document.getElementById('compPart')?.value.trim() || null;
+  const desc   = document.getElementById('compDesc')?.value.trim() || null;
+
+  if (!titulo) { toast('Informe o título do compromisso','err'); return; }
+  if (!data)   { toast('Informe a data','err'); return; }
+
+  const comp = { titulo, data, hora, tipo, participantes: part, descricao: desc, usuario_id: U.id };
+  const {error} = await sbRest('compromissos').insert(comp);
+  if (error) { toast('Erro ao salvar: ' + error.message, 'err'); return; }
+
+  toast('Compromisso salvo! ✅', 'ok');
+  fm('mCompromisso');
+  await atualizarAgenda();
+  // Se agenda estiver aberta, recarregar
+  if (document.getElementById('pg-agenda')?.classList.contains('on')) {
+    await agCarregarEventos();
+    renderAgenda();
+  }
+}
+
+// ── PATCH: sobrescrever salvarLembrete para recarregar agenda ──
+async function salvarLembrete() {
+  const desc   = document.getElementById('lemDesc')?.value.trim();
+  const data   = document.getElementById('lemData')?.value;
+  const hora   = document.getElementById('lemHora')?.value || null;
+  const resp   = document.getElementById('lemResp')?.value || U.id;
+  const status = document.getElementById('lemStatus')?.value || 'pendente';
+
+  if (!desc) { toast('Informe a descrição do lembrete','err'); return; }
+  if (!data) { toast('Informe a data','err'); return; }
+
+  const {error} = await sbRest('lembretes').insert({
+    demanda_id: _lembretesDemandaId || null,
+    usuario_id: U.id,
+    descricao: desc,
+    data_lembrete: data,
+    hora_lembrete: hora,
+    responsavel_id: resp,
+    status
+  });
+  if (error) { toast('Erro ao salvar lembrete: ' + error.message,'err'); return; }
+
+  toast('Lembrete salvo! ✅','ok');
+  fm('mLembrete');
+
+  // Recarregar em todas as telas que exibem lembretes
+  await carregarLembretesHoje();
+  await carregarLembretesDash();
+  if (_lembretesDemandaId) await carregarLembretesDet(_lembretesDemandaId);
+  if (document.getElementById('pg-agenda')?.classList.contains('on')) {
+    await agCarregarEventos();
+    renderAgenda();
+  }
+  await atualizarAgenda();
+}
+
 initDB().then(()=>{ init(); });
 </script>
-</body>
-</html><script>
+<script>
 // ================================================================
 // LEMBRETES
 // ================================================================
@@ -9538,31 +10174,6 @@ async function abrirModalLembrete(demandaId) {
   om('mLembrete');
 }
 
-async function salvarLembrete() {
-  const desc = document.getElementById('lemDesc').value.trim();
-  const data = document.getElementById('lemData').value;
-  const hora = document.getElementById('lemHora').value;
-  const resp = document.getElementById('lemResp').value;
-  const status = document.getElementById('lemStatus').value;
-  if(!desc){ toast('Informe a descrição do lembrete','err'); return; }
-  if(!data){ toast('Informe a data do lembrete','err'); return; }
-  const {error} = await sbRest('lembretes').insert({
-    demanda_id: _lembretesDemandaId,
-    usuario_id: U.id,
-    descricao: desc,
-    data_lembrete: data,
-    hora_lembrete: hora||null,
-    responsavel_id: resp||U.id,
-    status
-  });
-  if(error){ toast('Erro ao salvar lembrete: '+error.message,'err'); return; }
-  toast('Lembrete salvo!','ok');
-  fm('mLembrete');
-  await carregarLembretesDet(_lembretesDemandaId);
-  // Atualizar Minha Caixa e calendário automaticamente
-  if(document.getElementById('pg-caixa')?.classList.contains('on')) await carregarLembretesHoje();
-  _lemsMes = []; // Forçar recarregamento no próximo renderCalendario
-}
 
 async function carregarLembretesDet(demandaId) {
   const el = document.getElementById('lembretesLista');
@@ -9699,6 +10310,112 @@ async function carregarLembretesHoje() {
       </div>
     </div>`;
   }).join('');
+}
+
+async function carregarLembretesDash() {
+  const el = document.getElementById('dLembretes');
+  const lblEl = document.getElementById('dLembretesLabel');
+  if(!el) return;
+
+  const isGestor = U.usuario === 'Gerente' || U.nome === 'Edniel Oliveira';
+  if(lblEl) lblEl.textContent = isGestor ? 'todos os usuários' : 'apenas os seus';
+
+  // Query simples sem joins complexos de FK
+  let query = sbRest('lembretes')
+    .select('id,descricao,data_lembrete,hora_lembrete,status,demanda_id,responsavel_id')
+    .in('status',['pendente','reagendado'])
+    .order('data_lembrete',{ascending:true})
+    .order('hora_lembrete',{ascending:true});
+
+  if(!isGestor) query = query.eq('responsavel_id', U.id);
+
+  const {data, error} = await query;
+  if(error){ console.error('lembretes dash:', error); el.innerHTML='<div class="vazio">Erro ao carregar lembretes: '+error.message+'</div>'; return; }
+
+  // Resolver responsáveis e demandas pelo cache local
+  const profs = dbGet('profiles');
+  const demsCache = dbGet('demandas');
+  const clisCache = dbGet('clientes');
+
+  const lembretes = data||[];
+
+  if(!lembretes.length){
+    el.innerHTML='<div class="vazio" style="padding:16px 12px">Nenhum lembrete pendente ✅</div>';
+    return;
+  }
+
+  const hoje = new Date().toISOString().split('T')[0];
+  const VISTO_KEY = 'focco_lem_vistos_'+hoje+'_'+U.id;
+  const vistos = new Set(JSON.parse(localStorage.getItem(VISTO_KEY)||'[]'));
+
+  // Separar: atrasados → hoje → futuros
+  const atrasados = lembretes.filter(l => l.data_lembrete < hoje);
+  const deHoje    = lembretes.filter(l => l.data_lembrete === hoje);
+  const futuros   = lembretes.filter(l => l.data_lembrete > hoje);
+  const ordenados = [...atrasados, ...deHoje, ...futuros];
+
+  el.innerHTML = ordenados.map(l => {
+    // Resolver demanda e cliente pelo cache local
+    const demCache  = demsCache.find(d => d.id === l.demanda_id) || {};
+    const cliCache  = clisCache.find(c => c.id === demCache.cliente_id) || {};
+    const cliNome   = cliCache.nome || '';
+    const demNum    = demCache.numero || '';
+    const respProf  = profs.find(p => p.id === l.responsavel_id) || {};
+    const vencido   = l.data_lembrete < hoje;
+    const futuro    = l.data_lembrete > hoje;
+    const jaVisto   = vistos.has(l.id);
+    const dtFmt     = l.data_lembrete === hoje ? 'Hoje'
+                    : new Date(l.data_lembrete+'T12:00:00').toLocaleDateString('pt-BR');
+    const hora      = l.hora_lembrete ? ' '+l.hora_lembrete.slice(0,5) : '';
+    const respNome  = respProf.nome || '—';
+
+    // Visual por estado
+    const icone     = vencido ? '🔴' : futuro ? '🔔' : jaVisto ? '👁' : '📌';
+    const corBorda  = vencido ? 'var(--red)' : futuro ? 'var(--border)' : 'var(--amber)';
+    const corData   = vencido ? 'var(--red)' : futuro ? 'var(--sky)' : 'var(--text3)';
+    const opacity   = jaVisto || futuro ? 'opacity:.75;' : '';
+
+    const tagVenc = vencido
+      ? '<span style="font-size:10px;background:var(--red);color:#fff;padding:1px 6px;border-radius:10px">Em atraso</span>'
+      : l.status==='reagendado'
+        ? '<span style="font-size:10px;background:var(--sky-pale);color:var(--sky);padding:1px 6px;border-radius:10px">Reagendado</span>'
+        : '';
+
+    const descEsc = (l.descricao||'').replace(/'/g,"\'").replace(/"/g,'&quot;');
+
+    // Clicar na linha: se tiver demanda, abre o processo; senão, abre ação do lembrete
+    const clicavel = l.demanda_id
+      ? `onclick="abrirDet('${l.demanda_id}')"`
+      : `onclick="abrirAcaoLembrete('${l.id}','${descEsc}','','','')"`;
+
+    return `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-left:3px solid ${corBorda};border-bottom:1px solid var(--border);${opacity}cursor:pointer;transition:background .1s" ${clicavel} onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">
+      <div style="font-size:18px;flex-shrink:0;margin-top:1px">${icone}</div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px">
+          <span style="font-size:13px;font-weight:600;color:var(--text)">${l.descricao}</span>
+          ${tagVenc}
+        </div>
+        ${demNum ? `<div style="font-size:11px;color:var(--accent);margin-bottom:2px">📋 ${demNum}${cliNome?' — '+cliNome:''}</div>` : '<div style="font-size:11px;color:var(--text3);margin-bottom:2px">📌 Lembrete avulso</div>'}
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="font-size:11px;color:${corData}">📅 ${dtFmt}${hora}</span>
+          ${isGestor ? `<span style="font-size:11px;color:var(--text3)">👤 ${respNome}</span>` : ''}
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:3px;flex-shrink:0" onclick="event.stopPropagation()">
+        <button onclick="abrirAcaoLembrete('${l.id}','${descEsc}','${l.demanda_id||''}','${demNum}','${cliNome}')" style="background:var(--accent);border:none;color:#fff;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:11px;white-space:nowrap">▶ Agir</button>
+        ${!jaVisto && !futuro ? `<button onclick="dashMarcarVisto('${l.id}')" style="background:none;border:1px solid var(--border);color:var(--text3);border-radius:5px;padding:3px 8px;cursor:pointer;font-size:11px">👁</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function dashMarcarVisto(id) {
+  const hoje = new Date().toISOString().split('T')[0];
+  const KEY = 'focco_lem_vistos_'+hoje+'_'+U.id;
+  const v = new Set(JSON.parse(localStorage.getItem(KEY)||'[]'));
+  v.add(id);
+  localStorage.setItem(KEY, JSON.stringify([...v]));
+  carregarLembretesDash();
 }
 
 function marcarLembreteVisto(id) {
@@ -10172,3 +10889,5 @@ ${(trams||[]).map(t=>{
   win.onload = () => { win.print(); };
 }
 </script>
+</body>
+</html>
