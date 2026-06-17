@@ -4002,8 +4002,13 @@ const PC={baixa:'tgr',normal:'ts',alta:'ta',urgente:'tr'};
 const TL={abertura:'Abertura',documento_recebido:'Recebimento de Documento',documento_solicitado:'Solicitação de Documento',protocolo:'Protocolo Efetuado',exigencia_recebida:'Exigência Recebida',exigencia_respondida:'Exigência Respondida',transferencia:'Transferência',aceite:'Aceite',pendencia_criada:'Pendência criada',pendencia_resolvida:'Pendência resolvida',aprovacao_solicitada:'Aprox. solicitada',aprovacao_concedida:'✅ Aprovado',aprovacao_devolvida:'⚠️ Devolvido',conclusao:'Conclusão',cancelamento:'Cancelamento',movimentacao_geral:'Atualização do Processo'};
 
 async function init(){
-  const {data:{session}}=await sb.auth.getSession();
-  if(session)await loadUser(session.user);else showLogin();
+  try{
+    const {data:{session}}=await sb.auth.getSession();
+    if(session)await loadUser(session.user);else showLogin();
+  }catch(e){
+    console.error('init error:', e);
+    showLogin();
+  }
 }
 function showLogin(){document.getElementById('pgLogin').style.display='flex';document.getElementById('pgApp').style.display='none';}
 async function fazerLogin(){
@@ -4024,39 +4029,47 @@ async function fazerLogin(){
   }
 
   btn.disabled=true; btn.textContent='Entrando...';
-  const {data,error}=await sb.auth.signInWithPassword({email,password:senha});
-  if(error){
+  try{
+    const {data,error}=await sb.auth.signInWithPassword({email,password:senha});
+    if(error){
+      btn.disabled=false; btn.textContent='Entrar no Sistema';
+      const tent=(parseInt(localStorage.getItem(KEY_TENT)||'0'))+1;
+      localStorage.setItem(KEY_TENT,String(tent));
+      if(tent>=5){localStorage.setItem(KEY_BLOQ,String(Date.now()+5*60*1000));localStorage.removeItem(KEY_TENT);err.textContent='Acesso bloqueado por 5 minutos por excesso de tentativas.';}
+      else{err.textContent=(error.message.includes('Invalid')?'Usuario ou senha incorretos.':error.message)+' ('+( 5-tent)+' tentativa(s) restante(s))';}
+      err.classList.add('show'); return;
+    }
+    localStorage.removeItem(KEY_TENT); localStorage.removeItem(KEY_BLOQ);
+    // Verificar se é primeiro acesso — redirecionar para troca de senha
+    const profs = dbGet('profiles');
+    const login = (email||'').toLowerCase().trim();
+    const u = profs.find(p=>(
+      (p.usuario||'').toLowerCase()===login||
+      (p.nome||'').toLowerCase()===login||
+      (p.email||'').toLowerCase()===login
+    )&&p.ativo!==false);
+
+    if(u && u.primeiro_acesso===true) {
+      // Guardar usuário pendente e mostrar tela de troca
+      window._userPendenteTroca = data.user;
+      window._profPendenteTroca = u;
+      btn.disabled=false; btn.textContent='Entrar no Sistema';
+      document.getElementById('telaLoginNormal').style.display='none';
+      document.getElementById('telaTrocaSenha').style.display='block';
+      // Atualizar textos da tela de troca
+      const msg = document.querySelector('#telaTrocaSenha .login-p');
+      if(msg) msg.textContent = 'Olá, '+u.nome.split(' ')[0]+'! Defina sua senha pessoal antes de continuar.';
+      return;
+    }
+
+    await loadUser(data.user);
+  }catch(e){
+    // Qualquer erro inesperado (rede, navegador, etc.) — nunca deixar o botão travado
+    console.error('fazerLogin error:', e);
     btn.disabled=false; btn.textContent='Entrar no Sistema';
-    const tent=(parseInt(localStorage.getItem(KEY_TENT)||'0'))+1;
-    localStorage.setItem(KEY_TENT,String(tent));
-    if(tent>=5){localStorage.setItem(KEY_BLOQ,String(Date.now()+5*60*1000));localStorage.removeItem(KEY_TENT);err.textContent='Acesso bloqueado por 5 minutos por excesso de tentativas.';}
-    else{err.textContent=(error.message.includes('Invalid')?'Usuario ou senha incorretos.':error.message)+' ('+( 5-tent)+' tentativa(s) restante(s))';}
-    err.classList.add('show'); return;
+    err.textContent='Erro inesperado ao entrar: '+(e?.message||String(e));
+    err.classList.add('show');
   }
-  localStorage.removeItem(KEY_TENT); localStorage.removeItem(KEY_BLOQ);
-  // Verificar se é primeiro acesso — redirecionar para troca de senha
-  const profs = dbGet('profiles');
-  const login = (email||'').toLowerCase().trim();
-  const u = profs.find(p=>(
-    (p.usuario||'').toLowerCase()===login||
-    (p.nome||'').toLowerCase()===login||
-    (p.email||'').toLowerCase()===login
-  )&&p.ativo!==false);
-  
-  if(u && u.primeiro_acesso===true) {
-    // Guardar usuário pendente e mostrar tela de troca
-    window._userPendenteTroca = data.user;
-    window._profPendenteTroca = u;
-    btn.disabled=false; btn.textContent='Entrar no Sistema';
-    document.getElementById('telaLoginNormal').style.display='none';
-    document.getElementById('telaTrocaSenha').style.display='block';
-    // Atualizar textos da tela de troca
-    const msg = document.querySelector('#telaTrocaSenha .login-p');
-    if(msg) msg.textContent = 'Olá, '+u.nome.split(' ')[0]+'! Defina sua senha pessoal antes de continuar.';
-    return;
-  }
-  
-  await loadUser(data.user);
 }
 
 
@@ -4121,8 +4134,23 @@ async function trocarSenhaObrigatoria() {
   }
 }
 async function loadUser(user){
-  const {data:p}=await sb.from('profiles').select('*').eq('id',user.id).single();
-  if(!p){showLogin();return;}
+  const {data:p,error:perr}=await sb.from('profiles').select('*').eq('id',user.id).single();
+  if(!p){
+    // Falha ao buscar o perfil (RLS, rede, etc.) — não deixar o botão travado em "Entrando..."
+    let detalhe = 'perfil não encontrado';
+    try{
+      if(perr){
+        detalhe = perr.message || perr.error_description || perr.hint || perr.details || JSON.stringify(perr);
+      }
+    }catch(e){ detalhe = String(perr); }
+    console.error('loadUser: falha ao carregar perfil ->', detalhe, perr);
+    const btn=document.getElementById('lBtn');
+    if(btn){ btn.disabled=false; btn.textContent='Entrar no Sistema'; }
+    const err=document.getElementById('loginErr');
+    if(err){ err.textContent='Não foi possível carregar seu perfil: '+detalhe; err.classList.add('show'); }
+    showLogin();
+    return;
+  }
   U=p;
   const ini=p.nome.split(' ').map(x=>x[0]).slice(0,2).join('').toUpperCase();
   document.getElementById('sbAv').textContent=ini;
@@ -4198,21 +4226,36 @@ async function fazerLogout(){
   document.getElementById('loginErr')?.classList.remove('show');
   showLogin();
 }
-async function loadCols(){const {data}=await sb.from('profiles').select('id,nome').eq('ativo',true).order('nome');cols=data||[];}
+async function loadCols(){
+  try{
+    const {data,error}=await sb.from('profiles').select('id,nome').eq('ativo',true).order('nome');
+    if(error) throw error;
+    cols=data||[];
+  }catch(e){
+    console.error('loadCols error:', e);
+    toast('Erro ao carregar colaboradores: '+(e?.message||String(e)), 'err');
+  }
+}
 async function loadDeps(){
-  const [dR,cR,tR] = await Promise.all([
-    sb.from('departamentos').select('*').eq('ativo',true).order('ordem'),
-    sb.from('categorias').select('*').eq('ativo',true).order('ordem'),
-    sb.from('tipos_demanda').select('*').eq('ativo',true).order('nome'),
-  ]);
-  deps=dR.data||[];
-  // Sincronizar cache no localStorage para funções que usam dbGet
-  dbSet('departamentos', deps);
-  dbSet('categorias', cR.data||[]);
-  dbSet('tipos_demanda', tR.data||[]);
-  const s=document.getElementById('fDep'),s2=document.getElementById('ndDep');
-  if(s) deps.forEach(d=>{s.innerHTML+=`<option value="${d.id}">${d.nome}</option>`;});
-  if(s2) deps.forEach(d=>{s2.innerHTML+=`<option value="${d.id}">${d.nome}</option>`;});
+  try{
+    const [dR,cR,tR] = await Promise.all([
+      sb.from('departamentos').select('*').eq('ativo',true).order('ordem'),
+      sb.from('categorias').select('*').eq('ativo',true).order('ordem'),
+      sb.from('tipos_demanda').select('*').eq('ativo',true).order('nome'),
+    ]);
+    if(dR.error) throw dR.error;
+    deps=dR.data||[];
+    // Sincronizar cache no localStorage para funções que usam dbGet
+    dbSet('departamentos', deps);
+    dbSet('categorias', cR.data||[]);
+    dbSet('tipos_demanda', tR.data||[]);
+    const s=document.getElementById('fDep'),s2=document.getElementById('ndDep');
+    if(s) deps.forEach(d=>{s.innerHTML+=`<option value="${d.id}">${d.nome}</option>`;});
+    if(s2) deps.forEach(d=>{s2.innerHTML+=`<option value="${d.id}">${d.nome}</option>`;});
+  }catch(e){
+    console.error('loadDeps error:', e);
+    toast('Erro ao carregar departamentos/tipos: '+(e?.message||String(e)), 'err');
+  }
 }
 function fillGlobSelects(){
   ['ndResp','pResp','aResp','trResp'].forEach(id=>{
