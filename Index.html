@@ -4376,20 +4376,14 @@ async function loadImob(){
 async function loadDash(){
   const im=new Date();im.setDate(1);const ims=im.toISOString();
   const hj=new Date().toISOString().split('T')[0];
-  // RPC única — retorna todos os KPIs em 1 query (antes eram 8 queries separadas)
+  // IMPORTANTE: NÃO usamos mais a RPC fn_dashboard_kpis para estes números.
+  // Essa função roda no banco (fora deste arquivo) e estava contando
+  // pendências/urgências de demandas já Concluídas/Canceladas. Para garantir
+  // que demanda concluída NUNCA mais apareça nos painéis operacionais,
+  // calculamos os KPIs sempre aqui, via queries que excluem explicitamente
+  // status concluida/cancelada.
   let kpis = {};
-  try {
-    const {data:rpcData} = await sbRest('').then ? 
-      {data:null} : {data:null};
-    // Usar RPC do Supabase
-    const rpcRes = await fetch(SB_URL+'/rest/v1/rpc/fn_dashboard_kpis',{
-      method:'POST', headers:SB_HEADERS, body:'{}'
-    });
-    if(rpcRes.ok) kpis = await rpcRes.json();
-  } catch(e) {}
-
-  // Fallback para queries individuais se RPC falhar
-  if(!kpis.ativas && kpis.ativas !== 0) {
+  {
     const cincodiasAtras = new Date(Date.now()-5*86400000).toISOString();
     const [r1,r2,r3,r4,r5,r6,r7,r8] = await Promise.all([
       sbRest('demandas').select('id',{count:'exact',head:true}).not('status','in','(concluida,cancelada)'),
