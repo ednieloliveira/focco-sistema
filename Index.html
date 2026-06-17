@@ -4004,13 +4004,23 @@ const TL={abertura:'Abertura',documento_recebido:'Recebimento de Documento',docu
 async function init(){
   try{
     const {data:{session}}=await sb.auth.getSession();
-    if(session)await loadUser(session.user);else showLogin();
+    if(session)await comTimeout(loadUser(session.user), 20000, 'Carregamento do perfil');else showLogin();
   }catch(e){
     console.error('init error:', e);
     showLogin();
   }
 }
 function showLogin(){document.getElementById('pgLogin').style.display='flex';document.getElementById('pgApp').style.display='none';}
+// Evita que o sistema fique "pendurado" para sempre numa conexão de internet
+// instável: se a operação não responder dentro do prazo, cai num erro claro
+// em vez de deixar o botão preso em "Entrando..." indefinidamente.
+function comTimeout(promise, ms, rotulo){
+  return Promise.race([
+    promise,
+    new Promise((_,rej)=>setTimeout(()=>rej(new Error((rotulo||'Operação')+': tempo esgotado (sem resposta do servidor). Verifique sua conexão com a internet e tente novamente.')), ms))
+  ]);
+}
+
 async function fazerLogin(){
   const email=document.getElementById('lEmail').value.trim();
   const senha=document.getElementById('lSenha').value;
@@ -4030,7 +4040,7 @@ async function fazerLogin(){
 
   btn.disabled=true; btn.textContent='Entrando...';
   try{
-    const {data,error}=await sb.auth.signInWithPassword({email,password:senha});
+    const {data,error}=await comTimeout(sb.auth.signInWithPassword({email,password:senha}), 15000, 'Login');
     if(error){
       btn.disabled=false; btn.textContent='Entrar no Sistema';
       const tent=(parseInt(localStorage.getItem(KEY_TENT)||'0'))+1;
@@ -4062,7 +4072,7 @@ async function fazerLogin(){
       return;
     }
 
-    await loadUser(data.user);
+    await comTimeout(loadUser(data.user), 20000, 'Carregamento do perfil');
   }catch(e){
     // Qualquer erro inesperado (rede, navegador, etc.) — nunca deixar o botão travado
     console.error('fazerLogin error:', e);
