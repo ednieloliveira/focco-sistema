@@ -1556,7 +1556,14 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
     <div class="mb">
       <input type="hidden" id="mcId">
       <div class="fr">
-        <div class="fg"><label class="fl">Nome / Razão Social *</label><input type="text" class="fi" id="mcNome" placeholder="Nome completo ou razão social"></div>
+        <div class="fg">
+          <label class="fl">CPF / CNPJ</label>
+          <div style="display:flex;gap:6px">
+            <input type="text" class="fi" id="mcDoc" placeholder="Digite o CNPJ para buscar na Receita" style="flex:1;margin:0" onkeydown="if(event.key==='Enter')consultarCNPJ()">
+            <button type="button" class="btn btn-s" onclick="consultarCNPJ()" style="white-space:nowrap;flex-shrink:0" title="Baixar dados públicos do CNPJ">🔍 Baixar Receita</button>
+          </div>
+          <div id="cnpjStatus" style="font-size:11px;margin-top:4px"></div>
+        </div>
         <div class="fg"><label class="fl">Tipo de Pessoa</label>
           <select class="fi" id="mcTP">
             <option value="juridica">Pessoa Jurídica (CNPJ)</option>
@@ -1565,14 +1572,7 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
         </div>
       </div>
       <div class="fr">
-        <div class="fg">
-          <label class="fl">CPF / CNPJ</label>
-          <div style="display:flex;gap:6px">
-            <input type="text" class="fi" id="mcDoc" placeholder="000.000.000-00 ou 00.000.000/0001-00" style="flex:1;margin:0">
-            <button type="button" class="btn btn-s" onclick="consultarCNPJ()" style="white-space:nowrap;flex-shrink:0" title="Consultar Receita Federal">🔍 Consultar</button>
-          </div>
-          <div id="cnpjStatus" style="font-size:11px;margin-top:4px"></div>
-        </div>
+        <div class="fg"><label class="fl">Nome / Razão Social *</label><input type="text" class="fi" id="mcNome" placeholder="Nome completo ou razão social"></div>
         <div class="fg"><label class="fl">Regime Tributário</label>
           <select class="fi" id="mcReg">
             <option value="">Não informado</option>
@@ -3838,41 +3838,69 @@ function verTodasDemCli(){
 async function consultarCNPJ() {
   const doc = document.getElementById('mcDoc').value.replace(/\D/g,'');
   const status = document.getElementById('cnpjStatus');
+  const btn = document.querySelector('button[onclick="consultarCNPJ()"]');
   
   if(!doc){ toast('Informe o CPF/CNPJ primeiro','err'); return; }
   
   if(doc.length === 11) {
+    document.getElementById('mcTP').value = 'fisica';
     status.innerHTML = '<span style="color:var(--amber)">⚠️ Consulta de CPF não disponível por privacidade.</span>';
     return;
   }
   
   if(doc.length !== 14) { toast('CNPJ deve ter 14 dígitos','err'); return; }
   
-  status.innerHTML = '<span style="color:var(--sky)">⏳ Consultando Receita Federal...</span>';
+  document.getElementById('mcTP').value = 'juridica';
+  document.getElementById('mcDoc').value = doc.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,'$1.$2.$3/$4-$5');
+  status.innerHTML = '<span style="color:var(--sky)">⏳ Baixando dados públicos do CNPJ...</span>';
+  if(btn){ btn.disabled=true; btn.textContent='Consultando...'; }
   
   try {
-    const r = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${doc}`);
+    const ctrl = new AbortController();
+    const tmr = setTimeout(()=>ctrl.abort(), 12000);
+    const r = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${doc}`, {signal:ctrl.signal});
+    clearTimeout(tmr);
     if(!r.ok) throw new Error('CNPJ não encontrado');
     const d = await r.json();
     
     // Preencher campos automaticamente
-    document.getElementById('mcNome').value = d.razao_social || '';
-    if(d.logradouro) document.getElementById('mcEnd').value = `${d.logradouro}, ${d.numero||'s/n'} - ${d.bairro||''} - ${d.municipio||''} - ${d.uf||''}`;
-    if(d.email) document.getElementById('mcEmail').value = d.email;
+    document.getElementById('mcNome').value = d.razao_social || d.nome_fantasia || '';
+    const endParts = [
+      [d.descricao_tipo_de_logradouro,d.logradouro].filter(Boolean).join(' '),
+      d.numero || 's/n',
+      d.complemento,
+      d.bairro,
+      [d.municipio,d.uf].filter(Boolean).join(' - '),
+      d.cep ? 'CEP '+String(d.cep).replace(/^(\d{5})(\d{3})$/,'$1-$2') : ''
+    ].filter(Boolean);
+    if(endParts.length) document.getElementById('mcEnd').value = endParts.join(', ');
+    if(d.email) document.getElementById('mcEmail').value = String(d.email).toLowerCase();
     if(d.ddd_telefone_1) document.getElementById('mcTel').value = d.ddd_telefone_1;
+    if(d.ddd_telefone_2 && !document.getElementById('mcWa').value) document.getElementById('mcWa').value = d.ddd_telefone_2;
     
     // Detectar regime pelo porte
-    if(d.porte === 'MICRO EMPRESA' && d.opcao_pelo_simples) document.getElementById('mcReg').value = 'simples_nacional';
-    else if(d.porte === 'MICRO EMPRESA') document.getElementById('mcReg').value = 'mei';
+    if(d.opcao_pelo_mei) document.getElementById('mcReg').value = 'mei';
+    else if(d.opcao_pelo_simples) document.getElementById('mcReg').value = 'simples_nacional';
+
+    const obs = [];
+    if(d.nome_fantasia) obs.push('Nome fantasia: '+d.nome_fantasia);
+    if(d.cnae_fiscal_descricao) obs.push('CNAE principal: '+d.cnae_fiscal_descricao);
+    if(d.porte) obs.push('Porte: '+d.porte);
+    if(d.natureza_juridica) obs.push('Natureza jurídica: '+d.natureza_juridica);
+    if(obs.length && !document.getElementById('mcObs').value.trim()) document.getElementById('mcObs').value = obs.join('\n');
     
-    const sit = d.situacao_cadastral === 'ATIVA' ? 
+    const sitTxt = d.descricao_situacao_cadastral || d.situacao_cadastral || 'Não informada';
+    const ativo = String(sitTxt).toUpperCase().includes('ATIVA') || String(d.situacao_cadastral)==='2';
+    const sit = ativo ? 
       '<span style="color:var(--green)">✅ Situação: ATIVA</span>' : 
-      `<span style="color:var(--red)">⚠️ Situação: ${d.situacao_cadastral}</span>`;
+      `<span style="color:var(--red)">⚠️ Situação: ${sitTxt}</span>`;
     
     status.innerHTML = `${sit} · Abertura: ${d.data_inicio_atividade||'—'} · Porte: ${d.porte||'—'}`;
     toast('CNPJ consultado com sucesso!','ok');
   } catch(e) {
-    status.innerHTML = '<span style="color:var(--red)">❌ CNPJ não encontrado ou API indisponível</span>';
+    status.innerHTML = '<span style="color:var(--red)">❌ CNPJ não encontrado ou consulta indisponível no momento.</span>';
+  } finally {
+    if(btn){ btn.disabled=false; btn.textContent='🔍 Baixar Receita'; }
   }
 }
 
@@ -4829,7 +4857,7 @@ async function loadCaixa(){
       const tramDescRaw = d.ultimo_tramite_descricao||'—';
       const tramDesc = tramDescRaw.length>60 ? tramDescRaw.slice(0,57)+'...' : tramDescRaw;
       const tramDescEsc = tramDescRaw.replace(/"/g,'&quot;').replace(/</g,'&lt;');
-      const tramUser = d.ultimo_tramite_usuario ? ' · '+d.ultimo_tramite_usuario.split(' ')[0] : '';
+      const tramUser = d.ultimo_tramite_usuario ? ' · por '+d.ultimo_tramite_usuario : '';
       const tramData = refData ? new Date(refData).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}) : '';
       const cliNome = (cli?.nome||'—').replace(/</g,'&lt;');
       const num = (d.numero||'—').replace(/</g,'&lt;');
@@ -6172,6 +6200,7 @@ function abrirModalCliente(){
   document.getElementById('mcId').value='';
   ['mcNome','mcDoc','mcWa','mcEmail','mcObs'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   ['mcTel','mcEnd'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const st=document.getElementById('cnpjStatus');if(st)st.innerHTML='';
   document.getElementById('mcTP').value='juridica';
   document.getElementById('mcReg').value='';
   const tc=document.getElementById('mcTC');if(tc)tc.value='urbano';
@@ -6191,6 +6220,7 @@ function editCli(id){
   const tc=document.getElementById('mcTC');if(tc)tc.value=c.tipo_cliente||'urbano';
   const end=document.getElementById('mcEnd');if(end)end.value=c.endereco||'';
   document.getElementById('mcObs').value=c.observacoes||'';
+  const st=document.getElementById('cnpjStatus');if(st)st.innerHTML='';
   document.getElementById('mCliTit').textContent='Editar Cliente — '+c.nome;
   om('mCli');
 }
@@ -8292,6 +8322,8 @@ function filtDem() {
     const ultHr = ultAt ? ultAt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '';
     const ultUser = d.ultimo_tramite_usuario || '—';
     const ultDesc = d.ultimo_tramite_descricao ? (d.ultimo_tramite_descricao.slice(0,35)+(d.ultimo_tramite_descricao.length>35?'...':'')) : '—';
+    const ultDescTitle = (d.ultimo_tramite_descricao||'').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+    const ultUserEsc = String(ultUser).replace(/</g,'&lt;');
     return `<tr onclick="abrirDet('${d.id}','${_paginaAtual}')" style="${isConcluida?'opacity:.7;background:var(--surface2)':''}">
       <td><strong style="font-family:monospace;color:${isConcluida?'var(--text3)':'var(--accent)'}">${d.numero}</strong></td>
       <td style="font-size:13px">${d.clientes?.nome||'—'}</td>
@@ -8299,7 +8331,9 @@ function filtDem() {
       <td><span class="tag ${SC[d.status]||'tgr'}">${SL[d.status]||d.status}</span></td>
       <td><span class="tag ${PC[d.prioridade]||'tgr'}">${d.prioridade||'—'}</span></td>
       <td style="font-size:12px">${d.profiles?.nome||'—'}</td>
-      <td style="font-size:12px">${ultAt?`<div style="font-weight:600;color:var(--text)">${ultDt}</div><div style="color:var(--text3)">${ultHr}</div>`:'<span style="color:var(--text3)">—</span>'}</td>
+      <td style="font-size:11px;color:var(--text2)">
+        ${ultAt?`<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:190px;font-weight:600;color:var(--text)" title="${ultDescTitle}">${ultDesc}</div><div style="color:var(--text3);margin-top:1px">${ultDt} ${ultHr} · por ${ultUserEsc}</div>`:'<span style="color:var(--text3)">—</span>'}
+      </td>
       <td><span class="tag ${dc}">${isConcluida?'✅':diasReal+'d'}</span></td>
       <td style="font-size:12px;color:${pv?'var(--red)':'inherit'}">${d.prazo?new Date(d.prazo+'T12:00:00').toLocaleDateString('pt-BR'):'—'}</td>
     </tr>`;
