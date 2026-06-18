@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Formulario de Admissao - Focco Contabilidade</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#f6f7f9;--surface:#fff;--ink:#172033;--muted:#667085;--line:#d9dee8;--blue:#3157e8;--green:#0f9b6e;--red:#c62525;--amber:#b76e00}
+    *{box-sizing:border-box} body{margin:0;font-family:Inter,Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:14px}
+    header{background:#2545db;color:#fff;padding:18px 22px} header h1{margin:0;font-size:22px} header p{margin:5px 0 0;color:rgba(255,255,255,.78)}
+    main{max-width:1120px;margin:0 auto;padding:18px}
+    .toolbar{position:sticky;top:0;z-index:5;background:rgba(246,247,249,.96);backdrop-filter:blur(8px);padding:12px 0;display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-bottom:1px solid var(--line)}
+    .btn{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:8px;padding:9px 12px;font-weight:700;cursor:pointer;font-family:inherit}
+    .btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}.btn.ok{background:var(--green);border-color:var(--green);color:#fff}.btn.warn{background:#fff7e8;border-color:#ffd99b;color:#8a5300}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+    section{background:#fff;border:1px solid var(--line);border-radius:10px;margin:14px 0;overflow:hidden}
+    .sec-h{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;align-items:center}
+    .sec-h h2{margin:0;font-size:16px}.sec-b{padding:16px}.hint{font-size:12px;color:var(--muted)}
+    label{display:block;font-size:12px;font-weight:700;color:#5d6678;margin:0 0 5px}
+    input,select,textarea{width:100%;border:1px solid #cfd5df;border-radius:8px;padding:10px 11px;font:inherit;background:#fff;color:var(--ink);outline:none}
+    input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(49,87,232,.12)}
+    textarea{resize:vertical;min-height:82px}.fg{margin-bottom:12px}.req:after{content:" *";color:var(--red)}
+    .checkgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.check{display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:8px;background:#fbfcff}.check input{width:auto}
+    .dep-row{border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:8px}.pill{font-size:11px;background:#eef2ff;color:#2842bc;padding:2px 8px;border-radius:20px;font-weight:700}
+    .status{margin-left:auto;font-size:12px;color:var(--muted)} .okmsg{color:var(--green)} .errmsg{color:var(--red)}
+    @media(max-width:780px){.grid,.grid3,.checkgrid{grid-template-columns:1fr}.toolbar{position:static}}
+  </style>
+</head>
+<body>
+<header>
+  <h1>Formulario de Admissao de Funcionario</h1>
+  <p>Focco Contabilidade - preencha com atencao. Os dados ficam salvos neste navegador ate o envio/exportacao.</p>
+</header>
+<main>
+  <div class="toolbar">
+    <button class="btn primary" onclick="salvarRascunho()">Salvar rascunho</button>
+    <button class="btn ok" onclick="enviarFormulario()">Enviar ao escritorio</button>
+    <button class="btn" onclick="copiarDominio()">Copiar para Dominio</button>
+    <button class="btn" onclick="baixarCSV()">Baixar CSV</button>
+    <button class="btn" onclick="baixarJSON()">Baixar pacote</button>
+    <button class="btn warn" onclick="limparTudo()">Limpar</button>
+    <span class="status" id="status">Rascunho local ativo</span>
+  </div>
+
+  <form id="formAdm">
+    <section>
+      <div class="sec-h"><h2>1. Empresa contratante</h2><span class="pill">Empregador</span></div>
+      <div class="sec-b grid">
+        <div class="fg"><label class="req">CNPJ da empresa</label><input name="empresa_cnpj" data-mask="cnpj" required placeholder="00.000.000/0000-00"></div>
+        <div class="fg"><label class="req">Razao social</label><input name="empresa_razao" required list="empresas_sugeridas"></div>
+        <div class="fg"><label>Responsavel pelo preenchimento</label><input name="responsavel_cliente"></div>
+        <div class="fg"><label>E-mail/WhatsApp do responsavel</label><input name="contato_responsavel"></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-h"><h2>2. Dados pessoais do funcionario</h2><span class="pill">Funcionario</span></div>
+      <div class="sec-b grid">
+        <div class="fg"><label class="req">Nome completo</label><input name="func_nome" required></div>
+        <div class="fg"><label class="req">CPF</label><input name="func_cpf" data-mask="cpf" required></div>
+        <div class="fg"><label class="req">Data de nascimento</label><input type="date" name="func_nascimento" required></div>
+        <div class="fg"><label class="req">Sexo</label><select name="func_sexo" required><option value="">Selecione</option><option>Masculino</option><option>Feminino</option><option>Outro</option><option>Prefiro nao informar</option></select></div>
+        <div class="fg"><label>Estado civil</label><select name="estado_civil"><option>Solteiro(a)</option><option>Casado(a)</option><option>Uniao estavel</option><option>Divorciado(a)</option><option>Viuvo(a)</option></select></div>
+        <div class="fg"><label>Grau de instrucao</label><select name="instrucao"><option>Ensino fundamental incompleto</option><option>Ensino fundamental completo</option><option>Ensino medio incompleto</option><option selected>Ensino medio completo</option><option>Superior incompleto</option><option>Superior completo</option><option>Pos-graduacao</option></select></div>
+        <div class="fg"><label>Nacionalidade</label><input name="nacionalidade" value="Brasileira"></div>
+        <div class="fg"><label>Naturalidade/UF</label><input name="naturalidade" placeholder="Cidade - UF"></div>
+        <div class="fg"><label>Nome da mae</label><input name="mae"></div>
+        <div class="fg"><label>Nome do pai</label><input name="pai"></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-h"><h2>3. Documentos</h2><span class="pill">eSocial</span></div>
+      <div class="sec-b grid3">
+        <div class="fg"><label>RG</label><input name="rg"></div>
+        <div class="fg"><label>Orgao emissor/UF</label><input name="rg_orgao"></div>
+        <div class="fg"><label>Data emissao RG</label><input type="date" name="rg_emissao"></div>
+        <div class="fg"><label>PIS/PASEP/NIT</label><input name="pis"></div>
+        <div class="fg"><label>CTPS numero</label><input name="ctps_numero"></div>
+        <div class="fg"><label>CTPS serie/UF</label><input name="ctps_serie"></div>
+        <div class="fg"><label>Titulo eleitor</label><input name="titulo_eleitor"></div>
+        <div class="fg"><label>Zona/Secao</label><input name="titulo_zona_secao"></div>
+        <div class="fg"><label>CNH categoria/validade</label><input name="cnh"></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-h"><h2>4. Endereco e contato</h2><button type="button" class="btn" onclick="buscarCEP()">Buscar CEP</button></div>
+      <div class="sec-b grid">
+        <div class="fg"><label>CEP</label><input name="cep" data-mask="cep" placeholder="00000-000"></div>
+        <div class="fg"><label>Endereco</label><input name="endereco"></div>
+        <div class="fg"><label>Numero</label><input name="numero"></div>
+        <div class="fg"><label>Complemento</label><input name="complemento"></div>
+        <div class="fg"><label>Bairro</label><input name="bairro"></div>
+        <div class="fg"><label>Cidade/UF</label><input name="cidade_uf"></div>
+        <div class="fg"><label>Telefone/WhatsApp</label><input name="telefone"></div>
+        <div class="fg"><label>E-mail</label><input type="email" name="email"></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-h"><h2>5. Dados da admissao</h2><span class="pill">Contrato</span></div>
+      <div class="sec-b grid3">
+        <div class="fg"><label class="req">Data de admissao</label><input type="date" name="admissao_data" required></div>
+        <div class="fg"><label class="req">Cargo</label><input name="cargo" list="cargos_sugeridos" required></div>
+        <div class="fg"><label>CBO</label><input name="cbo"></div>
+        <div class="fg"><label>Departamento/setor</label><input name="setor" list="setores_sugeridos"></div>
+        <div class="fg"><label>Tipo de contrato</label><select name="tipo_contrato"><option>Prazo indeterminado</option><option>Experiencia 45 + 45 dias</option><option>Experiencia 30 + 60 dias</option><option>Prazo determinado</option><option>Intermitente</option><option>Aprendiz</option><option>Estagio</option></select></div>
+        <div class="fg"><label>Categoria eSocial</label><select name="categoria_esocial"><option>101 - Empregado geral</option><option>103 - Aprendiz</option><option>111 - Intermitente</option><option>901 - Estagiario</option><option>701 - Contribuinte individual</option></select></div>
+        <div class="fg"><label>Salario base</label><input name="salario" placeholder="R$ 0,00"></div>
+        <div class="fg"><label>Forma de pagamento</label><select name="forma_pagamento"><option>Mensalista</option><option>Horista</option><option>Comissionista</option><option>Misto</option></select></div>
+        <div class="fg"><label>Jornada</label><select name="jornada"><option>44h semanais</option><option>40h semanais</option><option>36h semanais</option><option>12x36</option><option>Parcial</option><option>Outra</option></select></div>
+        <div class="fg"><label>Horario de trabalho</label><input name="horario" placeholder="Seg a Sex 08:00-18:00"></div>
+        <div class="fg"><label>Intervalo</label><input name="intervalo" placeholder="Ex.: 12:00-13:30"></div>
+        <div class="fg"><label>Banco de horas?</label><select name="banco_horas"><option>Nao</option><option>Sim</option><option>A confirmar</option></select></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-h"><h2>6. Beneficios e dados bancarios</h2></div>
+      <div class="sec-b">
+        <div class="checkgrid">
+          <label class="check"><input type="checkbox" name="beneficios" value="Vale transporte"> Vale transporte</label>
+          <label class="check"><input type="checkbox" name="beneficios" value="Vale alimentacao"> Vale alimentacao</label>
+          <label class="check"><input type="checkbox" name="beneficios" value="Plano de saude"> Plano de saude</label>
+          <label class="check"><input type="checkbox" name="beneficios" value="Seguro de vida"> Seguro de vida</label>
+          <label class="check"><input type="checkbox" name="beneficios" value="Cesta basica"> Cesta basica</label>
+          <label class="check"><input type="checkbox" name="beneficios" value="Nenhum"> Nenhum</label>
+        </div>
+        <div class="grid3" style="margin-top:12px">
+          <div class="fg"><label>Banco</label><input name="banco"></div>
+          <div class="fg"><label>Agencia</label><input name="agencia"></div>
+          <div class="fg"><label>Conta / Pix</label><input name="conta_pix"></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-h"><h2>7. Dependentes</h2><button type="button" class="btn" onclick="addDependente()">+ Dependente</button></div>
+      <div class="sec-b">
+        <div id="dependentes"></div>
+        <div class="hint">Informe dependentes para salario-familia e IRRF, quando houver.</div>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-h"><h2>8. Saude, exames e documentos</h2></div>
+      <div class="sec-b">
+        <div class="grid">
+          <div class="fg"><label>Exame admissional realizado?</label><select name="exame_admissional"><option>Aguardando</option><option>Sim, apto</option><option>Sim, inapto</option><option>Nao se aplica</option></select></div>
+          <div class="fg"><label>Data do ASO</label><input type="date" name="aso_data"></div>
+          <div class="fg"><label>Usa EPI/uniforme?</label><select name="epi_uniforme"><option>Nao</option><option>Sim, EPI</option><option>Sim, uniforme</option><option>Sim, ambos</option></select></div>
+          <div class="fg"><label>Risco ocupacional</label><select name="risco_ocupacional"><option>Nao informado</option><option>Administrativo</option><option>Operacional</option><option>Periculosidade</option><option>Insalubridade</option><option>A confirmar com SST</option></select></div>
+        </div>
+        <div class="checkgrid">
+          <label class="check"><input type="checkbox" name="docs" value="RG/CPF"> RG/CPF</label>
+          <label class="check"><input type="checkbox" name="docs" value="Comprovante endereco"> Comprovante endereco</label>
+          <label class="check"><input type="checkbox" name="docs" value="CTPS digital"> CTPS digital</label>
+          <label class="check"><input type="checkbox" name="docs" value="PIS"> PIS</label>
+          <label class="check"><input type="checkbox" name="docs" value="Titulo eleitor"> Titulo eleitor</label>
+          <label class="check"><input type="checkbox" name="docs" value="Certidao casamento/nascimento"> Certidao</label>
+          <label class="check"><input type="checkbox" name="docs" value="Documentos dependentes"> Dependentes</label>
+          <label class="check"><input type="checkbox" name="docs" value="ASO admissional"> ASO</label>
+          <label class="check"><input type="checkbox" name="docs" value="Foto 3x4"> Foto</label>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-h"><h2>9. Observacoes finais</h2></div>
+      <div class="sec-b">
+        <textarea name="observacoes" placeholder="Informacoes adicionais, combinados, pendencias, particularidades do contrato..."></textarea>
+      </div>
+    </section>
+  </form>
+
+  <datalist id="cargos_sugeridos"><option>Auxiliar Administrativo</option><option>Assistente Administrativo</option><option>Vendedor</option><option>Operador de Caixa</option><option>Servente</option><option>Motorista</option><option>Auxiliar de Servicos Gerais</option><option>Recepcionista</option></datalist>
+  <datalist id="setores_sugeridos"><option>Administrativo</option><option>Financeiro</option><option>Comercial</option><option>Operacional</option><option>Producao</option><option>Atendimento</option></datalist>
+  <datalist id="empresas_sugeridas"></datalist>
+</main>
+
+<script>
+const SUPABASE_URL = 'https://nambhrizjnhebqgfztux.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hbWJocml6am5oZWJxZ2Z6dHV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNDUzMDIsImV4cCI6MjA5NjkyMTMwMn0.AeBCJetQQugrpDAaOPrEYgHor9irmosN8EWogCtPzSo';
+const KEY='focco_admissao_rascunho';
+function qs(n){return document.querySelector(`[name="${n}"]`)}
+function status(msg,tipo){const s=document.getElementById('status');s.textContent=msg;s.className='status '+(tipo||'')}
+function formDataObj(){
+  const fd=new FormData(document.getElementById('formAdm')); const obj={};
+  for(const [k,v] of fd.entries()){ if(obj[k]) obj[k]=Array.isArray(obj[k])?[...obj[k],v]:[obj[k],v]; else obj[k]=v; }
+  obj.dependentes=[...document.querySelectorAll('.dep-row')].map((r,i)=>({nome:r.querySelector(`[name="dep_nome_${i}"]`)?.value||'',cpf:r.querySelector(`[name="dep_cpf_${i}"]`)?.value||'',nascimento:r.querySelector(`[name="dep_nasc_${i}"]`)?.value||'',parentesco:r.querySelector(`[name="dep_parent_${i}"]`)?.value||''})).filter(d=>d.nome||d.cpf);
+  obj.preenchido_em=new Date().toISOString(); obj.origem='formulario_publico_admissao_focco';
+  return obj;
+}
+function setFormData(obj){
+  Object.entries(obj||{}).forEach(([k,v])=>{ if(k==='dependentes'||Array.isArray(v))return; const el=qs(k); if(el) el.value=v||''; });
+  ['beneficios','docs'].forEach(k=>{ const vals=[].concat(obj?.[k]||[]); document.querySelectorAll(`[name="${k}"]`).forEach(c=>c.checked=vals.includes(c.value)); });
+  (obj?.dependentes||[]).forEach(d=>addDependente(d));
+}
+function salvarRascunho(){localStorage.setItem(KEY,JSON.stringify(formDataObj()));status('Rascunho salvo neste navegador','okmsg')}
+function limparTudo(){if(confirm('Limpar todo o formulario?')){localStorage.removeItem(KEY);location.reload()}}
+function addDependente(d={}){
+  const i=document.querySelectorAll('.dep-row').length;
+  document.getElementById('dependentes').insertAdjacentHTML('beforeend',`<div class="dep-row grid">
+    <div class="fg"><label>Nome do dependente</label><input name="dep_nome_${i}" value="${esc(d.nome||'')}"></div>
+    <div class="fg"><label>CPF</label><input name="dep_cpf_${i}" data-mask="cpf" value="${esc(d.cpf||'')}"></div>
+    <div class="fg"><label>Nascimento</label><input type="date" name="dep_nasc_${i}" value="${esc(d.nascimento||'')}"></div>
+    <div class="fg"><label>Parentesco</label><select name="dep_parent_${i}"><option>Filho(a)</option><option>Conjuge</option><option>Enteado(a)</option><option>Outro</option></select></div>
+  </div>`);
+}
+function esc(v){return String(v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')}
+async function buscarCEP(){
+  const cep=(qs('cep').value||'').replace(/\D/g,''); if(cep.length!==8){status('Informe um CEP valido','errmsg');return}
+  try{const r=await fetch(`https://viacep.com.br/ws/${cep}/json/`);const d=await r.json(); if(d.erro)throw new Error();
+    qs('endereco').value=d.logradouro||''; qs('bairro').value=d.bairro||''; qs('cidade_uf').value=[d.localidade,d.uf].filter(Boolean).join(' - '); status('Endereco preenchido pelo CEP','okmsg');
+  }catch(e){status('Nao foi possivel consultar o CEP','errmsg')}
+}
+function dominioTexto(){
+  const d=formDataObj();
+  return [
+    'ADMISSAO DE FUNCIONARIO',
+    `Empresa: ${d.empresa_razao||''} - CNPJ ${d.empresa_cnpj||''}`,
+    `Funcionario: ${d.func_nome||''}`,
+    `CPF: ${d.func_cpf||''} | Nascimento: ${d.func_nascimento||''} | Sexo: ${d.func_sexo||''}`,
+    `Mae: ${d.mae||''} | Pai: ${d.pai||''}`,
+    `Endereco: ${d.endereco||''}, ${d.numero||''}, ${d.bairro||''}, ${d.cidade_uf||''}, CEP ${d.cep||''}`,
+    `Contato: ${d.telefone||''} | ${d.email||''}`,
+    `RG: ${d.rg||''} ${d.rg_orgao||''} | PIS: ${d.pis||''} | CTPS: ${d.ctps_numero||''} ${d.ctps_serie||''}`,
+    `Admissao: ${d.admissao_data||''} | Cargo: ${d.cargo||''} | CBO: ${d.cbo||''} | Setor: ${d.setor||''}`,
+    `Contrato: ${d.tipo_contrato||''} | Categoria eSocial: ${d.categoria_esocial||''}`,
+    `Salario: ${d.salario||''} | Pagamento: ${d.forma_pagamento||''} | Jornada: ${d.jornada||''}`,
+    `Horario: ${d.horario||''} | Intervalo: ${d.intervalo||''}`,
+    `Beneficios: ${[].concat(d.beneficios||[]).join(', ')}`,
+    `Banco: ${d.banco||''} | Agencia: ${d.agencia||''} | Conta/Pix: ${d.conta_pix||''}`,
+    `Dependentes: ${(d.dependentes||[]).map(x=>`${x.nome} (${x.cpf}, ${x.nascimento}, ${x.parentesco})`).join('; ')}`,
+    `Documentos recebidos: ${[].concat(d.docs||[]).join(', ')}`,
+    `Observacoes: ${d.observacoes||''}`
+  ].join('\n');
+}
+async function copiarDominio(){await navigator.clipboard.writeText(dominioTexto());status('Texto copiado para colar no Dominio','okmsg')}
+function baixarJSON(){download('admissao_funcionario_'+Date.now()+'.json',JSON.stringify(formDataObj(),null,2),'application/json')}
+function baixarCSV(){
+  const d=formDataObj(); const flat={...d,beneficios:[].concat(d.beneficios||[]).join('; '),docs:[].concat(d.docs||[]).join('; '),dependentes:(d.dependentes||[]).map(x=>`${x.nome}|${x.cpf}|${x.nascimento}|${x.parentesco}`).join('; ')};
+  const headers=Object.keys(flat); const row=headers.map(h=>csv(flat[h])).join(';');
+  download('admissao_funcionario.csv',headers.join(';')+'\n'+row,'text/csv;charset=utf-8')
+}
+function csv(v){return `"${String(v??'').replace(/"/g,'""')}"`}
+function download(name,content,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}
+async function enviarFormulario(){
+  const d=formDataObj(); salvarRascunho();
+  try{
+    const r=await fetch(`${SUPABASE_URL}/rest/v1/admissoes_funcionarios`,{method:'POST',headers:{apikey:SUPABASE_ANON_KEY,Authorization:`Bearer ${SUPABASE_ANON_KEY}`,'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({dados:d,empresa_cnpj:d.empresa_cnpj||null,funcionario_nome:d.func_nome||null,status:'recebido',created_at:new Date().toISOString()})});
+    if(!r.ok) throw new Error(await r.text());
+    status('Formulario enviado ao escritorio com sucesso','okmsg'); localStorage.removeItem(KEY);
+  }catch(e){status('Nao consegui enviar online. Baixe o pacote ou copie para enviar ao escritorio.','errmsg');baixarJSON();}
+}
+document.addEventListener('input',e=>{ if(e.target.form) localStorage.setItem(KEY,JSON.stringify(formDataObj())); });
+document.addEventListener('change',e=>{ if(e.target.form) localStorage.setItem(KEY,JSON.stringify(formDataObj())); });
+window.addEventListener('load',()=>{try{setFormData(JSON.parse(localStorage.getItem(KEY)||'{}'));}catch(e){}});
+</script>
+</body>
+</html>
