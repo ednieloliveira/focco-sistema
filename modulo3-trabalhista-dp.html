@@ -52,13 +52,66 @@
       <a class="btn" href="Index.html">Clientes</a>
     </div></div></div>
   </section>
+  <section class="card" style="margin-top:16px">
+    <div class="head">Fichas de admissao recebidas</div>
+    <div class="body">
+      <div id="admissoesRecebidas" class="list"><div class="item"><span>Carregando fichas recebidas...</span></div></div>
+    </div>
+  </section>
 </main>
 <script>
+const FOCCO_SUPABASE_URL = 'https://nambhrizjnhebqgfztux.supabase.co';
+const FOCCO_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hbWJocml6am5oZWJxZ2Z6dHV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNDUzMDIsImV4cCI6MjA5NjkyMTMwMn0.AeBCJetQQugrpDAaOPrEYgHor9irmosN8EWogCtPzSo';
+let fichasAdmissao = [];
+
 async function copiarLink(path){
   const url = new URL(path, window.location.href).href;
   try{await navigator.clipboard.writeText(url); alert('Link copiado.');}
   catch(e){prompt('Copie o link:', url);}
 }
+
+function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+
+async function carregarAdmissoesRecebidas(){
+  const el=document.getElementById('admissoesRecebidas');
+  try{
+    const r=await fetch(`${FOCCO_SUPABASE_URL}/rest/v1/admissoes_funcionarios?select=*&order=created_at.desc&limit=50`,{
+      headers:{apikey:FOCCO_SUPABASE_KEY,Authorization:'Bearer '+FOCCO_SUPABASE_KEY}
+    });
+    if(!r.ok) throw new Error('Tabela indisponivel');
+    fichasAdmissao=await r.json();
+    if(!fichasAdmissao.length){el.innerHTML='<div class="item"><span>Nenhuma ficha recebida ainda.</span></div>';return;}
+    el.innerHTML=fichasAdmissao.map((f,i)=>{
+      const d=f.dados||{};
+      const data=f.created_at?new Date(f.created_at).toLocaleString('pt-BR'):'';
+      return `<div class="item"><b>${esc(d.nome||f.funcionario_nome||'Funcionario sem nome')}</b><span>${esc(d.empresa||'Empresa nao informada')} - ${esc(f.protocolo||d.protocolo||'sem protocolo')} - ${data}</span><div class="actions"><button class="btn" onclick="verFicha(${i})">Ver detalhes</button><button class="btn" onclick="baixarFicha(${i})">Baixar JSON</button><button class="btn" onclick="copiarFicha(${i})">Copiar resumo</button></div></div>`;
+    }).join('');
+  }catch(e){
+    el.innerHTML='<div class="item"><b>Consulta online nao configurada</b><span>Quando a tabela admissoes_funcionarios estiver disponivel no Supabase, as fichas recebidas aparecerao aqui. Por enquanto use o arquivo JSON enviado pelo cliente.</span></div>';
+  }
+}
+
+function resumoFicha(i){
+  const f=fichasAdmissao[i]||{},d=f.dados||{};
+  return ['FICHA DE ADMISSAO - FOCCO',`Protocolo: ${f.protocolo||d.protocolo||''}`,`Empresa: ${d.empresa||''}`,`Nome: ${d.nome||f.funcionario_nome||''}`,`CPF: ${d.cpf||''}`,`Nascimento: ${d.nascimento||''}`,`Telefone: ${d.celular||d.telefone||''}`,`Email: ${d.email||''}`,`Cargo: ${d.cargo||''}`,`Data admissao: ${d.data_admissao||''}`,`Salario: ${d.salario||''}`].join('\n');
+}
+
+function verFicha(i){alert(resumoFicha(i));}
+
+function baixarFicha(i){
+  const f=fichasAdmissao[i]||{},d=f.dados||f;
+  const blob=new Blob([JSON.stringify(d,null,2)],{type:'application/json;charset=utf-8'});
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download=`focco-admissao-${(f.protocolo||d.protocolo||'sem-protocolo').toLowerCase()}.json`;a.click();URL.revokeObjectURL(url);
+}
+
+async function copiarFicha(i){
+  const texto=resumoFicha(i);
+  try{await navigator.clipboard.writeText(texto);alert('Resumo copiado.');}
+  catch(e){prompt('Copie o resumo:',texto);}
+}
+
+carregarAdmissoesRecebidas();
 </script>
 </body>
 </html>
