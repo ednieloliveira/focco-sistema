@@ -662,6 +662,9 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
       <option value="60">Próximos 60 dias</option>
       <option value="0">Todos pendentes</option>
     </select>
+    <select id="agFiltroUsuario" class="fi" style="width:190px;margin:0;display:none" onchange="renderAgenda()">
+      <option value="">Todos os usuarios</option>
+    </select>
     <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);cursor:pointer">
       <input type="checkbox" id="agMostrarPassados" onchange="renderAgenda()"> Incluir passados
     </label>
@@ -2403,6 +2406,23 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
   </div>
 </div>
 
+<!-- MODAL DETALHE AGENDA -->
+<div class="modal-ov" id="mAgendaDetalhe">
+  <div class="modal" style="max-width:560px">
+    <div class="mh">
+      <div>
+        <div class="mt" id="agDetTitulo">Registro da Agenda</div>
+        <div style="font-size:12px;color:var(--text3)" id="agDetSub"></div>
+      </div>
+      <button class="mc" onclick="fm('mAgendaDetalhe')">×</button>
+    </div>
+    <div class="mb" id="agDetCorpo"></div>
+    <div class="mf" id="agDetAcoes">
+      <button class="btn btn-s" onclick="fm('mAgendaDetalhe')">Fechar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL LEMBRETE -->
 <div class="modal-ov" id="mLembrete">
   <div class="modal" style="max-width:460px">
@@ -2982,9 +3002,11 @@ const _auth={
       u.senha_hash=h;
     }
     if(u.senha_hash!==h)return{data:{session:null,user:null},error:{message:'Senha incorreta. Verifique e tente novamente.'}};
-    const sess={user:{id:u.id,email:u.email,user_metadata:{},app_metadata:{}},expires_at:Date.now()+this._duracaoSessao};
+    const perfilSessao={id:u.id,nome:u.nome,usuario:u.usuario,email:u.email,perfil:u.perfil,ativo:u.ativo,primeiro_acesso:u.primeiro_acesso,whatsapp:u.whatsapp};
+    const sess={user:{id:u.id,email:u.email,user_metadata:{},app_metadata:{},profile:perfilSessao},profile:perfilSessao,expires_at:Date.now()+this._duracaoSessao};
     this._sess=sess;
     localStorage.setItem('focco_auth',JSON.stringify(sess));
+    localStorage.setItem('focco_last_user_id',u.id);
     return{data:{session:sess,user:sess.user},error:null};
   },
   async signOut(){this._sess=null;localStorage.removeItem('focco_auth');return{error:null};},
@@ -4064,12 +4086,16 @@ const PC={baixa:'tgr',normal:'ts',alta:'ta',urgente:'tr'};
 const TL={abertura:'Abertura',documento_recebido:'Recebimento de Documento',documento_solicitado:'Solicitação de Documento',protocolo:'Protocolo Efetuado',exigencia_recebida:'Exigência Recebida',exigencia_respondida:'Exigência Respondida',transferencia:'Transferência',aceite:'Aceite',pendencia_criada:'Pendência criada',pendencia_resolvida:'Pendência resolvida',aprovacao_solicitada:'Aprox. solicitada',aprovacao_concedida:'✅ Aprovado',aprovacao_devolvida:'⚠️ Devolvido',conclusao:'Conclusão',cancelamento:'Cancelamento',movimentacao_geral:'Atualização do Processo'};
 
 async function init(){
+  let session = null;
   try{
-    const {data:{session}}=await sb.auth.getSession();
-    if(session)await comTimeout(loadUser(session.user), 20000, 'Carregamento do perfil');else showLogin();
+    const authResp=await sb.auth.getSession();
+    session = authResp?.data?.session || null;
+    if(session) await loadUser(session.user);
+    else showLogin();
   }catch(e){
     console.error('init error:', e);
-    showLogin();
+    if(session?.user) await loadUser(session.user);
+    else showLogin();
   }
 }
 function showLogin(){document.getElementById('pgLogin').style.display='flex';document.getElementById('pgApp').style.display='none';}
@@ -4235,7 +4261,14 @@ async function trocarSenhaObrigatoria() {
   }
 }
 async function loadUser(user){
-  let {data:p,error:perr}=await sb.from('profiles').select('*').eq('id',user.id).single();
+  let p=null, perr=null;
+  try{
+    const resp = await comTimeout(sb.from('profiles').select('*').eq('id',user.id).single(), 8000, 'Perfil');
+    p = resp.data; perr = resp.error;
+  }catch(e){
+    perr = e;
+    console.warn('loadUser: perfil demorou/falhou, tentando cache local', e);
+  }
   if(!p){
     // Rede falhou — tentar cache local antes de exigir login novamente
     try{
@@ -4243,6 +4276,21 @@ async function loadUser(user){
       const cp=cached.find(x=>x.id===user.id);
       if(cp){ p=cp; perr=null; console.warn('loadUser: usando cache local por falha de rede'); }
     }catch(e){}
+  }
+  if(!p && user?.profile){
+    p = user.profile;
+    perr = null;
+    console.warn('loadUser: usando perfil salvo na sessao local');
+  }
+  if(!p){
+    try{
+      const sess=JSON.parse(localStorage.getItem('focco_auth')||'null');
+      if(sess?.profile?.id===user.id){ p=sess.profile; perr=null; console.warn('loadUser: usando perfil de focco_auth'); }
+    }catch(e){}
+  }
+  if(!p){
+    const localProf = dbGet('profiles').find(x=>x.id===user.id);
+    if(localProf){ p=localProf; perr=null; console.warn('loadUser: usando profile do cache db local'); }
   }
   if(!p){
     let detalhe = 'perfil não encontrado';
@@ -4258,6 +4306,15 @@ async function loadUser(user){
     return;
   }
   U=p;
+  try{
+    const sess=JSON.parse(localStorage.getItem('focco_auth')||'null')||{};
+    sess.user = sess.user || {id:p.id,email:p.email,user_metadata:{},app_metadata:{}};
+    sess.user.profile = {id:p.id,nome:p.nome,usuario:p.usuario,email:p.email,perfil:p.perfil,ativo:p.ativo,primeiro_acesso:p.primeiro_acesso,whatsapp:p.whatsapp};
+    sess.profile = sess.user.profile;
+    sess.expires_at = Date.now() + (sb.auth?._duracaoSessao || 30*24*60*60*1000);
+    localStorage.setItem('focco_auth',JSON.stringify(sess));
+    localStorage.setItem('focco_last_user_id',p.id);
+  }catch(e){}
   const ini=p.nome.split(' ').map(x=>x[0]).slice(0,2).join('').toUpperCase();
   document.getElementById('sbAv').textContent=ini;
   document.getElementById('sbNome').textContent=p.nome;
@@ -10082,6 +10139,7 @@ if(localStorage.getItem('focco_version') !== DB_VERSION) {
   const cliBackup = localStorage.getItem('focco_db_clientes');
   const profBackup = localStorage.getItem('focco_db_profiles');
   const authBackup = localStorage.getItem('focco_auth');
+  const lastUserBackup = localStorage.getItem('focco_last_user_id');
   const cliCacheBackup = localStorage.getItem('focco_cache_clientes');
   const profCacheBackup = localStorage.getItem('focco_cache_profiles');
   localStorage.clear();
@@ -10092,6 +10150,7 @@ if(localStorage.getItem('focco_version') !== DB_VERSION) {
   if(cliBackup && cliBackup !== '[]') localStorage.setItem('focco_db_clientes', cliBackup);
   if(profBackup && profBackup !== '[]') localStorage.setItem('focco_db_profiles', profBackup);
   if(authBackup) localStorage.setItem('focco_auth', authBackup);
+  if(lastUserBackup) localStorage.setItem('focco_last_user_id', lastUserBackup);
   if(cliCacheBackup) localStorage.setItem('focco_cache_clientes', cliCacheBackup);
   if(profCacheBackup) localStorage.setItem('focco_cache_profiles', profCacheBackup);
 }
@@ -10584,6 +10643,50 @@ function agAudit(acao,tipo,id,obs){const a=JSON.parse(localStorage.getItem(AG_AU
 function agTxt(v){return String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}
 function agEsc(v){return String(v||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;')}
 function agGestor(){return U?.perfil==='gestor'||U?.perfil==='supervisor'||U?.usuario==='Gerente'||U?.nome==='Edniel Oliveira'}
+function agEventoChave(ev){
+  if(ev?.id) return `${ev._tipo||''}:id:${ev.id}`;
+  return [
+    ev?._tipo||'',
+    ev?.data||'',
+    (ev?.hora||'').slice(0,5),
+    agTxt(ev?.titulo||''),
+    ev?.responsavel_id||ev?.usuario_id||''
+  ].join('|');
+}
+function agEventoAssinatura(ev){
+  return [
+    ev?._tipo||'',
+    ev?.data||'',
+    (ev?.hora||'').slice(0,5),
+    agTxt(ev?.titulo||''),
+    ev?.responsavel_id||ev?.usuario_id||''
+  ].join('|');
+}
+function agDedupEventos(lista){
+  const vistosId=new Set(), vistosAssinatura=new Set();
+  return (lista||[]).filter(ev=>{
+    const idKey=agEventoChave(ev);
+    const sigKey=agEventoAssinatura(ev);
+    if(vistosId.has(idKey)||vistosAssinatura.has(sigKey)) return false;
+    vistosId.add(idKey);
+    vistosAssinatura.add(sigKey);
+    return true;
+  });
+}
+function agPrepararFiltroUsuarios(){
+  const el=document.getElementById('agFiltroUsuario');
+  if(!el) return;
+  if(!agGestor()){
+    el.value='';
+    el.style.display='none';
+    return;
+  }
+  const atual=el.value;
+  const profs=dbGet('profiles').filter(p=>p.ativo!==false).sort((a,b)=>(a.nome||'').localeCompare(b.nome||''));
+  el.innerHTML='<option value="">Todos os usuarios</option>'+profs.map(p=>`<option value="${p.id}">${agEsc(p.nome||p.usuario||p.email||'Usuario')}</option>`).join('');
+  el.value=profs.some(p=>p.id===atual)?atual:'';
+  el.style.display='block';
+}
 function agCanSee(ev){
   if(agGestor()) return true;
   if(ev._tipo==='compromisso'){
@@ -10614,6 +10717,7 @@ function agSetVisao(v){
 }
 
 async function agCarregarEventos() {
+  agPrepararFiltroUsuarios();
   const inicio = new Date(); inicio.setDate(inicio.getDate() - (_agVisao==='historico'?365:30));
   const fim = new Date(); fim.setDate(fim.getDate() + 120);
   const dtInicio = inicio.toISOString().split('T')[0];
@@ -10640,6 +10744,7 @@ async function agCarregarEventos() {
       const ev={_tipo:'lembrete',id:l.id,data:l.data_lembrete,hora:l.hora_lembrete,titulo:m.titulo||l.descricao,status:l.status,descricao:m.observacao||'',demanda_id:l.demanda_id,demanda_num:dem.numero||'',demanda_cli:cli.nome||'',responsavel:resp.nome||'Sem responsavel',responsavel_id:l.responsavel_id,empresa_id:m.empresa_id||dem.cliente_id||'',empresa_nome:cli.nome||'',recorrencia:m.recorrencia||'',recorrencia_dias:m.recorrencia_dias||'',situacao:m.situacao||l.status};
       if(agCanSee(ev)) _agEventos.push(ev);
     });
+    _agEventos=agDedupEventos(_agEventos);
     _agEventos.sort((a,b)=>((a.data||'')+(a.hora||'00:00')).localeCompare((b.data||'')+(b.hora||'00:00')));
     agRenderCal();
   }catch(e){console.error('Agenda v2 erro:',e);toast('Erro ao carregar agenda: '+e.message,'err');}
@@ -10652,18 +10757,20 @@ function agEventosFiltrados(){
   const periodo=parseInt(document.getElementById('agFiltPeriodo')?.value||'30');
   const mostrarPassados=document.getElementById('agMostrarPassados')?.checked||_agVisao==='historico';
   const busca=agTxt(document.getElementById('agBusca')?.value||'');
+  const usuarioFiltro=agGestor()?(document.getElementById('agFiltroUsuario')?.value||''):'';
   const lim=new Date(); if(periodo>0) lim.setDate(lim.getDate()+periodo);
   const dtFim=periodo>0?lim.toISOString().split('T')[0]:'9999-99-99';
-  return _agEventos.filter(e=>{
+  return agDedupEventos(_agEventos.filter(e=>{
     const hist=['concluido','excluido','reagendado'].includes(e.situacao||e.status);
     if(_agVisao==='historico'){ if(!hist) return false; }
     else { if((e.situacao||e.status)==='excluido') return false; if(!mostrarPassados&&e.data<hoje) return false; if(periodo>0&&e.data>dtFim) return false; }
     if(_agDiaSel&&e.data!==_agDiaSel) return false;
     if(_agFiltro==='compromissos'&&e._tipo!=='compromisso') return false;
     if(_agFiltro==='lembretes'&&e._tipo!=='lembrete') return false;
+    if(usuarioFiltro && e.responsavel_id!==usuarioFiltro && e.usuario_id!==usuarioFiltro) return false;
     if(busca&&!agTxt([e.titulo,e.empresa_nome,e.responsavel,e.descricao,e.participantes,e.demanda_num,e.demanda_cli].join(' ')).includes(busca)) return false;
     return true;
-  });
+  }));
 }
 
 function renderAgenda(){
@@ -10728,17 +10835,71 @@ function agRenderCal(){
   gridEl.innerHTML=cells;
 }
 
-function agDiaClick(dataStr){_agDiaSel=_agDiaSel===dataStr?null:dataStr;const p=document.getElementById('agPainelDia');if(_agDiaSel){p.style.display='block';document.getElementById('agPainelDiaTit').textContent=new Date(dataStr+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'});const evs=_agEventos.filter(e=>e.data===dataStr&&(e.situacao||e.status)!=='excluido');document.getElementById('agPainelDiaConteudo').innerHTML=evs.length?evs.map(agMiniEvento).join(''):'<div class="vazio">Nenhum registro neste dia.</div>';}else p.style.display='none';agRenderCal();renderAgenda();}
+function agDiaClick(dataStr){_agDiaSel=_agDiaSel===dataStr?null:dataStr;const p=document.getElementById('agPainelDia');if(_agDiaSel){p.style.display='block';document.getElementById('agPainelDiaTit').textContent=new Date(dataStr+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'});const evs=agDedupEventos(_agEventos.filter(e=>e.data===dataStr&&(e.situacao||e.status)!=='excluido'));document.getElementById('agPainelDiaConteudo').innerHTML=evs.length?evs.map(agMiniEvento).join(''):'<div class="vazio">Nenhum registro neste dia.</div>';}else p.style.display='none';agRenderCal();renderAgenda();}
 
 function agPopularClientesSelect(id){const el=document.getElementById(id);if(!el)return;el.innerHTML='<option value="">Interno / sem cliente</option>';dbGet('clientes').filter(c=>c.ativo!==false).sort((a,b)=>a.nome.localeCompare(b.nome)).forEach(c=>el.innerHTML+=`<option value="${c.id}">${agEsc(c.nome)}</option>`);}
 function agPopularResponsaveisSelect(id){const el=document.getElementById(id);if(!el)return;el.innerHTML='<option value="">Selecione...</option>';dbGet('profiles').filter(p=>p.ativo!==false).sort((a,b)=>a.nome.localeCompare(b.nome)).forEach(p=>{const opt=document.createElement('option');opt.value=p.id;opt.textContent=p.nome;if(p.id===U.id)opt.selected=true;el.appendChild(opt);});}
 function agendaAbrirCompromisso(){const hoje=new Date().toISOString().split('T')[0];['compTitulo','compPart','compDesc'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});document.getElementById('compData').value=_agDiaSel||hoje;document.getElementById('compHora').value='09:00';document.getElementById('compTipo').value='reuniao';document.getElementById('compVisibilidade').value='privado';agPopularResponsaveisSelect('compResp');agPopularClientesSelect('compEmpresa');om('mCompromisso');}
 function agendaAbrirLembrete(){_lembretesDemandaId=null;const hoje=new Date().toISOString().split('T')[0];['lemTitulo','lemDesc','lemHora'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});document.getElementById('lemData').value=_agDiaSel||hoje;document.getElementById('lemStatus').value='pendente';document.getElementById('lemRecorrencia').value='';document.getElementById('lemRecDiasWrap').style.display='none';agPopularResponsaveisSelect('lemResp');agPopularClientesSelect('lemEmpresa');om('mLembrete');}
 
-async function salvarCompromisso(){const titulo=document.getElementById('compTitulo')?.value.trim(),data=document.getElementById('compData')?.value,hora=document.getElementById('compHora')?.value||null,tipo=document.getElementById('compTipo')?.value||'outro',part=document.getElementById('compPart')?.value.trim()||null,desc=document.getElementById('compDesc')?.value.trim()||null,resp=document.getElementById('compResp')?.value||U.id,empresa=document.getElementById('compEmpresa')?.value||'',vis=document.getElementById('compVisibilidade')?.value||'privado';if(!titulo){toast('Informe o titulo do compromisso','err');return;}if(!data){toast('Informe a data','err');return;}const {data:ins,error}=await sbRest('compromissos').insert({titulo,data,hora,tipo,participantes:part,descricao:desc,usuario_id:resp});if(error){toast('Erro ao salvar: '+error.message,'err');return;}const id=ins?.[0]?.id;if(id){agMetaSet('compromisso',id,{responsavel_id:resp,empresa_id:empresa,visibilidade:vis,situacao:'pendente'});agAudit('criou','compromisso',id,titulo);if(resp!==U.id) await criarNotificacao(resp,'Novo compromisso recebido',titulo,id,'agenda_compromisso');}toast('Compromisso salvo!','ok');fm('mCompromisso');await atualizarAgenda();if(document.getElementById('pg-agenda')?.classList.contains('on')){await agCarregarEventos();renderAgenda();}}
-async function salvarLembrete(){const titulo=document.getElementById('lemTitulo')?.value.trim(),obs=document.getElementById('lemDesc')?.value.trim()||'',data=document.getElementById('lemData')?.value,hora=document.getElementById('lemHora')?.value||null,resp=document.getElementById('lemResp')?.value||U.id,status=document.getElementById('lemStatus')?.value||'pendente',empresa=document.getElementById('lemEmpresa')?.value||'',rec=document.getElementById('lemRecorrencia')?.value||'',recDias=document.getElementById('lemRecDias')?.value||'';if(!titulo){toast('Informe o titulo do lembrete','err');return;}if(!data){toast('Informe a data','err');return;}const {data:ins,error}=await sbRest('lembretes').insert({demanda_id:_lembretesDemandaId||null,usuario_id:U.id,descricao:titulo,data_lembrete:data,hora_lembrete:hora,responsavel_id:resp,status});if(error){toast('Erro ao salvar lembrete: '+error.message,'err');return;}const id=ins?.[0]?.id;if(id){agMetaSet('lembrete',id,{titulo,observacao:obs,empresa_id:empresa,recorrencia:rec,recorrencia_dias:recDias,situacao:status});agAudit('criou','lembrete',id,titulo);if(resp!==U.id) await criarNotificacao(resp,'Novo lembrete recebido',titulo,id,'agenda_lembrete');}toast('Lembrete salvo!','ok');fm('mLembrete');await carregarLembretesHoje();await carregarLembretesDash();if(_lembretesDemandaId)await carregarLembretesDet(_lembretesDemandaId);if(document.getElementById('pg-agenda')?.classList.contains('on')){await agCarregarEventos();renderAgenda();}await atualizarAgenda();}
+async function salvarCompromisso(){
+  const titulo=document.getElementById('compTitulo')?.value.trim(),data=document.getElementById('compData')?.value,hora=document.getElementById('compHora')?.value||null,tipo=document.getElementById('compTipo')?.value||'outro',part=document.getElementById('compPart')?.value.trim()||null,desc=document.getElementById('compDesc')?.value.trim()||null,resp=document.getElementById('compResp')?.value||U.id,empresa=document.getElementById('compEmpresa')?.value||'',vis=document.getElementById('compVisibilidade')?.value||'privado';
+  if(!titulo){toast('Informe o titulo do compromisso','err');return;}
+  if(!data){toast('Informe a data','err');return;}
+  const {data:dups}=await sbRest('compromissos').select('id,titulo,data,hora,usuario_id').eq('data',data).eq('usuario_id',resp);
+  const jaExiste=(dups||[]).some(c=>agTxt(c.titulo)===agTxt(titulo)&&(c.hora||'').slice(0,5)===(hora||'').slice(0,5));
+  if(jaExiste){toast('Este compromisso ja existe nesta data e horario.','err');return;}
+  const {data:ins,error}=await sbRest('compromissos').insert({titulo,data,hora,tipo,participantes:part,descricao:desc,usuario_id:resp});
+  if(error){toast('Erro ao salvar: '+error.message,'err');return;}
+  const id=ins?.[0]?.id;
+  if(id){agMetaSet('compromisso',id,{responsavel_id:resp,empresa_id:empresa,visibilidade:vis,situacao:'pendente'});agAudit('criou','compromisso',id,titulo);if(resp!==U.id) await criarNotificacao(resp,'Novo compromisso recebido',titulo,id,'agenda_compromisso');}
+  toast('Compromisso salvo!','ok');fm('mCompromisso');await atualizarAgenda();if(document.getElementById('pg-agenda')?.classList.contains('on')){await agCarregarEventos();renderAgenda();}
+}
+async function salvarLembrete(){
+  const titulo=document.getElementById('lemTitulo')?.value.trim(),obs=document.getElementById('lemDesc')?.value.trim()||'',data=document.getElementById('lemData')?.value,hora=document.getElementById('lemHora')?.value||null,resp=document.getElementById('lemResp')?.value||U.id,status=document.getElementById('lemStatus')?.value||'pendente',empresa=document.getElementById('lemEmpresa')?.value||'',rec=document.getElementById('lemRecorrencia')?.value||'',recDias=document.getElementById('lemRecDias')?.value||'';
+  if(!titulo){toast('Informe o titulo do lembrete','err');return;}
+  if(!data){toast('Informe a data','err');return;}
+  const {data:dups}=await sbRest('lembretes').select('id,descricao,data_lembrete,hora_lembrete,responsavel_id,status').eq('data_lembrete',data).eq('responsavel_id',resp).in('status',['pendente','reagendado']);
+  const jaExiste=(dups||[]).some(l=>agTxt(l.descricao)===agTxt(titulo)&&(l.hora_lembrete||'').slice(0,5)===(hora||'').slice(0,5));
+  if(jaExiste){toast('Este lembrete ja existe nesta data e horario.','err');return;}
+  const {data:ins,error}=await sbRest('lembretes').insert({demanda_id:_lembretesDemandaId||null,usuario_id:U.id,descricao:titulo,data_lembrete:data,hora_lembrete:hora,responsavel_id:resp,status});
+  if(error){toast('Erro ao salvar lembrete: '+error.message,'err');return;}
+  const id=ins?.[0]?.id;
+  if(id){agMetaSet('lembrete',id,{titulo,observacao:obs,empresa_id:empresa,recorrencia:rec,recorrencia_dias:recDias,situacao:status});agAudit('criou','lembrete',id,titulo);if(resp!==U.id) await criarNotificacao(resp,'Novo lembrete recebido',titulo,id,'agenda_lembrete');}
+  toast('Lembrete salvo!','ok');fm('mLembrete');await carregarLembretesHoje();await carregarLembretesDash();if(_lembretesDemandaId)await carregarLembretesDet(_lembretesDemandaId);if(document.getElementById('pg-agenda')?.classList.contains('on')){await agCarregarEventos();renderAgenda();}await atualizarAgenda();
+}
 
-function agAbrirRegistro(tipo,id){const ev=_agEventos.find(e=>e._tipo===tipo&&e.id===id);if(!ev)return;alert((tipo==='compromisso'?'Compromisso':'Lembrete')+'\\n\\n'+ev.titulo+'\\nData: '+new Date(ev.data+'T12:00:00').toLocaleDateString('pt-BR')+(ev.hora?' '+ev.hora.slice(0,5):'')+'\\nResponsavel: '+ev.responsavel+(ev.empresa_nome?'\\nEmpresa: '+ev.empresa_nome:'')+(ev.descricao?'\\n\\n'+ev.descricao:''));}
+function agAbrirRegistro(tipo,id){
+  const ev=_agEventos.find(e=>e._tipo===tipo&&e.id===id);
+  if(!ev)return;
+  const isComp=tipo==='compromisso';
+  const dataTxt=ev.data?new Date(ev.data+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'}):'Sem data';
+  const horaTxt=ev.hora?ev.hora.slice(0,5):'Sem horario';
+  const status=ev.situacao||ev.status||'pendente';
+  document.getElementById('agDetTitulo').textContent=(isComp?'Compromisso: ':'Lembrete: ')+(ev.titulo||'Registro');
+  document.getElementById('agDetSub').textContent=dataTxt+' · '+horaTxt+' · '+(ev.responsavel||'Sem responsavel');
+  document.getElementById('agDetCorpo').innerHTML=`
+    <div style="display:grid;grid-template-columns:130px 1fr;gap:8px 12px;font-size:13px">
+      <div style="color:var(--text3)">Tipo</div><div><strong>${isComp?'Compromisso':'Lembrete'}</strong></div>
+      <div style="color:var(--text3)">Data</div><div>${agEsc(dataTxt)}${ev.hora?' as '+agEsc(horaTxt):''}</div>
+      <div style="color:var(--text3)">Responsavel</div><div>${agEsc(ev.responsavel||'Sem responsavel')}</div>
+      <div style="color:var(--text3)">Status</div><div>${agEsc(status)}</div>
+      ${ev.empresa_nome?`<div style="color:var(--text3)">Empresa</div><div>${agEsc(ev.empresa_nome)}</div>`:''}
+      ${ev.participantes?`<div style="color:var(--text3)">Participantes</div><div>${agEsc(ev.participantes)}</div>`:''}
+      ${ev.visibilidade?`<div style="color:var(--text3)">Visibilidade</div><div>${agEsc(ev.visibilidade)}</div>`:''}
+      ${ev.demanda_num?`<div style="color:var(--text3)">Processo</div><div><button class="btn btn-s" style="padding:3px 8px;font-size:11px" onclick="fm('mAgendaDetalhe');abrirDet('${ev.demanda_id}')">${agEsc(ev.demanda_num)} ${agEsc(ev.demanda_cli||'')}</button></div>`:''}
+    </div>
+    ${ev.descricao?`<div style="margin-top:14px;padding:12px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);font-size:13px;white-space:pre-wrap">${agEsc(ev.descricao)}</div>`:''}
+  `;
+  const fechado=['concluido','excluido'].includes(status);
+  document.getElementById('agDetAcoes').innerHTML=`
+    <button class="btn btn-s" onclick="fm('mAgendaDetalhe')">Fechar</button>
+    ${fechado?'':`<button class="btn btn-ok" onclick="fm('mAgendaDetalhe');agConcluirRegistro('${tipo}','${id}')">Concluir</button>
+    <button class="btn btn-s" onclick="fm('mAgendaDetalhe');agTransferirRegistro('${tipo}','${id}')">Transferir</button>
+    <button class="btn btn-er" onclick="fm('mAgendaDetalhe');agExcluirRegistro('${tipo}','${id}')">Excluir</button>`}
+  `;
+  om('mAgendaDetalhe');
+}
 function agDragStart(ev,tipo,id){ev.dataTransfer.setData('text/plain',JSON.stringify({tipo,id}));}
 async function agDropRegistro(ev,novaData,novaHora){
   ev.preventDefault(); ev.stopPropagation();
