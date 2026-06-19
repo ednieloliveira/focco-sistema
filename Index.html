@@ -656,6 +656,10 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
     <div class="kcard kr"><div class="ki kr">⚡</div><div class="kv" id="cU">—</div><div class="kl">Urgentes</div></div>
     <div class="kcard kr"><div class="ki kr">⏰</div><div class="kv" id="cV">—</div><div class="kl">Ações vencidas</div></div>
   </div>
+  <div class="card" id="cAdmissaoGestorCard" style="display:none;margin-bottom:16px;border-left:4px solid var(--accent)">
+    <div class="ch"><div class="ct">?? Admiss?es recebidas</div></div>
+    <div class="cb" id="cAdmissaoGestor"><div class="loading">Verificando fichas...</div></div>
+  </div>
   <div class="g2" style="margin-bottom:16px">
     <div class="card"><div class="ch"><div class="ct">🔔 Aguardando Meu Aceite</div></div><div class="cb" id="cAList"><div class="loading">Carregando...</div></div></div>
     <div class="card"><div class="ch"><div class="ct">⚡ Urgentes</div></div><div class="cb" id="cUList"><div class="loading">Carregando...</div></div></div>
@@ -4827,6 +4831,7 @@ function ordenarDemandasPorCampo(lista, campo, dirOrdenacao){
 async function loadCaixa(){
   const hj = new Date().toISOString().split('T')[0];
   const todasCli = dbGet('clientes');
+  await carregarAtalhoAdmissaoGestor();
 
   // Buscar dados em paralelo
   const [demRes, aceRes, urgRes, vcRes, mnRes] = await Promise.all([
@@ -4961,6 +4966,29 @@ async function loadCaixa(){
   } catch(e) {
     console.error('cMList render erro:', e);
     document.getElementById('cMList').innerHTML = '<div class="vazio">Erro ao exibir demandas: '+e.message+'</div>';
+  }
+}
+
+async function carregarAtalhoAdmissaoGestor(){
+  const card = document.getElementById('cAdmissaoGestorCard');
+  const box = document.getElementById('cAdmissaoGestor');
+  if(!card || !box) return;
+  const perfil = (U?.perfil || '').toLowerCase();
+  if(!['gestor','admin','administrador'].includes(perfil)) { card.style.display='none'; return; }
+  card.style.display = 'block';
+  try {
+    const r = await fetch(SB_URL + '/rest/v1/admissoes_funcionarios?select=id,protocolo,funcionario_nome,dados,created_at&order=created_at.desc&limit=3', {headers: SB_HEADERS});
+    if(!r.ok) throw new Error('Tabela indisponivel');
+    const rows = await r.json();
+    const total = rows.length;
+    const ultimas = rows.map(f=>{
+      const d = f.dados || {};
+      const data = f.created_at ? new Date(f.created_at).toLocaleDateString('pt-BR') : '';
+      return `<div style="font-size:12px;color:var(--text2);margin-top:4px">${esc(d.empresa||'Empresa nao informada')} - ${esc(d.nome||f.funcionario_nome||'Funcionario')} ${data?'- '+data:''}</div>`;
+    }).join('');
+    box.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><div style="font-size:14px;font-weight:700;color:var(--text)">${total ? total+' ficha(s) recente(s)' : 'Nenhuma ficha recente'}</div><div style="font-size:12px;color:var(--text3);margin-top:2px">Acesse o Modulo 3 - Trabalhista (DP) para conferir, exportar ou baixar PDF.</div>${ultimas}</div><button class="btn btn-p" onclick="window.location.href='modulo3-trabalhista-dp.html'">Abrir admiss?es</button></div>`;
+  } catch(e) {
+    box.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><div style="font-size:14px;font-weight:700;color:var(--text)">Atalho para admiss?o</div><div style="font-size:12px;color:var(--text3);margin-top:2px">Nao foi possivel consultar o Supabase agora, mas o modulo DP esta disponivel.</div></div><button class="btn btn-p" onclick="window.location.href='modulo3-trabalhista-dp.html'">Abrir m?dulo DP</button></div>`;
   }
 }
 
@@ -6571,12 +6599,12 @@ async function filtFiscal(pref) {
 // DEPARTAMENTO PESSOAL
 // ══════════════════════════════════════════
 function abrirFormularioAdmissao(){
-  const url = new URL('focco-admissao-cliente.html', window.location.href).href;
+  const url = new URL('focco-admissao-funcionario.html', window.location.href).href;
   window.open(url, '_blank');
 }
 
 async function copiarLinkFormularioAdmissao(){
-  const url = new URL('focco-admissao-cliente.html', window.location.href).href;
+  const url = new URL('focco-admissao-funcionario.html', window.location.href).href;
   try{
     await navigator.clipboard.writeText(url);
     toast('Link da admissão copiado.','ok');

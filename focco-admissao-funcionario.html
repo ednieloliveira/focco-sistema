@@ -1,0 +1,1476 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ficha de Admissão — Focco Contabilidade</title>
+<style>
+/* ====================================================
+   FOCCO ADMISSÃO — v4 (revisado)
+   Cores: navy #1B2A6B  |  sky #0099E5
+   ==================================================== */
+:root{
+  --navy:#1B2A6B; --navy-mid:#2563b0; --sky:#0099E5;
+  --blue-light:#e8f0fb; --blue-border:#b8d0f0;
+  --white:#ffffff; --gray-50:#f8fafc; --gray-100:#f1f5f9;
+  --gray-200:#e2e8f0; --gray-400:#94a3b8; --gray-600:#475569; --gray-800:#1e293b;
+  --red:#dc2626; --red-light:#fef2f2;
+  --green:#16a34a; --green-light:#f0fdf4;
+  --amber:#92400e; --amber-light:#fefce8;
+  --radius:8px;
+  --shadow:0 2px 12px rgba(27,42,107,.10);
+  --header-h:70px; --empresa-h:38px; --progress-h:36px; --tabs-h:46px; --footer-h:52px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  font-family:'Segoe UI',Arial,sans-serif;
+  background:var(--gray-100);
+  color:var(--gray-800);
+  min-height:100vh;
+  padding-bottom:calc(var(--footer-h) + 20px);
+}
+
+/* ── HEADER ─────────────────────────────────────── */
+.header{
+  position:sticky;top:0;z-index:100;
+  background:var(--navy);color:#fff;
+  padding:10px 20px;
+  display:flex;align-items:center;gap:14px;
+  box-shadow:0 2px 10px rgba(27,42,107,.30);
+  height:var(--header-h);
+}
+.header img{height:48px;border-radius:6px;background:#fff;}
+.header-info h1{font-size:16px;font-weight:700;line-height:1.2;}
+.header-info p{font-size:11px;opacity:.75;margin-top:2px;}
+
+/* ── EMPRESA BAR ─────────────────────────────────── */
+.empresa-bar{
+  position:sticky;top:var(--header-h);z-index:99;
+  background:var(--navy-mid);
+  padding:6px 20px;
+  display:flex;align-items:center;gap:10px;
+  height:var(--empresa-h);
+}
+.empresa-bar label{color:#fff;font-size:13px;font-weight:600;white-space:nowrap;}
+.empresa-bar input{
+  flex:1;padding:6px 12px;border-radius:6px;border:none;
+  font-size:13px;background:rgba(255,255,255,.95);color:var(--gray-800);
+}
+.empresa-bar input:focus{outline:2px solid var(--sky);outline-offset:1px;}
+
+/* ── PROGRESS ────────────────────────────────────── */
+.progress-wrap{
+  position:sticky;top:calc(var(--header-h) + var(--empresa-h));z-index:98;
+  background:var(--white);border-bottom:1px solid var(--gray-200);
+  padding:6px 20px;height:var(--progress-h);
+  display:flex;align-items:center;gap:12px;
+}
+.progress-label{font-size:11px;font-weight:600;color:var(--navy);white-space:nowrap;}
+.progress-bar-bg{flex:1;height:8px;background:var(--gray-200);border-radius:20px;overflow:hidden;}
+.progress-bar-fill{
+  height:100%;
+  background:linear-gradient(90deg,var(--navy-mid),var(--sky));
+  border-radius:20px;transition:width .4s ease;width:33%;
+}
+.progress-pct{font-size:11px;font-weight:700;color:var(--navy-mid);min-width:32px;text-align:right;}
+
+/* ── TABS ────────────────────────────────────────── */
+.tabs-wrap{
+  position:sticky;
+  top:calc(var(--header-h) + var(--empresa-h) + var(--progress-h));z-index:97;
+  background:var(--white);border-bottom:2px solid var(--blue-border);overflow-x:auto;
+}
+.tabs{display:flex;min-width:max-content;}
+.tab-btn{
+  padding:12px 18px;border:none;background:none;
+  font-size:13px;font-weight:600;color:var(--gray-600);
+  cursor:pointer;border-bottom:3px solid transparent;
+  transition:all .2s;white-space:nowrap;
+  display:flex;align-items:center;gap:7px;
+}
+.tab-btn:hover{color:var(--navy);}
+.tab-btn.active{color:var(--navy);border-bottom-color:var(--sky);}
+.tab-btn .tab-num{
+  width:22px;height:22px;border-radius:50%;
+  background:var(--gray-200);color:var(--gray-600);
+  font-size:11px;display:flex;align-items:center;justify-content:center;transition:all .2s;
+}
+.tab-btn.active .tab-num{background:var(--navy);color:#fff;}
+.tab-btn.done .tab-num{background:var(--green);color:#fff;}
+
+/* ── FORM LAYOUT ─────────────────────────────────── */
+.form-wrap{max-width:720px;margin:0 auto;padding:20px 16px 40px;}
+.tab-content{display:none;}
+.tab-content.active{display:block;animation:fadeUp .30s ease;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+
+/* ── CARDS ───────────────────────────────────────── */
+.section-card{
+  background:var(--white);border-radius:var(--radius);
+  box-shadow:var(--shadow);margin-bottom:18px;overflow:hidden;
+}
+.section-title{
+  background:var(--navy);color:#fff;
+  padding:10px 16px;font-size:14px;font-weight:700;
+  display:flex;align-items:center;gap:8px;
+}
+.section-body{padding:16px;}
+
+/* ── GRID ────────────────────────────────────────── */
+.form-row{display:grid;gap:12px;margin-bottom:12px;}
+.form-row:last-child{margin-bottom:0;}
+.col-1{grid-template-columns:1fr;}
+.col-2{grid-template-columns:1fr 1fr;}
+.col-3{grid-template-columns:1fr 1fr 1fr;}
+.col-2-1{grid-template-columns:2fr 1fr;}
+
+/* ── FIELD ───────────────────────────────────────── */
+.field{display:flex;flex-direction:column;gap:4px;}
+.field label{font-size:12px;font-weight:600;color:var(--gray-600);}
+.field label .req{color:var(--red);margin-left:2px;}
+.field input,.field select,.field textarea{
+  padding:9px 12px;border:1.5px solid var(--gray-200);border-radius:6px;
+  font-size:14px;color:var(--gray-800);background:var(--white);
+  transition:border-color .18s,box-shadow .18s;width:100%;
+}
+.field input:focus,.field select:focus,.field textarea:focus{
+  outline:none;border-color:var(--sky);
+  box-shadow:0 0 0 3px rgba(0,153,229,.15);background:#f5fbff;
+}
+.field input.error,.field select.error{border-color:var(--red);background:var(--red-light);}
+.field .error-msg{font-size:11px;color:var(--red);display:none;}
+.field .error-msg.show{display:block;}
+.field .hint{font-size:11px;color:var(--gray-400);}
+.field textarea{resize:vertical;min-height:80px;}
+.age-badge{
+  display:none;
+  background:var(--blue-light);color:var(--navy);
+  border-radius:20px;padding:2px 10px;
+  font-size:12px;font-weight:600;margin-top:2px;width:fit-content;
+}
+.radio-group{display:flex;gap:16px;align-items:center;flex-wrap:wrap;padding-top:4px;}
+.radio-group label{
+  display:flex;align-items:center;gap:6px;
+  font-size:14px;cursor:pointer;font-weight:400;color:var(--gray-800);
+}
+.radio-group input[type=radio]{accent-color:var(--navy);width:16px;height:16px;}
+.hidden{display:none !important;}
+
+/* ── DEPENDENTES ─────────────────────────────────── */
+.dep-row{
+  background:var(--gray-50);border:1px solid var(--gray-200);
+  border-radius:8px;padding:12px;margin-bottom:10px;position:relative;
+}
+.dep-row .remove-btn{
+  position:absolute;top:8px;right:8px;
+  background:var(--red-light);border:none;color:var(--red);
+  border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;
+  transition:background .15s;
+}
+.dep-row .remove-btn:hover{background:var(--red);color:#fff;}
+.dep-title{font-size:12px;font-weight:700;color:var(--navy);margin-bottom:10px;}
+.add-btn{
+  background:var(--blue-light);border:1.5px dashed var(--navy-mid);
+  color:var(--navy);padding:10px 16px;border-radius:8px;
+  font-size:13px;font-weight:600;cursor:pointer;width:100%;
+  margin-top:4px;transition:all .2s;
+}
+.add-btn:hover{background:var(--navy);color:#fff;border-style:solid;}
+
+/* ── HORÁRIO ─────────────────────────────────────── */
+.hor-preview{
+  background:var(--blue-light);border:1.5px solid var(--blue-border);
+  border-radius:8px;padding:10px 14px;margin-bottom:12px;
+  display:none;
+}
+.hor-preview.show{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.hor-preview-label{font-size:12px;font-weight:600;color:var(--navy);}
+.hor-duracao-badge{
+  background:var(--navy);color:#fff;
+  border-radius:20px;padding:3px 12px;font-size:13px;font-weight:700;
+}
+
+/* ── NAV ─────────────────────────────────────────── */
+.nav-row{display:flex;justify-content:space-between;align-items:center;margin-top:20px;gap:10px;}
+.btn-nav{padding:12px 28px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;border:none;transition:all .2s;}
+.btn-prev{background:var(--gray-200);color:var(--gray-800);}
+.btn-prev:hover{background:var(--gray-400);color:#fff;}
+.btn-next{background:var(--navy);color:#fff;}
+.btn-next:hover{background:var(--sky);}
+.btn-submit{background:var(--green);color:#fff;}
+.btn-submit:hover{background:#15803d;}
+.btn-submit:disabled{opacity:.65;cursor:not-allowed;}
+.btn-submit.loading{opacity:.7;pointer-events:none;}
+
+/* ── LGPD ────────────────────────────────────────── */
+.lgpd-box{
+  background:var(--blue-light);border:1.5px solid var(--blue-border);
+  border-radius:8px;padding:14px;margin-top:16px;
+}
+.lgpd-box label{display:flex;gap:10px;font-size:13px;line-height:1.5;cursor:pointer;}
+.lgpd-box input[type=checkbox]{
+  accent-color:var(--navy);width:18px;height:18px;flex-shrink:0;margin-top:2px;
+}
+
+/* ── SUCCESS ─────────────────────────────────────── */
+#success-page{
+  display:none;max-width:720px;margin:0 auto;padding:40px 16px;text-align:center;
+}
+.success-icon{font-size:64px;margin-bottom:16px;}
+.success-title{font-size:24px;font-weight:700;color:var(--green);margin-bottom:8px;}
+.protocol-box{
+  background:var(--navy);color:#fff;
+  border-radius:10px;padding:16px 28px;
+  display:inline-block;margin:16px 0;
+  font-size:20px;font-weight:700;letter-spacing:3px;
+}
+.docs-box{
+  background:var(--white);border-radius:10px;
+  box-shadow:var(--shadow);padding:20px;text-align:left;margin-top:20px;
+}
+.docs-box h3{color:var(--navy);font-size:15px;margin-bottom:12px;}
+.docs-box ul{list-style:none;}
+.docs-box ul li{padding:6px 0;font-size:13px;border-bottom:1px solid var(--gray-100);display:flex;gap:8px;}
+.docs-box ul li::before{content:"📄";flex-shrink:0;}
+.obs-red{
+  background:#fff3cd;border:1.5px solid #f0a500;
+  border-radius:8px;padding:12px;margin-top:14px;
+  font-size:13px;font-weight:600;color:#7c4a00;
+}
+.client-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:18px 0 6px;}
+.client-actions button{padding:11px 16px;border-radius:8px;border:1px solid var(--blue-border);background:#fff;color:var(--navy);font-weight:700;cursor:pointer;}
+.client-actions button.primary{background:var(--navy);color:#fff;border-color:var(--navy);}
+
+/* ── FOOTER ──────────────────────────────────────── */
+.footer{
+  position:fixed;bottom:0;left:0;right:0;z-index:100;
+  background:var(--navy);color:rgba(255,255,255,.85);
+  height:var(--footer-h);
+  display:flex;align-items:center;justify-content:center;
+  gap:20px;font-size:11px;padding:0 20px;
+  box-shadow:0 -2px 10px rgba(27,42,107,.20);flex-wrap:wrap;
+}
+.footer span{display:flex;align-items:center;gap:5px;}
+.footer a{color:rgba(255,255,255,.85);text-decoration:none;}
+.footer a:hover{color:#fff;text-decoration:underline;}
+
+/* ── ALERT INLINE ────────────────────────────────── */
+.inline-alert{
+  border-radius:6px;padding:8px 12px;margin-top:6px;
+  font-size:12px;font-weight:600;display:none;
+}
+.inline-alert.show{display:block;}
+.inline-alert.ok{background:var(--green-light);color:var(--green);}
+.inline-alert.over{background:var(--red-light);color:var(--red);}
+.inline-alert.under{background:var(--amber-light);color:var(--amber);}
+
+/* ── RESPONSIVE ──────────────────────────────────── */
+@media(max-width:600px){
+  .col-2,.col-3,.col-2-1{grid-template-columns:1fr;}
+  .header-info h1{font-size:14px;}
+  .tab-btn{padding:10px 11px;font-size:11px;}
+  .form-wrap{padding:14px 10px 40px;}
+  .footer{gap:8px;font-size:10px;}
+  .btn-nav{padding:11px 18px;font-size:13px;}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <img src="data:image/jpeg;base64,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CkHZVhsauNQTMXqCZi+tIgEyJQcKmYKQTMXqxEETNIIiSVBMxfWofeouoJAXnJUBNqgRZZtUL2MzUEzF6WAhNDNQpDQI8Rk3qyb1ZN6sm9WTerJvVk3qyb1ZN6sm9WTerJvVk3qyb1ZN6sm9WTerJvVk3qyb1ZN6sm9WTerJvVk3qyb1ZN6sm9WT/wCqf//aAAwDAAABEQIRAAAQrDDDDDDDDDDDDHzbHTHSuR/PP++uPP8Awmhi42x5wywwwwwwwwwwww6wwwwwwwwww2z540x90r+szigwwwwzmsr2xomx482wwwwwwwwwwww6wwwwwwwww22w542yr8hk4zwksssohz0x2t20h402ywwwwwwwwwww6wwwwwwww222wx5h+5kz0rkMwwzQ084npy42r55022iwwwwwwwwww6wwwwwwww1wwx5p8mx1moz08xzzzw8wz8xp2x9y40222ywwwwwwww6wwwwwwxx55x5v5g2yoS4z07wwQQR/4z8z82i59ix001wwwwwwwww6wwwwwww6445p5o22x4y50QBDDjjjAEJ+z42xp59i5x554wwwwwww6wwwww002y254g22yx90wDsggggggkojkJ52y5p595442yywwwwww6wwwww45xx2+2220x54RoginLPPLHDCgoiI/wBsvIsq9pNMccMMMMMOsMMMNNMsu9cYdIceeFoIbz3LIIJLLbywpIpHdNNpNJueOMsMMMMMOsMMMMu8dcuqu6OO+FoJzzIYjDHDHAxDT0pIoeeceeeftNeeMMMMMOsMMMNdMspdZdptslYJz2JiEAwgAwwDEjH0pIiMsvptY+ONtcMMMMOsMMNNusNLos6OfcCJbyJkA6AwwwwjApGhT0qZAcdeOKt0eOsMMMMOsMMMutdc+odJNOlILypgBoTzCQzDSxghEjSwIiMst5daJNeOMMMMOsMMOPcMrdZemqwqNTwSFITgTAABCRjxApVL0qZWOOJNYWttcMMMMOsMMNdMuxcILLGSbBOtgoAwGAzjCQhRiwQCj6hYBccaur8KN8cMMMOsMMNcOvXouvSvklKU2mxSihaEG4RAOHxAWtewYHpVeOqsIPtcMMMOsMMNcOtaqvY8md9EKWGhRQAw9s7xCneK+kfBuoHsRUKKtYOtcMMMOsMMNeutaqkniEB5CI2m7Dg8lQDmQFRRRCpR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" alt="Focco Contabilidade">
+  <div class="header-info">
+    <h1>Focco Contabilidade e Assessoria Empresarial</h1>
+    <p>Rua Elpídio Ribeiro Rocha, 332 — Patrocínio/MG &nbsp;·&nbsp; (34) 3831-8072</p>
+  </div>
+</div>
+
+<div class="empresa-bar">
+  <label for="empresa">EMPRESA:</label>
+  <input type="text" id="empresa" name="empresa" placeholder="Nome da empresa contratante">
+</div>
+
+<div class="progress-wrap">
+  <span class="progress-label" id="progress-label">Etapa 1 de 3</span>
+  <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-fill"></div></div>
+  <span class="progress-pct" id="progress-pct">33%</span>
+</div>
+
+<div class="tabs-wrap">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="goTab(0)" id="tab0"><span class="tab-num">1</span> Dados Pessoais &amp; Dependentes</button>
+    <button class="tab-btn" onclick="goTab(1)" id="tab1"><span class="tab-num">2</span> Dados Bancários</button>
+    <button class="tab-btn" onclick="goTab(2)" id="tab2"><span class="tab-num">3</span> Dados da Admissão</button>
+  </div>
+</div>
+
+<div class="form-wrap" id="main-form">
+
+  <!-- ===== ABA 1 — DADOS PESSOAIS ===== -->
+  <div class="tab-content active" id="content0">
+
+    <div class="section-card">
+      <div class="section-title">👤 Dados Pessoais</div>
+      <div class="section-body">
+        <div class="form-row col-1">
+          <div class="field">
+            <label for="nome">Nome Completo <span class="req">*</span></label>
+            <input type="text" id="nome" name="nome" placeholder="Nome completo do funcionário">
+            <span class="error-msg" id="err-nome">Campo obrigatório</span>
+          </div>
+        </div>
+        <div class="form-row col-2">
+          <div class="field">
+            <label for="nascimento">Data de Nascimento <span class="req">*</span></label>
+            <input type="date" id="nascimento" name="nascimento" onchange="calcAge()">
+            <span class="age-badge" id="age-badge"></span>
+            <span class="error-msg" id="err-nascimento">Campo obrigatório</span>
+          </div>
+          <div class="field">
+            <label for="sexo">Sexo <span class="req">*</span></label>
+            <select id="sexo" name="sexo">
+              <option value="">Selecione...</option>
+              <option value="M">Masculino</option>
+              <option value="F">Feminino</option>
+            </select>
+            <span class="error-msg" id="err-sexo">Campo obrigatório</span>
+          </div>
+        </div>
+        <div class="form-row col-2">
+          <div class="field">
+            <label for="naturalidade_cidade">Naturalidade — Cidade</label>
+            <input type="text" id="naturalidade_cidade" name="naturalidade_cidade" placeholder="Cidade de nascimento">
+          </div>
+          <div class="field">
+            <label for="naturalidade_uf">Estado (UF)</label>
+            <select id="naturalidade_uf" name="naturalidade_uf"><option value="">UF</option><option>AC</option><option>AL</option><option>AM</option><option>AP</option><option>BA</option><option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option><option>MG</option><option>MS</option><option>MT</option><option>PA</option><option>PB</option><option>PE</option><option>PI</option><option>PR</option><option>RJ</option><option>RN</option><option>RO</option><option>RR</option><option>RS</option><option>SC</option><option>SE</option><option>SP</option><option>TO</option></select>
+          </div>
+        </div>
+        <div class="form-row col-2">
+          <div class="field">
+            <label for="nome_mae">Nome da Mãe</label>
+            <input type="text" id="nome_mae" name="nome_mae" placeholder="Nome completo da mãe">
+          </div>
+          <div class="field">
+            <label for="nome_pai">Nome do Pai</label>
+            <input type="text" id="nome_pai" name="nome_pai" placeholder="Nome completo do pai">
+          </div>
+        </div>
+        <div class="form-row col-2">
+          <div class="field">
+            <label for="estado_civil">Estado Civil</label>
+            <select id="estado_civil" name="estado_civil" onchange="toggleConjuge()">
+              <option value="">Selecione...</option>
+              <option value="solteiro">Solteiro(a)</option>
+              <option value="casado">Casado(a)</option>
+              <option value="uniao_estavel">União Estável</option>
+              <option value="divorciado">Divorciado(a)</option>
+              <option value="viuvo">Viúvo(a)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="grau_instrucao">Grau de Instrução</label>
+            <select id="grau_instrucao" name="grau_instrucao">
+              <option value="">Selecione...</option>
+              <option value="1">Analfabeto</option>
+              <option value="2">Fundamental Incompleto</option>
+              <option value="3">Fundamental Completo</option>
+              <option value="4">Médio Incompleto</option>
+              <option value="5">Médio Completo</option>
+              <option value="6">Superior Incompleto</option>
+              <option value="7">Superior Completo</option>
+              <option value="8">Pós-Graduação / Especialização</option>
+              <option value="9">Mestrado</option>
+              <option value="10">Doutorado / PhD</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row col-1 hidden" id="conjuge-row">
+          <div class="field">
+            <label for="nome_conjuge">Nome do Cônjuge / Companheiro(a)</label>
+            <input type="text" id="nome_conjuge" name="nome_conjuge" placeholder="Nome completo">
+          </div>
+        </div>
+        <div class="form-row col-2">
+          <div class="field">
+            <label for="raca_cor">Raça / Cor</label>
+            <select id="raca_cor" name="raca_cor">
+              <option value="">Selecione...</option>
+              <option value="branca">Branca</option>
+              <option value="preta">Preta</option>
+              <option value="amarela">Amarela</option>
+              <option value="indigena">Indígena</option>
+              <option value="parda">Parda</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="tipo_sanguineo">Tipo Sanguíneo</label>
+            <select id="tipo_sanguineo" name="tipo_sanguineo">
+              <option value="">Selecione...</option>
+              <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
+              <option>AB+</option><option>AB-</option><option>O+</option><option>O-</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-title">📄 Documentos</div>
+      <div class="section-body">
+        <div class="form-row col-2">
+          <div class="field">
+            <label for="cpf">CPF <span class="req">*</span></label>
+            <input type="text" id="cpf" name="cpf" placeholder="000.000.000-00" maxlength="14"
+              oninput="maskCPF(this)" onblur="validateCPF()">
+            <span class="error-msg" id="err-cpf">CPF inválido</span>
+          </div>
+          <div class="field">
+            <label for="rg">RG</label>
+            <input type="text" id="rg" name="rg" placeholder="Número do RG">
+          </div>
+        </div>
+        <div class="form-row col-3">
+          <div class="field">
+            <label for="rg_orgao">Órgão Emissor RG</label>
+            <input type="text" id="rg_orgao" name="rg_orgao" placeholder="Ex: SSP/MG">
+          </div>
+          <div class="field">
+            <label for="rg_data">Data Emissão RG</label>
+            <input type="date" id="rg_data" name="rg_data">
+          </div>
+          <div class="field">
+            <label for="pis">PIS / NIT</label>
+            <input type="text" id="pis" name="pis" placeholder="000.00000.00-0" maxlength="14" oninput="maskPIS(this)">
+          </div>
+        </div>
+        <div class="form-row col-3">
+          <div class="field">
+            <label for="titulo_eleitor">Título de Eleitor</label>
+            <input type="text" id="titulo_eleitor" name="titulo_eleitor" placeholder="Número">
+          </div>
+          <div class="field">
+            <label for="titulo_zona">Zona</label>
+            <input type="text" id="titulo_zona" name="titulo_zona" placeholder="Zona">
+          </div>
+          <div class="field">
+            <label for="titulo_secao">Seção</label>
+            <input type="text" id="titulo_secao" name="titulo_secao" placeholder="Seção">
+          </div>
+        </div>
+        <div class="form-row col-1">
+          <div class="field">
+            <label>Tipo de CTPS</label>
+            <div class="radio-group">
+              <label><input type="radio" name="ctps_tipo" value="digital" checked onchange="toggleCTPS()"> Digital</label>
+              <label><input type="radio" name="ctps_tipo" value="fisica" onchange="toggleCTPS()"> Física</label>
+            </div>
+          </div>
+        </div>
+        <div class="form-row col-3 hidden" id="ctps-fields">
+          <div class="field">
+            <label for="ctps_numero">CTPS — Número</label>
+            <input type="text" id="ctps_numero" name="ctps_numero" placeholder="Número">
+          </div>
+          <div class="field">
+            <label for="ctps_serie">Série</label>
+            <input type="text" id="ctps_serie" name="ctps_serie" placeholder="Série">
+          </div>
+          <div class="field">
+            <label for="ctps_uf">UF</label>
+            <select id="ctps_uf" name="ctps_uf"><option value="">UF</option><option>AC</option><option>AL</option><option>AM</option><option>AP</option><option>BA</option><option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option><option>MG</option><option>MS</option><option>MT</option><option>PA</option><option>PB</option><option>PE</option><option>PI</option><option>PR</option><option>RJ</option><option>RN</option><option>RO</option><option>RR</option><option>RS</option><option>SC</option><option>SE</option><option>SP</option><option>TO</option>_MG</select>
+          </div>
+        </div>
+        <div class="form-row col-1">
+          <div class="field">
+            <label>Possui CNH?</label>
+            <div class="radio-group">
+              <label><input type="radio" name="cnh_possui" value="nao" checked onchange="toggleCNH()"> Não</label>
+              <label><input type="radio" name="cnh_possui" value="sim" onchange="toggleCNH()"> Sim</label>
+            </div>
+          </div>
+        </div>
+        <div class="form-row col-2 hidden" id="cnh-fields">
+          <div class="field">
+            <label for="cnh_numero">CNH — Número</label>
+            <input type="text" id="cnh_numero" name="cnh_numero" placeholder="Número da CNH">
+          </div>
+          <div class="field">
+            <label for="cnh_categoria">Categoria</label>
+            <select id="cnh_categoria" name="cnh_categoria">
+              <option value="">Selecione...</option>
+              <option>A</option><option>B</option><option>AB</option>
+              <option>C</option><option>D</option><option>E</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row col-1">
+          <div class="field">
+            <label>PCD — Pessoa com Deficiência?</label>
+            <div class="radio-group">
+              <label><input type="radio" name="pcd" value="nao" checked onchange="togglePCD()"> Não</label>
+              <label><input type="radio" name="pcd" value="sim" onchange="togglePCD()"> Sim</label>
+            </div>
+          </div>
+        </div>
+        <div class="form-row col-1 hidden" id="pcd-fields">
+          <div class="field">
+            <label for="pcd_tipo">Tipo de Deficiência</label>
+            <select id="pcd_tipo" name="pcd_tipo">
+              <option value="">Selecione...</option>
+              <option value="fisica">Física</option>
+              <option value="auditiva">Auditiva</option>
+              <option value="visual">Visual</option>
+              <option value="mental">Mental</option>
+              <option value="intelectual">Intelectual</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-title">📍 Endereço</div>
+      <div class="section-body">
+        <div class="form-row col-2-1">
+          <div class="field">
+            <label for="cep">CEP <span class="req">*</span></label>
+            <input type="text" id="cep" name="cep" placeholder="00000-000" maxlength="9"
+              oninput="maskCEP(this)" onblur="buscarCEP()">
+            <span class="hint" id="cep-hint">Digite o CEP para preencher o endereço automaticamente</span>
+            <span class="error-msg" id="err-cep">Campo obrigatório</span>
+          </div>
+          <div class="field">
+            <label for="uf">UF</label>
+            <select id="uf" name="uf"><option value="">UF</option><option>AC</option><option>AL</option><option>AM</option><option>AP</option><option>BA</option><option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option><option>MG</option><option>MS</option><option>MT</option><option>PA</option><option>PB</option><option>PE</option><option>PI</option><option>PR</option><option>RJ</option><option>RN</option><option>RO</option><option>RR</option><option>RS</option><option>SC</option><option>SE</option><option>SP</option><option>TO</option>_MG</select>
+          </div>
+        </div>
+        <div class="form-row col-2-1">
+          <div class="field">
+            <label for="logradouro">Rua / Avenida</label>
+            <input type="text" id="logradouro" name="logradouro" placeholder="Preenchido pelo CEP">
+          </div>
+          <div class="field">
+            <label for="numero">Número</label>
+            <input type="text" id="numero" name="numero" placeholder="Nº">
+          </div>
+        </div>
+        <div class="form-row col-2">
+          <div class="field">
+            <label for="complemento">Complemento</label>
+            <input type="text" id="complemento" name="complemento" placeholder="Apto, Bloco...">
+          </div>
+          <div class="field">
+            <label for="bairro">Bairro</label>
+            <input type="text" id="bairro" name="bairro" placeholder="Preenchido pelo CEP">
+          </div>
+        </div>
+        <div class="form-row col-1">
+          <div class="field">
+            <label for="cidade">Cidade</label>
+            <input type="text" id="cidade" name="cidade" placeholder="Preenchida pelo CEP">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-title">📞 Contato</div>
+      <div class="section-body">
+        <div class="form-row col-2">
+          <div class="field">
+            <label for="celular">Celular Principal <span class="req">*</span></label>
+            <input type="tel" id="celular" name="celular" placeholder="(00) 99999-9999" maxlength="15" oninput="maskPhone(this)">
+            <span class="error-msg" id="err-celular">Campo obrigatório</span>
+          </div>
+          <div class="field">
+            <label for="celular_recado">Celular para Recado</label>
+            <input type="tel" id="celular_recado" name="celular_recado" placeholder="(00) 99999-9999" maxlength="15" oninput="maskPhone(this)">
+          </div>
+        </div>
+        <div class="form-row col-1">
+          <div class="field">
+            <label for="email">E-mail</label>
+            <input type="email" id="email" name="email" placeholder="email@exemplo.com" onblur="validateEmail()">
+            <span class="error-msg" id="err-email">E-mail inválido</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-title">👨‍👩‍👧 Dependentes</div>
+      <div class="section-body">
+        <div id="dependentes-container"></div>
+        <button type="button" class="add-btn" onclick="addDependente()">+ Adicionar Dependente</button>
+      </div>
+    </div>
+
+    <div class="nav-row">
+      <div></div>
+      <button class="btn-nav btn-next" onclick="goTab(1)">Próximo →</button>
+    </div>
+  </div>
+
+  <!-- ===== ABA 2 — DADOS BANCÁRIOS ===== -->
+  <div class="tab-content" id="content1">
+    <div class="section-card">
+      <div class="section-title">🏦 Dados Bancários do Empregado</div>
+      <div class="section-body">
+        <div class="form-row col-1">
+          <div class="field">
+            <label for="banco">Banco</label>
+            <select id="banco" name="banco" onchange="toggleOutroBanco()">
+              <option value="">Selecione o banco...</option>
+              <optgroup label="Bancos Públicos">
+                <option value="001">001 — Banco do Brasil</option>
+                <option value="004">004 — Banco do Nordeste (BNB)</option>
+                <option value="021">021 — Banestes</option>
+                <option value="037">037 — Banpará</option>
+                <option value="041">041 — Banrisul</option>
+                <option value="047">047 — Banese</option>
+                <option value="070">070 — BRB — Banco de Brasília</option>
+                <option value="104">104 — Caixa Econômica Federal</option>
+              </optgroup>
+              <optgroup label="Bancos Privados Grandes">
+                <option value="033">033 — Santander</option>
+                <option value="237">237 — Bradesco</option>
+                <option value="341">341 — Itaú Unibanco</option>
+                <option value="422">422 — Banco Safra</option>
+                <option value="745">745 — Citibank</option>
+              </optgroup>
+              <optgroup label="Bancos Digitais e Médios">
+                <option value="077">077 — Banco Inter</option>
+                <option value="121">121 — Banco Agibank</option>
+                <option value="197">197 — Stone Pagamentos</option>
+                <option value="208">208 — BTG Pactual</option>
+                <option value="212">212 — Banco Original</option>
+                <option value="218">218 — Banco BS2</option>
+                <option value="260">260 — Nubank</option>
+                <option value="290">290 — PagBank</option>
+                <option value="318">318 — Banco BMG</option>
+                <option value="323">323 — Mercado Pago</option>
+                <option value="336">336 — C6 Bank</option>
+                <option value="348">348 — Banco XP</option>
+                <option value="360">360 — PicPay Bank</option>
+                <option value="389">389 — Banco Mercantil do Brasil</option>
+                <option value="403">403 — Cora SCD</option>
+                <option value="413">413 — Banco BV</option>
+                <option value="623">623 — Banco Pan</option>
+                <option value="633">633 — Banco Rendimento</option>
+                <option value="655">655 — Banco Votorantim</option>
+                <option value="707">707 — Banco Daycoval</option>
+                <option value="735">735 — Banco Neon</option>
+                <option value="748">748 — Sicredi</option>
+                <option value="756">756 — Sicoob / Bancoob</option>
+              </optgroup>
+              <option value="outro">— Outro banco (não listado) —</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row col-1 hidden" id="outro-banco-row">
+          <div class="field">
+            <label for="banco_outro">Nome / Código do Banco</label>
+            <input type="text" id="banco_outro" name="banco_outro" placeholder="Ex: 999 — Nome do Banco">
+          </div>
+        </div>
+        <div class="form-row col-2">
+          <div class="field">
+            <label for="agencia">Agência</label>
+            <input type="text" id="agencia" name="agencia" placeholder="0000">
+          </div>
+          <div class="field">
+            <label for="tipo_conta">Tipo de Conta</label>
+            <select id="tipo_conta" name="tipo_conta">
+              <option value="">Selecione...</option>
+              <option value="corrente">Conta Corrente</option>
+              <option value="poupanca">Conta Poupança</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row col-2">
+          <div class="field">
+            <label for="conta">Número da Conta</label>
+            <input type="text" id="conta" name="conta" placeholder="00000000-0">
+          </div>
+          <div class="field">
+            <label for="operacao">Operação</label>
+            <input type="text" id="operacao" name="operacao" placeholder="Ex: 013 (poupança CEF)">
+          </div>
+        </div>
+        <div class="form-row col-1">
+          <div class="field">
+            <label for="pix">Chave PIX (opcional)</label>
+            <input type="text" id="pix" name="pix" placeholder="CPF, e-mail, celular ou chave aleatória">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="nav-row">
+      <button class="btn-nav btn-prev" onclick="goTab(0)">← Anterior</button>
+      <button class="btn-nav btn-next" onclick="goTab(2)">Próximo →</button>
+    </div>
+  </div>
+
+  <!-- ===== ABA 3 — DADOS DA ADMISSÃO ===== -->
+  <div class="tab-content" id="content2">
+
+    <div class="section-card">
+      <div class="section-title">📋 Dados da Admissão</div>
+      <div class="section-body">
+        <div class="form-row col-2">
+          <div class="field">
+            <label for="data_admissao">Data de Admissão <span class="req">*</span></label>
+            <input type="date" id="data_admissao" name="data_admissao">
+            <span class="error-msg" id="err-data_admissao">Campo obrigatório</span>
+          </div>
+          <div class="field">
+            <label for="funcao">Função / Cargo <span class="req">*</span></label>
+            <input type="text" id="funcao" name="funcao" placeholder="Ex: Auxiliar Administrativo">
+            <span class="error-msg" id="err-funcao">Campo obrigatório</span>
+          </div>
+        </div>
+        <div class="form-row col-2">
+          <div class="field">
+            <label for="salario">Salário <span class="req">*</span></label>
+            <input type="text" id="salario" name="salario" placeholder="R$ 0,00" oninput="maskMoney(this)">
+            <span class="error-msg" id="err-salario">Campo obrigatório</span>
+          </div>
+          <div class="field">
+            <label for="beneficios">Benefícios</label>
+            <input type="text" id="beneficios" name="beneficios" placeholder="Ex: Vale Transporte, Plano de Saúde...">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HORÁRIO DE TRABALHO -->
+    <div class="section-card">
+      <div class="section-title">🕐 Horário de Trabalho</div>
+      <div class="section-body">
+        <div class="form-row col-2">
+          <div class="field">
+            <label for="hor_tipo">Tipo de Horário</label>
+            <select id="hor_tipo" name="hor_tipo" onchange="toggleTipoHorario()">
+              <option value="">Selecione ou preencha manualmente...</option>
+              <optgroup label="Jornada Fixa — Seg–Sex + Sáb 4h (44h)">
+                <option value="F01">Fixo | 07:00–16:00 | Almoço 1h | + Sáb 07:00–11:00</option>
+                <option value="F02">Fixo | 07:00–16:30 | Almoço 1h30 | + Sáb 07:00–11:00</option>
+                <option value="F03">Fixo | 07:30–16:30 | Almoço 1h | + Sáb 07:30–11:30</option>
+                <option value="F04">Fixo | 07:30–17:00 | Almoço 1h30 | + Sáb 07:30–11:30</option>
+                <option value="F05">Fixo | 08:00–17:00 | Almoço 1h | + Sáb 08:00–12:00</option>
+                <option value="F06">Fixo | 08:00–17:30 | Almoço 1h30 | + Sáb 08:00–12:00</option>
+                <option value="F07">Fixo | 08:30–17:30 | Almoço 1h | + Sáb 08:30–12:30</option>
+                <option value="F08">Fixo | 08:30–18:00 | Almoço 1h30 | + Sáb 08:30–12:30</option>
+                <option value="F09">Fixo | 09:00–18:00 | Almoço 1h | + Sáb 09:00–13:00</option>
+                <option value="F10">Fixo | 09:00–18:30 | Almoço 1h30 | + Sáb 09:00–13:00</option>
+              </optgroup>
+              <optgroup label="Jornada Fixa — Seg–Sex 8h48 sem sábado (44h)">
+                <option value="G01">Fixo | 07:00–16:48 | Almoço 1h | Sem sábado</option>
+                <option value="G02">Fixo | 07:00–17:48 | Almoço 2h | Sem sábado</option>
+                <option value="G03">Fixo | 07:30–17:18 | Almoço 1h | Sem sábado</option>
+                <option value="G04">Fixo | 07:30–18:18 | Almoço 2h | Sem sábado</option>
+                <option value="G05">Fixo | 08:00–17:48 | Almoço 1h | Sem sábado</option>
+                <option value="G06">Fixo | 08:00–18:48 | Almoço 2h | Sem sábado</option>
+                <option value="G07">Fixo | 08:30–18:18 | Almoço 1h | Sem sábado</option>
+                <option value="G08">Fixo | 08:30–19:18 | Almoço 2h | Sem sábado</option>
+                <option value="G09">Fixo | 09:00–17:48 | Almoço 1h | Sem sábado</option>
+                <option value="G10">Fixo | 09:00–18:48 | Almoço 2h | Sem sábado</option>
+              </optgroup>
+              <optgroup label="Escala 12×36">
+                <option value="E01">12×36 | 06:00–19:00 | Almoço 1h</option>
+                <option value="E02">12×36 | 06:00–20:00 | Almoço 2h</option>
+                <option value="E03">12×36 | 07:00–20:00 | Almoço 1h</option>
+                <option value="E04">12×36 | 07:00–21:00 | Almoço 2h</option>
+                <option value="E05">12×36 | 08:00–21:00 | Almoço 1h</option>
+                <option value="E06">12×36 | 08:00–22:00 | Almoço 2h</option>
+                <option value="E07">12×36 | 09:00–22:00 | Almoço 1h</option>
+                <option value="E08">12×36 | 09:00–23:00 | Almoço 2h</option>
+              </optgroup>
+              <optgroup label="Escala 6×1 — 7h20/dia (44h)">
+                <option value="S01">6×1 | 06:00–14:20 | Almoço 1h</option>
+                <option value="S02">6×1 | 06:00–14:50 | Almoço 1h30</option>
+                <option value="S03">6×1 | 07:00–15:20 | Almoço 1h</option>
+                <option value="S04">6×1 | 07:00–15:50 | Almoço 1h30</option>
+                <option value="S05">6×1 | 08:00–16:20 | Almoço 1h</option>
+                <option value="S06">6×1 | 08:00–16:50 | Almoço 1h30</option>
+                <option value="S07">6×1 | 08:00–17:20 | Almoço 2h</option>
+              </optgroup>
+              <option value="OUTRO">Outro (preencher manualmente abaixo)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Duração da Jornada</label>
+            <input type="text" id="hor_duracao" name="hor_duracao" readonly
+              placeholder="—"
+              style="background:var(--blue-light);color:var(--navy);font-weight:700;font-size:15px;text-align:center;border-color:var(--blue-border);">
+          </div>
+        </div>
+
+        <div id="hor_campos">
+          <div class="form-row col-2" style="margin-top:4px;">
+            <div class="field">
+              <label for="hor_entrada">Hora Entrada</label>
+              <input type="time" id="hor_entrada" name="hor_entrada" onchange="calcDuracao()">
+            </div>
+            <div class="field">
+              <label for="hor_saida">Hora Saída</label>
+              <input type="time" id="hor_saida" name="hor_saida" onchange="calcDuracao()">
+            </div>
+          </div>
+          <div class="form-row col-3">
+            <div class="field">
+              <label for="hor_tipo_intervalo">Tipo de Intervalo</label>
+              <select id="hor_tipo_intervalo" name="hor_tipo_intervalo" onchange="toggleIntervalo()">
+                <option value="sem">Sem intervalo</option>
+                <option value="fixo" selected>Em horário fixo</option>
+                <option value="variavel">Horário variável</option>
+              </select>
+            </div>
+            <div class="field" id="hor_intv_inicio_field">
+              <label for="hor_intv_inicio">Início Intervalo</label>
+              <input type="time" id="hor_intv_inicio" name="hor_intv_inicio" onchange="calcDuracao()">
+            </div>
+            <div class="field" id="hor_intv_fim_field">
+              <label for="hor_intv_fim">Fim Intervalo</label>
+              <input type="time" id="hor_intv_fim" name="hor_intv_fim" onchange="calcDuracao()">
+            </div>
+          </div>
+          <div class="form-row col-2 hidden" id="hor_duracao_intv_field">
+            <div class="field">
+              <label for="hor_duracao_intv">Duração do Intervalo (minutos)</label>
+              <input type="number" id="hor_duracao_intv" name="hor_duracao_intv"
+                min="0" max="240" placeholder="Ex: 60" onchange="calcDuracao()">
+            </div>
+          </div>
+          <div class="form-row col-2 hidden" id="hor_sabado_fields">
+            <div class="field">
+              <label for="hor_sab_entrada">Sábado — Entrada</label>
+              <input type="time" id="hor_sab_entrada" name="hor_sab_entrada" onchange="calcDuracao()">
+            </div>
+            <div class="field">
+              <label for="hor_sab_saida">Sábado — Saída</label>
+              <input type="time" id="hor_sab_saida" name="hor_sab_saida" onchange="calcDuracao()">
+            </div>
+          </div>
+        </div>
+
+        <div class="field" style="margin-top:12px;">
+          <label for="horario_obs">Observações sobre o horário</label>
+          <input type="text" id="horario_obs" name="horario_obs"
+            placeholder="Ex: folga alternada aos sábados, banco de horas, variação diária...">
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-title">📝 Contrato de Experiência</div>
+      <div class="section-body">
+        <div class="form-row col-1">
+          <div class="field">
+            <label>Contrato de Experiência?</label>
+            <div class="radio-group">
+              <label><input type="radio" name="contrato_exp" value="nao" checked onchange="toggleContratoExp()"> Não</label>
+              <label><input type="radio" name="contrato_exp" value="sim" onchange="toggleContratoExp()"> Sim</label>
+            </div>
+          </div>
+        </div>
+        <div class="form-row col-1 hidden" id="contrato-exp-fields">
+          <div class="field">
+            <label for="contrato_duracao">Duração do Contrato</label>
+            <select id="contrato_duracao" name="contrato_duracao">
+              <option value="">Selecione...</option>
+              <option value="30">30 dias</option>
+              <option value="45">45 dias</option>
+              <option value="60">60 dias</option>
+              <option value="75">75 dias</option>
+              <option value="90">90 dias</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-title">💬 Observações</div>
+      <div class="section-body">
+        <div class="field">
+          <label for="observacoes">Observações Gerais</label>
+          <textarea id="observacoes" name="observacoes"
+            placeholder="Informações adicionais relevantes para a admissão..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="lgpd-box">
+      <label>
+        <input type="checkbox" id="lgpd" name="lgpd">
+        <span>Declaro que os dados acima são verdadeiros e autorizo o escritório
+          <strong>Focco Contabilidade e Assessoria Empresarial</strong> a utilizar estas informações
+          para fins trabalhistas, previdenciários e fiscais, em conformidade com a
+          Lei Geral de Proteção de Dados (LGPD — Lei nº 13.709/2018).</span>
+      </label>
+      <span class="error-msg show" id="err-lgpd" style="display:none;margin-top:8px;">
+        Você deve aceitar os termos para enviar.
+      </span>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-nav btn-prev" onclick="goTab(1)">← Anterior</button>
+      <button class="btn-nav btn-submit" id="btn-submit" onclick="submitForm()">✓ Enviar Ficha</button>
+    </div>
+  </div>
+
+</div><!-- /form-wrap -->
+
+<!-- ===== SUCCESS ===== -->
+<div id="success-page">
+  <div class="success-icon">✅</div>
+  <div class="success-title">Ficha enviada com sucesso!</div>
+  <p style="color:#475569;font-size:14px;">Seu número de protocolo é:</p>
+  <div class="protocol-box" id="protocol-display">FAD-2025-00001</div>
+  <p style="font-size:13px;color:#64748b;margin-top:8px;">Guarde este número para acompanhar o seu cadastro.</p>
+  <div id="status-envio-online" style="font-size:13px;color:#475569;margin-top:8px;font-weight:600"></div>
+  <div class="client-actions">
+    <button class="primary" onclick="baixarFichaJSON()">Baixar ficha preenchida</button>
+    <button onclick="baixarFichaCSV()">Baixar CSV</button>
+    <button onclick="baixarFichaExcel()">Baixar Excel</button>
+    <button onclick="gerarFichaPDF()">Gerar PDF</button>
+    <button onclick="copiarResumoDominio()">Copiar para Dominio</button>
+  </div>
+  <p style="font-size:12px;color:#64748b;margin-top:6px;">Se o envio online nao estiver configurado, envie o arquivo baixado ao escritorio.</p>
+  <div class="docs-box">
+    <h3>📋 Documentos Obrigatórios para Enviar ao Escritório</h3>
+    <ul>
+      <li>Uma foto 3×4 recente</li>
+      <li>Carteira de Trabalho (CTPS) — digital ou física</li>
+      <li>Atestado Admissional assinado por médico do Trabalho</li>
+      <li>Cópia da Carteira de Identidade (RG) e CPF</li>
+      <li>Cópia da Carteira de Habilitação (CNH), se possuir</li>
+      <li>Comprovante de Endereço recente</li>
+      <li>Para filhos menores de 14 anos: certidão de nascimento + declaração escolar</li>
+      <li>Para filhos menores de 5 anos: certidão de nascimento + cartão de vacinação</li>
+    </ul>
+    <div class="obs-red">⚠️ ATENÇÃO: Caso não seja enviada a documentação completa em prazo hábil, não será realizado o registro do emprego.</div>
+    <p style="font-size:12px;color:#94a3b8;margin-top:12px;">
+      Dúvidas? (34) 3831-8072 · (34) 8882-9500 · foccocontabilidade@yahoo.com.br
+    </p>
+  </div>
+</div>
+
+<!-- ===== FOOTER ===== -->
+<footer class="footer">
+  <span>📍 Rua Elpídio Ribeiro Rocha, 332 — Morada do Sol, Patrocínio/MG — CEP 38740-000</span>
+  <span>📞 <a href="tel:3438318072">(34) 3831-8072</a> · <a href="tel:3488829500">(34) 8882-9500</a></span>
+  <span>✉️ <a href="mailto:foccocontabilidade@yahoo.com.br">foccocontabilidade@yahoo.com.br</a></span>
+</footer>
+
+<script>
+// ================================================================
+// FOCCO ADMISSÃO — JavaScript v4
+// ================================================================
+
+// ── OPÇÕES UF ────────────────────────────────────────────────────
+var UFS = ["AC","AL","AM","AP","BA","CE","DF","ES","GO","MA",
+           "MG","MS","MT","PA","PB","PE","PI","PR","RJ","RN",
+           "RO","RR","RS","SC","SE","SP","TO"];
+
+// ── TABS ─────────────────────────────────────────────────────────
+var tabProgress = [33, 66, 100];
+var tabLabels   = ["Etapa 1 de 3", "Etapa 2 de 3", "Etapa 3 de 3"];
+var currentTab  = 0;
+
+function goTab(n) {
+  document.getElementById("content" + currentTab).classList.remove("active");
+  document.getElementById("tab"     + currentTab).classList.remove("active");
+  currentTab = n;
+  document.getElementById("content" + n).classList.add("active");
+  document.getElementById("tab"     + n).classList.add("active");
+  document.getElementById("progress-fill").style.width = tabProgress[n] + "%";
+  document.getElementById("progress-pct").textContent  = tabProgress[n] + "%";
+  document.getElementById("progress-label").textContent = tabLabels[n];
+  window.scrollTo(0, 0);
+}
+
+// ── VALIDAÇÃO ────────────────────────────────────────────────────
+function required(id) {
+  var el  = document.getElementById(id);
+  var err = document.getElementById("err-" + id);
+  if (!el) return true;
+  var ok = el.value.trim() !== "";
+  el.classList.toggle("error", !ok);
+  if (err) err.classList.toggle("show", !ok);
+  return ok;
+}
+
+function validateAllRequired() {
+  var t1 = [required("nome"), required("nascimento"), required("sexo"),
+             required("cep"), required("celular"), validateCPF()];
+  var t3 = [required("data_admissao"), required("funcao"), required("salario")];
+  var lgpd    = document.getElementById("lgpd");
+  var errLgpd = document.getElementById("err-lgpd");
+  var lgpdOk  = lgpd.checked;
+  errLgpd.style.display = lgpdOk ? "none" : "block";
+  return t1.every(Boolean) && t3.every(Boolean) && lgpdOk;
+}
+
+// ── MÁSCARAS ─────────────────────────────────────────────────────
+function maskCPF(el) {
+  var v = el.value.replace(/[^0-9]/g, "").slice(0, 11);
+  if (v.length > 9)      v = v.replace(/([0-9]{3})([0-9]{3})([0-9]{3})([0-9]{1,2})/, "$1.$2.$3-$4");
+  else if (v.length > 6) v = v.replace(/([0-9]{3})([0-9]{3})([0-9]{1,3})/, "$1.$2.$3");
+  else if (v.length > 3) v = v.replace(/([0-9]{3})([0-9]{1,3})/, "$1.$2");
+  el.value = v;
+}
+
+function validateCPF() {
+  var el  = document.getElementById("cpf");
+  var err = document.getElementById("err-cpf");
+  var v   = el.value.replace(/[^0-9]/g, "");
+  if (!v) { el.classList.remove("error"); err.classList.remove("show"); return true; }
+  // Verifica dígitos verificadores
+  if (v.length !== 11 || /^(\d)\1+$/.test(v)) { el.classList.add("error"); err.classList.add("show"); return false; }
+  var soma = 0, resto;
+  for (var i = 0; i < 9; i++) soma += +v[i] * (10 - i);
+  resto = (soma * 10) % 11; if (resto === 10 || resto === 11) resto = 0;
+  if (resto !== +v[9]) { el.classList.add("error"); err.classList.add("show"); return false; }
+  soma = 0;
+  for (var i = 0; i < 10; i++) soma += +v[i] * (11 - i);
+  resto = (soma * 10) % 11; if (resto === 10 || resto === 11) resto = 0;
+  if (resto !== +v[10]) { el.classList.add("error"); err.classList.add("show"); return false; }
+  el.classList.remove("error"); err.classList.remove("show"); return true;
+}
+
+function maskPhone(el) {
+  var v = el.value.replace(/[^0-9]/g, "").slice(0, 11);
+  if (v.length > 10)     v = v.replace(/([0-9]{2})([0-9]{5})([0-9]{4})/, "($1) $2-$3");
+  else if (v.length > 6) v = v.replace(/([0-9]{2})([0-9]{4,5})([0-9]{0,4})/, "($1) $2-$3");
+  else if (v.length > 2) v = v.replace(/([0-9]{2})([0-9]+)/, "($1) $2");
+  el.value = v;
+}
+
+function maskCEP(el) {
+  var v = el.value.replace(/[^0-9]/g, "").slice(0, 8);
+  if (v.length > 5) v = v.slice(0, 5) + "-" + v.slice(5);
+  el.value = v;
+}
+
+function maskPIS(el) {
+  var v = el.value.replace(/[^0-9]/g, "").slice(0, 11);
+  if (v.length > 9) v = v.replace(/([0-9]{3})([0-9]{5})([0-9]{2})([0-9]{1})/, "$1.$2.$3-$4");
+  el.value = v;
+}
+
+function maskMoney(el) {
+  var v = el.value.replace(/[^0-9]/g, "");
+  if (!v) { el.value = ""; return; }
+  v = (parseInt(v) / 100).toFixed(2);
+  el.value = "R$ " + v.replace(".", ",").replace(/([0-9])(?=([0-9]{3})+(?![0-9]))/g, "$1.");
+}
+
+function validateEmail() {
+  var el  = document.getElementById("email");
+  var err = document.getElementById("err-email");
+  if (!el.value) { err.classList.remove("show"); return; }
+  var ok = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(el.value);
+  el.classList.toggle("error", !ok);
+  err.classList.toggle("show", !ok);
+}
+
+function calcAge() {
+  var val   = document.getElementById("nascimento").value;
+  var badge = document.getElementById("age-badge");
+  if (!val) { badge.style.display = "none"; return; }
+  var dob = new Date(val), today = new Date();
+  var age = today.getFullYear() - dob.getFullYear();
+  if (today.getMonth() < dob.getMonth() ||
+     (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate())) age--;
+  badge.textContent    = age + " anos";
+  badge.style.display  = "inline-block";
+}
+
+async function buscarCEP() {
+  var cep  = document.getElementById("cep").value.replace(/[^0-9]/g, "");
+  var hint = document.getElementById("cep-hint");
+  if (cep.length !== 8) return;
+  hint.textContent = "Buscando endereço...";
+  try {
+    var d = await (await fetch("https://viacep.com.br/ws/" + cep + "/json/")).json();
+    if (d.erro) { hint.textContent = "CEP não encontrado."; return; }
+    document.getElementById("logradouro").value = d.logradouro || "";
+    document.getElementById("bairro").value     = d.bairro     || "";
+    document.getElementById("cidade").value     = d.localidade || "";
+    document.getElementById("uf").value         = d.uf         || "";
+    hint.textContent = "✓ Endereço preenchido automaticamente";
+    document.getElementById("numero").focus();
+  } catch (e) {
+    hint.textContent = "Erro ao buscar CEP. Preencha manualmente.";
+  }
+}
+
+// ── TOGGLES ──────────────────────────────────────────────────────
+function toggleConjuge() {
+  var ec = document.getElementById("estado_civil").value;
+  document.getElementById("conjuge-row").classList.toggle("hidden", ec !== "casado" && ec !== "uniao_estavel");
+}
+function toggleCTPS() {
+  document.getElementById("ctps-fields").classList.toggle("hidden",
+    document.querySelector("input[name=ctps_tipo]:checked").value !== "fisica");
+}
+function toggleCNH() {
+  document.getElementById("cnh-fields").classList.toggle("hidden",
+    document.querySelector("input[name=cnh_possui]:checked").value !== "sim");
+}
+function togglePCD() {
+  document.getElementById("pcd-fields").classList.toggle("hidden",
+    document.querySelector("input[name=pcd]:checked").value !== "sim");
+}
+function toggleContratoExp() {
+  document.getElementById("contrato-exp-fields").classList.toggle("hidden",
+    document.querySelector("input[name=contrato_exp]:checked").value !== "sim");
+}
+function toggleOutroBanco() {
+  document.getElementById("outro-banco-row").classList.toggle("hidden",
+    document.getElementById("banco").value !== "outro");
+}
+
+// ── DEPENDENTES ───────────────────────────────────────────────────
+var depCount = 0;
+function addDependente() {
+  depCount++;
+  var div = document.createElement("div");
+  div.className = "dep-row";
+  div.id = "dep-" + depCount;
+  div.innerHTML =
+    '<div class="dep-title">Dependente #' + depCount + '</div>' +
+    '<button type="button" class="remove-btn" onclick="removeDep(' + depCount + ')">✕ Remover</button>' +
+    '<div class="form-row col-2">' +
+      '<div class="field"><label>Nome Completo</label>' +
+        '<input type="text" name="dep_nome_' + depCount + '" placeholder="Nome do dependente"></div>' +
+      '<div class="field"><label>Grau de Parentesco</label>' +
+        '<select name="dep_parentesco_' + depCount + '">' +
+          '<option value="">Selecione...</option>' +
+          '<option>Filho(a)</option><option>Enteado(a)</option>' +
+          '<option>Cônjuge</option><option>Companheiro(a)</option>' +
+          '<option>Pai / Mãe</option><option>Outro</option>' +
+        '</select></div></div>' +
+    '<div class="form-row col-2">' +
+      '<div class="field"><label>Data de Nascimento</label>' +
+        '<input type="date" name="dep_nascimento_' + depCount + '"></div>' +
+      '<div class="field"><label>CPF do Dependente</label>' +
+        '<input type="text" name="dep_cpf_' + depCount + '" placeholder="000.000.000-00"' +
+        ' maxlength="14" oninput="maskCPF(this)"></div>' +
+    '</div>';
+  document.getElementById("dependentes-container").appendChild(div);
+}
+function removeDep(id) {
+  var el = document.getElementById("dep-" + id);
+  if (el) el.remove();
+}
+
+// ── HORÁRIO DE TRABALHO ───────────────────────────────────────────
+var ESCALAS = {
+  F01:{e:"07:00",s:"16:00",ii:"11:00",if_:"12:00",se:"07:00",ss:"11:00",d:"8h00",ti:"fixo",sab:true},
+  F02:{e:"07:00",s:"16:30",ii:"11:00",if_:"12:30",se:"07:00",ss:"11:00",d:"8h00",ti:"fixo",sab:true},
+  F03:{e:"07:30",s:"16:30",ii:"11:30",if_:"12:30",se:"07:30",ss:"11:30",d:"8h00",ti:"fixo",sab:true},
+  F04:{e:"07:30",s:"17:00",ii:"11:30",if_:"13:00",se:"07:30",ss:"11:30",d:"8h00",ti:"fixo",sab:true},
+  F05:{e:"08:00",s:"17:00",ii:"12:00",if_:"13:00",se:"08:00",ss:"12:00",d:"8h00",ti:"fixo",sab:true},
+  F06:{e:"08:00",s:"17:30",ii:"12:00",if_:"13:30",se:"08:00",ss:"12:00",d:"8h00",ti:"fixo",sab:true},
+  F07:{e:"08:30",s:"17:30",ii:"12:30",if_:"13:30",se:"08:30",ss:"12:30",d:"8h00",ti:"fixo",sab:true},
+  F08:{e:"08:30",s:"18:00",ii:"12:30",if_:"14:00",se:"08:30",ss:"12:30",d:"8h00",ti:"fixo",sab:true},
+  F09:{e:"09:00",s:"18:00",ii:"13:00",if_:"14:00",se:"09:00",ss:"13:00",d:"8h00",ti:"fixo",sab:true},
+  F10:{e:"09:00",s:"18:30",ii:"13:00",if_:"14:30",se:"09:00",ss:"13:00",d:"8h00",ti:"fixo",sab:true},
+  G01:{e:"07:00",s:"16:48",ii:"11:24",if_:"12:24",d:"8h48",ti:"fixo",sab:false},
+  G02:{e:"07:00",s:"17:48",ii:"11:24",if_:"13:24",d:"8h48",ti:"fixo",sab:false},
+  G03:{e:"07:30",s:"17:18",ii:"11:54",if_:"12:54",d:"8h48",ti:"fixo",sab:false},
+  G04:{e:"07:30",s:"18:18",ii:"11:54",if_:"13:54",d:"8h48",ti:"fixo",sab:false},
+  G05:{e:"08:00",s:"17:48",ii:"12:24",if_:"13:24",d:"8h48",ti:"fixo",sab:false},
+  G06:{e:"08:00",s:"18:48",ii:"12:24",if_:"14:24",d:"8h48",ti:"fixo",sab:false},
+  G07:{e:"08:30",s:"18:18",ii:"12:54",if_:"13:54",d:"8h48",ti:"fixo",sab:false},
+  G08:{e:"08:30",s:"19:18",ii:"12:54",if_:"14:54",d:"8h48",ti:"fixo",sab:false},
+  G09:{e:"09:00",s:"17:48",ii:"13:24",if_:"14:24",d:"8h48",ti:"fixo",sab:false},
+  G10:{e:"09:00",s:"18:48",ii:"13:24",if_:"15:24",d:"8h48",ti:"fixo",sab:false},
+  E01:{e:"06:00",s:"19:00",ii:"12:00",if_:"13:00",d:"12h00",ti:"fixo",sab:false},
+  E02:{e:"06:00",s:"20:00",ii:"12:00",if_:"14:00",d:"12h00",ti:"fixo",sab:false},
+  E03:{e:"07:00",s:"20:00",ii:"13:00",if_:"14:00",d:"12h00",ti:"fixo",sab:false},
+  E04:{e:"07:00",s:"21:00",ii:"13:00",if_:"15:00",d:"12h00",ti:"fixo",sab:false},
+  E05:{e:"08:00",s:"21:00",ii:"14:00",if_:"15:00",d:"12h00",ti:"fixo",sab:false},
+  E06:{e:"08:00",s:"22:00",ii:"14:00",if_:"16:00",d:"12h00",ti:"fixo",sab:false},
+  E07:{e:"09:00",s:"22:00",ii:"15:00",if_:"16:00",d:"12h00",ti:"fixo",sab:false},
+  E08:{e:"09:00",s:"23:00",ii:"15:00",if_:"17:00",d:"12h00",ti:"fixo",sab:false},
+  S01:{e:"06:00",s:"14:20",ii:"09:40",if_:"10:40",d:"7h20",ti:"fixo",sab:false},
+  S02:{e:"06:00",s:"14:50",ii:"09:40",if_:"11:10",d:"7h20",ti:"fixo",sab:false},
+  S03:{e:"07:00",s:"15:20",ii:"10:40",if_:"11:40",d:"7h20",ti:"fixo",sab:false},
+  S04:{e:"07:00",s:"15:50",ii:"10:40",if_:"12:10",d:"7h20",ti:"fixo",sab:false},
+  S05:{e:"08:00",s:"16:20",ii:"11:40",if_:"12:40",d:"7h20",ti:"fixo",sab:false},
+  S06:{e:"08:00",s:"16:50",ii:"11:40",if_:"13:10",d:"7h20",ti:"fixo",sab:false},
+  S07:{e:"08:00",s:"17:20",ii:"11:40",if_:"13:40",d:"7h20",ti:"fixo",sab:false}
+};
+
+function _set(id, val) { var el = document.getElementById(id); if (el) el.value = val || ""; }
+function _show(id, vis) { var el = document.getElementById(id); if (el) el.classList.toggle("hidden", !vis); }
+
+function toggleTipoHorario() {
+  var v = document.getElementById("hor_tipo").value;
+  if (!v || v === "OUTRO") {
+    ["hor_entrada","hor_saida","hor_intv_inicio","hor_intv_fim","hor_sab_entrada","hor_sab_saida"]
+      .forEach(function(id) { _set(id, ""); });
+    _set("hor_duracao", "");
+    _set("hor_tipo_intervalo", "fixo");
+    _show("hor_sabado_fields", false);
+    _show("hor_intv_inicio_field", true);
+    _show("hor_intv_fim_field", true);
+    _show("hor_duracao_intv_field", false);
+    return;
+  }
+  var esc = ESCALAS[v];
+  if (!esc) return;
+  _set("hor_entrada", esc.e);
+  _set("hor_saida",   esc.s);
+  _set("hor_tipo_intervalo", esc.ti);
+  _set("hor_intv_inicio",    esc.ii  || "");
+  _set("hor_intv_fim",       esc.if_ || "");
+  _set("hor_duracao",        esc.d);
+  _show("hor_sabado_fields",      esc.sab || false);
+  if (esc.sab) { _set("hor_sab_entrada", esc.se || ""); _set("hor_sab_saida", esc.ss || ""); }
+  _show("hor_intv_inicio_field",  esc.ti !== "sem");
+  _show("hor_intv_fim_field",     esc.ti === "fixo");
+  _show("hor_duracao_intv_field", esc.ti === "variavel");
+}
+
+function toggleIntervalo() {
+  var t = document.getElementById("hor_tipo_intervalo").value;
+  _show("hor_intv_inicio_field",  t !== "sem");
+  _show("hor_intv_fim_field",     t === "fixo");
+  _show("hor_duracao_intv_field", t === "variavel");
+  calcDuracao();
+}
+
+function timeToMin(t) {
+  if (!t) return 0;
+  var p = t.split(":");
+  return parseInt(p[0]) * 60 + parseInt(p[1]);
+}
+function minToStr(m) {
+  if (m <= 0) return "";
+  var h = Math.floor(m / 60), mn = m % 60;
+  return mn ? h + "h" + String(mn).padStart(2, "0") + "min" : h + "h00";
+}
+
+function calcDuracao() {
+  var e  = timeToMin(document.getElementById("hor_entrada").value);
+  var s  = timeToMin(document.getElementById("hor_saida").value);
+  var ti = document.getElementById("hor_tipo_intervalo").value;
+  var intv = 0;
+  if (ti === "fixo") {
+    var ii = timeToMin(document.getElementById("hor_intv_inicio").value);
+    var fi = timeToMin(document.getElementById("hor_intv_fim").value);
+    if (ii && fi && fi > ii) intv = fi - ii;
+  } else if (ti === "variavel") {
+    intv = parseInt(document.getElementById("hor_duracao_intv").value) || 0;
+  }
+  var dur = (e && s && s > e) ? s - e - intv : 0;
+  document.getElementById("hor_duracao").value = dur > 0 ? minToStr(dur) : "";
+}
+
+// ── SUBMIT ────────────────────────────────────────────────────────
+function generateProtocol() {
+  return "FAD-" + new Date().getFullYear() + "-" + String(Math.floor(Math.random() * 99999)).padStart(5, "0");
+}
+
+function collectData() {
+  var data = {};
+  document.querySelectorAll("input:not([type=radio]):not([type=checkbox]),select,textarea")
+    .forEach(function(el) { if (el.name) data[el.name] = el.value; });
+  document.querySelectorAll("input[type=radio]:checked")
+    .forEach(function(el) { if (el.name) data[el.name] = el.value; });
+  document.querySelectorAll("input[type=checkbox]")
+    .forEach(function(el) { if (el.name) data[el.name] = el.checked; });
+  data.empresa    = document.getElementById("empresa").value;
+  data.protocolo  = generateProtocol();
+  data.data_envio = new Date().toISOString();
+  return data;
+}
+
+async function submitForm() {
+  if (!validateAllRequired()) {
+    // Navega para aba com erro
+    var camposT1 = ["nome","nascimento","sexo","cep","celular","cpf"];
+    var erroT1   = camposT1.some(function(id) {
+      var el = document.getElementById(id); return el && (!el.value.trim() || el.classList.contains("error"));
+    });
+    goTab(erroT1 ? 0 : 2);
+    return;
+  }
+  var btn = document.getElementById("btn-submit");
+  btn.classList.add("loading");
+  btn.textContent = "Enviando...";
+  btn.disabled    = true;
+
+  var formData = collectData();
+
+  // ── Configurar Supabase antes de publicar ──────────────────────
+  var SUPABASE_URL = "https://nambhrizjnhebqgfztux.supabase.co";
+  var SUPABASE_KEY = "CONFIGURADO_NA_ROTINA_FINAL_ABAIXO";
+  // ──────────────────────────────────────────────────────────────
+
+  try {
+    var res = await fetch(SUPABASE_URL + "/rest/v1/admissoes", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey":        SUPABASE_KEY,
+        "Authorization": "Bearer " + SUPABASE_KEY,
+        "Prefer":        "return=minimal"
+      },
+      body: JSON.stringify(formData)
+    });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    showSuccess(formData.protocolo);
+  } catch (e) {
+    console.error("Erro ao enviar:", e);
+    // Mesmo com erro de rede, exibe sucesso local (protocolo gerado)
+    // Remover este comportamento quando Supabase estiver configurado
+    showSuccess(formData.protocolo);
+  }
+}
+
+function showSuccess(p) {
+  document.getElementById("main-form").style.display        = "none";
+  document.querySelector(".tabs-wrap").style.display        = "none";
+  document.querySelector(".progress-wrap").style.display    = "none";
+  document.getElementById("protocol-display").textContent   = p;
+  document.getElementById("success-page").style.display     = "block";
+  window.scrollTo(0, 0);
+}
+
+var ultimaFichaEnviada = null;
+var FOCCO_SUPABASE_URL = "https://nambhrizjnhebqgfztux.supabase.co";
+var FOCCO_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hbWJocml6am5oZWJxZ2Z6dHV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNDUzMDIsImV4cCI6MjA5NjkyMTMwMn0.AeBCJetQQugrpDAaOPrEYgHor9irmosN8EWogCtPzSo";
+
+async function foccoRest(path, options) {
+  var headers = Object.assign({apikey:FOCCO_SUPABASE_KEY,Authorization:"Bearer "+FOCCO_SUPABASE_KEY,"Content-Type":"application/json"}, (options && options.headers) || {});
+  var resp = await fetch(FOCCO_SUPABASE_URL + path, Object.assign({}, options || {}, {headers:headers}));
+  if (!resp.ok) throw new Error("Supabase " + resp.status + " em " + path);
+  if (resp.status === 204) return null;
+  var txt = await resp.text();
+  return txt ? JSON.parse(txt) : null;
+}
+
+async function salvarAdmissaoOnline(dados) {
+  var payload = {dados:dados,empresa_cnpj:dados.empresa_cnpj||dados.cnpj||null,funcionario_nome:dados.nome||null,protocolo:dados.protocolo||null,status:"recebido",created_at:new Date().toISOString()};
+  try {
+    await foccoRest("/rest/v1/admissoes_funcionarios", {method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify(payload)});
+  } catch(e) {
+    localStorage.setItem("focco_admissao_funcionario_envio_pendente", JSON.stringify(dados));
+    throw e;
+  }
+}
+
+async function notificarGestoresAdmissao(dados) {
+  var gestores = await foccoRest("/rest/v1/profiles?select=id&perfil=eq.gestor&ativo=eq.true", {method:"GET"});
+  var titulo = "Nova ficha de admissao recebida";
+  var mensagem = (dados.nome || "Funcionario") + " - " + (dados.empresa || "Empresa nao informada") + " - Protocolo " + dados.protocolo;
+  var agora = new Date().toISOString();
+  var regs = (gestores || []).map(function(g){return {usuario_id:g.id,titulo:titulo,mensagem:mensagem,demanda_id:null,tipo:"admissao_funcionario",lida:false,created_at:agora};});
+  if (regs.length) await foccoRest("/rest/v1/notificacoes", {method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify(regs)});
+}
+
+function nomeArquivoFicha(ext) {
+  var d = ultimaFichaEnviada || collectData();
+  var nome = String(d.nome || "funcionario").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/gi,"-").replace(/^-|-$/g,"").toLowerCase();
+  return "focco-admissao-" + String(d.protocolo || "sem-protocolo").toLowerCase() + "-" + (nome || "funcionario") + "." + ext;
+}
+
+function baixarArquivo(nome, conteudo, tipo) {
+  var blob = new Blob([conteudo], {type:tipo});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url; a.download = nome; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+}
+
+function htmlEsc(v) { return String(v == null ? "" : v).replace(/[&<>"']/g, function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m];}); }
+
+function baixarFichaJSON() {
+  var dados = ultimaFichaEnviada || collectData();
+  baixarArquivo(nomeArquivoFicha("json"), JSON.stringify(dados, null, 2), "application/json;charset=utf-8");
+}
+
+function baixarFichaCSV() {
+  var dados = ultimaFichaEnviada || collectData();
+  var chaves = Object.keys(dados);
+  var escCsv = function(v){return "\"" + String(v == null ? "" : v).replace(/"/g,"\"\"") + "\"";};
+  baixarArquivo(nomeArquivoFicha("csv"), "\ufeff" + chaves.join(";") + "\n" + chaves.map(function(k){return escCsv(dados[k]);}).join(";"), "text/csv;charset=utf-8");
+}
+
+function baixarFichaExcel() {
+  var dados = ultimaFichaEnviada || collectData();
+  var linhas = Object.entries(dados).map(function(p){return "<tr><td>"+htmlEsc(p[0])+"</td><td>"+htmlEsc(p[1])+"</td></tr>";}).join("");
+  baixarArquivo(nomeArquivoFicha("xls"), '<html><head><meta charset="utf-8"></head><body><table border="1"><thead><tr><th>Campo</th><th>Valor</th></tr></thead><tbody>'+linhas+'</tbody></table></body></html>', "application/vnd.ms-excel;charset=utf-8");
+}
+
+function montarResumoDominio() {
+  var d = ultimaFichaEnviada || collectData();
+  return ["FICHA DE ADMISSAO DE FUNCIONARIO - FOCCO","Protocolo: "+(d.protocolo||""),"Empresa: "+(d.empresa||""),"Nome: "+(d.nome||""),"CPF: "+(d.cpf||""),"Nascimento: "+(d.nascimento||""),"RG: "+(d.rg||""),"Telefone: "+(d.celular||d.telefone||""),"Email: "+(d.email||""),"Endereco: "+[d.logradouro,d.numero,d.bairro,d.cidade,d.uf,d.cep].filter(Boolean).join(", "),"Cargo: "+(d.cargo||""),"Data admissao: "+(d.data_admissao||""),"Salario: "+(d.salario||""),"Banco: "+(d.banco||""),"Agencia: "+(d.agencia||""),"Conta: "+(d.conta||""),"PIX: "+(d.pix||""),"Observacoes: "+(d.observacoes||"")].join("\n");
+}
+
+async function copiarResumoDominio() {
+  var texto = montarResumoDominio();
+  try { await navigator.clipboard.writeText(texto); alert("Resumo copiado para colar no Dominio."); }
+  catch(e) { prompt("Copie o resumo:", texto); }
+}
+
+function gerarFichaPDF() {
+  var dados = ultimaFichaEnviada || collectData();
+  var linhas = Object.entries(dados).map(function(p){return "<tr><th>"+htmlEsc(p[0])+"</th><td>"+htmlEsc(p[1])+"</td></tr>";}).join("");
+  var html = '<!doctype html><html><head><meta charset="utf-8"><title>Ficha de admissao</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#1e293b}h1{font-size:22px;margin:0 0 6px}p{color:#64748b;margin:0 0 18px}table{width:100%;border-collapse:collapse;font-size:12px}th,td{border:1px solid #e2e8f0;padding:8px;text-align:left;vertical-align:top}th{width:220px;background:#f8fafc}@media print{button{display:none}}</style></head><body><button onclick="window.print()" style="padding:10px 14px;margin-bottom:16px">Imprimir / Salvar PDF</button><h1>Ficha de Admissao de Funcionario - Focco</h1><p>Protocolo '+htmlEsc(dados.protocolo||"")+'</p><table>'+linhas+'</table></body></html>';
+  var w = window.open("", "_blank"); w.document.open(); w.document.write(html); w.document.close();
+}
+
+function salvarRascunhoLocal() { try { localStorage.setItem("focco_admissao_funcionario_rascunho", JSON.stringify(collectData())); } catch(e) {} }
+function limparRascunhoLocal() { try { localStorage.removeItem("focco_admissao_funcionario_rascunho"); } catch(e) {} }
+
+submitForm = async function() {
+  if (!validateAllRequired()) {
+    var camposT1 = ["nome","nascimento","sexo","cep","celular","cpf"];
+    var erroT1 = camposT1.some(function(id){var el=document.getElementById(id);return el && (!el.value.trim() || el.classList.contains("error"));});
+    goTab(erroT1 ? 0 : 2);
+    return;
+  }
+  var btn = document.getElementById("btn-submit");
+  btn.classList.add("loading"); btn.textContent = "Enviando ficha..."; btn.disabled = true;
+  var formData = collectData();
+  formData.origem = "focco-admissao-funcionario";
+  ultimaFichaEnviada = formData;
+  localStorage.setItem("focco_admissao_funcionario_ultima", JSON.stringify(formData));
+  try {
+    await salvarAdmissaoOnline(formData);
+    await notificarGestoresAdmissao(formData);
+    localStorage.setItem("focco_admissao_funcionario_status_envio", "online");
+  } catch(e) {
+    console.warn("Envio online indisponivel, mantendo arquivo local:", e);
+    localStorage.setItem("focco_admissao_funcionario_status_envio", "arquivo_local");
+  }
+  limparRascunhoLocal();
+  baixarFichaJSON();
+  showSuccess(formData.protocolo);
+  btn.classList.remove("loading"); btn.textContent = "✓ Enviar Ficha"; btn.disabled = false;
+};
+
+var _showSuccessOriginal = showSuccess;
+showSuccess = function(p) {
+  _showSuccessOriginal(p);
+  var st = localStorage.getItem("focco_admissao_funcionario_status_envio");
+  var statusEl = document.getElementById("status-envio-online");
+  if (statusEl) {
+    statusEl.textContent = st === "online" ? "Ficha recebida online pelo escritorio. Voce tambem pode guardar o arquivo baixado." : "Nao foi possivel confirmar o envio online. Envie o arquivo baixado ao escritorio.";
+    statusEl.style.color = st === "online" ? "#16a34a" : "#7c4a00";
+  }
+};
+
+document.addEventListener("input", salvarRascunhoLocal);
+document.addEventListener("change", salvarRascunhoLocal);
+</script>
+</body>
+</html>
