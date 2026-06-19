@@ -94,6 +94,7 @@ button,input,select,textarea{font:inherit}
     <button class="tab" data-tab="obrigacoes">Obrigacoes</button>
     <button class="tab" data-tab="procedimentos">Procedimentos</button>
     <button class="tab" data-tab="pendencias">Pendencias</button>
+    <button class="tab" data-tab="eventuais">Eventuais</button>
   </div>
   <section class="panel active" id="tab-clientes">
     <div class="card"><div class="ch"><div><b>Clientes x Operação</b><br><span>Vincula a base fixa de clientes aos regimes, atividades, responsáveis e procedimentos operacionais.</span></div><button class="btn btn-p" onclick="openDrawer('cliente')">Cadastrar vínculo</button></div><div class="cb"><div class="toolbar"><div class="search"><input id="busca-clientes" placeholder="Buscar por cliente, CNPJ, regime ou procedimento" oninput="render()"><select id="filtro-regime" onchange="render()"><option value="">Todos os regimes</option><option>MEI</option><option>Simples Nacional</option><option>Lucro Presumido</option><option>Lucro Real</option><option>Produtor Rural</option><option>Sem Fins Lucrativos</option></select></div></div><div id="clientes-view"></div></div></div>
@@ -103,6 +104,7 @@ button,input,select,textarea{font:inherit}
   <section class="panel" id="tab-obrigacoes"><div class="card"><div class="ch"><div><b>Obrigacoes fiscais</b><br><span>Parametros que alimentam os checklists fiscais.</span></div></div><div class="cb"><div class="toolbar"><div class="search"><input id="busca-obrigacoes" placeholder="Buscar cliente ou obrigacao fiscal" oninput="render()"></div></div><div id="obrigacoes-view"></div></div></div></section>
   <section class="panel" id="tab-procedimentos"><div class="card"><div class="ch"><div><b>Procedimentos vinculados</b><br><span>Rotinas mensais sugeridas por cliente.</span></div><button class="btn" onclick="gerarProcedimentosPadrao()">Gerar padrao</button></div><div class="cb"><div class="toolbar"><div class="search"><input id="busca-procedimentos" placeholder="Buscar procedimento, cliente, prazo ou periodicidade" oninput="render()"></div></div><div id="procedimentos-view"></div></div></div></section>
   <section class="panel" id="tab-pendencias"><div class="card"><div class="ch"><div><b>Pendencias de importacao</b><br><span>O que precisa ser revisado antes de gerar tarefas automaticas.</span></div></div><div class="cb"><div class="toolbar"><div class="search"><input id="busca-pendencias" placeholder="Buscar pendencia, cliente, status ou tipo" oninput="render()"></div></div><div id="pendencias-view"></div></div></div></section>
+  <section class="panel" id="tab-eventuais"><div class="card"><div class="ch"><div><b>Clientes eventuais</b><br><span>Clientes da base fixa que ficam fora da rotina operacional mensal.</span></div></div><div class="cb"><div class="toolbar"><div class="search"><input id="busca-eventuais" placeholder="Buscar cliente eventual, documento, email ou status" oninput="render()"></div></div><div id="eventuais-view"></div></div></div></section>
 </main>
 </div>
 
@@ -169,13 +171,22 @@ function textoBusca(...values){return values.join(' ').normalize('NFD').replace(
 function combinaBusca(q,...values){if(!q)return true;const hay=textoBusca(...values);return textoBusca(q).split(/\s+/).filter(Boolean).every(p=>hay.includes(p))}
 function buscaInteligente(value){
  const active=document.querySelector('.tab.active')?.dataset.tab||'clientes';
- const map={clientes:'busca-clientes',responsaveis:'busca-responsaveis',coleta:'busca-coleta',obrigacoes:'busca-obrigacoes',procedimentos:'busca-procedimentos',pendencias:'busca-pendencias'};
+ const map={clientes:'busca-clientes',responsaveis:'busca-responsaveis',coleta:'busca-coleta',obrigacoes:'busca-obrigacoes',procedimentos:'busca-procedimentos',pendencias:'busca-pendencias',eventuais:'busca-eventuais'};
  const target=document.getElementById(map[active]||'busca-clientes');
  if(target)target.value=value;
  render();
 }
 function aplicarBuscaTopoNaAba(){const v=document.getElementById('busca-topo')?.value||'';if(v)buscaInteligente(v)}
 function filteredClientes(){const q=buscaValor('busca-clientes');const reg=document.getElementById('filtro-regime')?.value||'';return state.clientes.filter(c=>combinaBusca(q,c.codigo,c.nome,c.documento,c.regime,c.atividade,c.procedimento,c.municipio,c.uf)&&(!reg||c.regime===reg))}
+function clientesEventuais(){
+ const fixos=window.FoccoCadastros?.clientes?.()||[];
+ const vinculados=new Set(state.clientes.filter(c=>c.cliente_id).map(c=>String(c.cliente_id)));
+ return fixos.filter(c=>{
+  const tipo=String(c.tipo_cliente||'').toUpperCase();
+  if(tipo==='EVENTUAL'||c.entra_rotina_operacional===false)return true;
+  return c.id&&!vinculados.has(String(c.id));
+ });
+}
 function render(){
  const fixos=window.FoccoCadastros?.clientes?.()||[];
  const audit=auditOperacionalEFixo();
@@ -183,7 +194,7 @@ function render(){
  document.getElementById('k-clientes-fixo').textContent=fixos.length;
  document.getElementById('k-proc').textContent=state.procedimentos.length;
  document.getElementById('k-revisar').textContent=state.pendencias.length+state.clientes.filter(c=>c.revisar==='Sim').length+audit.total;
- renderClientes();renderResponsaveis();renderColeta();renderObrigacoes();renderProcedimentos();renderPendencias();
+ renderClientes();renderResponsaveis();renderColeta();renderObrigacoes();renderProcedimentos();renderPendencias();renderEventuais();
  renderSharedAudit(audit,fixos);
 }
 function auditOperacionalEFixo(){
@@ -200,10 +211,11 @@ function renderSharedAudit(audit,fixos){
  const el=document.getElementById('shared-audit');if(!el)return;
  const usuarios=window.FoccoCadastros?.usuarios?.()||[];
  const depts=window.FoccoCadastros?.departamentos?.()||[];
+ const eventuais=clientesEventuais().length;
  if(!fixos.length&&!usuarios.length&&!depts.length){el.innerHTML='Base fixa ainda nao carregada neste navegador. Quando o Hub carregar clientes, usuarios e departamentos, o Modulo 2 passa a usar a mesma origem.';return}
  const problemas=audit.total?`<span class="badge warn">${audit.total} possivel(is) duplicidade(s)</span>`:'<span class="badge ok">Sem duplicidade aparente</span>';
  const origem=fonteDados==='supabase'?'<span class="badge ok">Dados operacionais no Supabase</span>':'<span class="badge warn">Usando base local deste navegador</span>';
- el.innerHTML=`<div class="row-actions"><span class="badge ok">${fixos.length} clientes fixos</span><span class="badge ok">${usuarios.length} usuarios</span><span class="badge ok">${depts.length} departamentos</span>${problemas}${origem}</div><div class="hint">A Central de Operacoes deve vincular rotinas ao cliente fixo, nao criar outro cliente separado.</div>`;
+ el.innerHTML=`<div class="row-actions"><span class="badge ok">${fixos.length} clientes fixos</span><span class="badge ok">${usuarios.length} usuarios</span><span class="badge ok">${depts.length} departamentos</span><span class="badge warn">${eventuais} clientes eventuais</span>${problemas}${origem}</div><div class="hint">A Central de Operacoes deve vincular rotinas ao cliente fixo, nao criar outro cliente separado.</div>`;
 }
 function auditarClientesFixos(){
  const audit=auditOperacionalEFixo();
@@ -220,6 +232,11 @@ function renderColeta(){const q=buscaValor('busca-coleta');const rows=state.cole
 function renderObrigacoes(){const q=buscaValor('busca-obrigacoes');const rows=state.obrigacoes.filter(r=>combinaBusca(q,r.codigo,getCliente(r.codigo).nome,r.cliente,r.sintegra,r.destda,r.dapi,r.efd,r.sped,r.mit,r.tomador,r.prestador)).map(r=>`<tr><td><b>${esc(r.codigo)}</b></td><td>${esc(getCliente(r.codigo).nome||r.cliente||'-')}</td><td>${badge(r.sintegra)}</td><td>${badge(r.destda)}</td><td>${badge(r.dapi)}</td><td>${badge(r.efd)}</td><td>${badge(r.sped)}</td><td>${badge(r.mit)}</td><td>${badge(r.tomador)}</td><td>${badge(r.prestador)}</td></tr>`);document.getElementById('obrigacoes-view').innerHTML=table(['Codigo','Cliente','SINTEGRA','DESTDA','DAPI','EFD','SPED','MIT','Tomador','Prestador'],rows,'Nenhuma obrigacao encontrada para esta busca.')}
 function renderProcedimentos(){const q=buscaValor('busca-procedimentos');const rows=state.procedimentos.filter(r=>combinaBusca(q,r.codigo,getCliente(r.codigo).nome,r.cliente,r.procedimento,r.periodicidade,r.prazo,r.auditoria,r.enviaCliente)).map(r=>`<tr><td><b>${esc(r.codigo)}</b></td><td>${esc(getCliente(r.codigo).nome||r.cliente||'-')}</td><td>${esc(r.procedimento)}</td><td>${esc(r.periodicidade||'Mensal')}</td><td>${esc(r.prazo||'Dia 20')}</td><td>${badge(r.auditoria||'Sim')}</td><td>${badge(r.enviaCliente||'Sim')}</td></tr>`);document.getElementById('procedimentos-view').innerHTML=table(['Codigo','Cliente','Procedimento','Periodicidade','Prazo','Auditoria','Envia cliente'],rows,'Nenhum procedimento encontrado para esta busca.')}
 function renderPendencias(){const q=buscaValor('busca-pendencias');const rows=state.pendencias.filter(p=>combinaBusca(q,p.codigo,getCliente(p.codigo).nome,p.cliente,p.tipo,p.descricao,p.status)).map(p=>`<tr><td><b>${esc(p.codigo)}</b></td><td>${esc(getCliente(p.codigo).nome||p.cliente||'-')}</td><td>${esc(p.tipo||'Revisao')}</td><td>${esc(p.descricao||'')}</td><td>${badge(p.status||'Aberta')}</td></tr>`);document.getElementById('pendencias-view').innerHTML=table(['Codigo','Cliente','Tipo','Descricao','Status'],rows,'Nenhuma pendencia encontrada para esta busca.')}
+function renderEventuais(){
+ const q=buscaValor('busca-eventuais');
+ const rows=clientesEventuais().filter(c=>combinaBusca(q,c.nome,c.razao_social,c.cpf_cnpj,c.documento,c.email,c.ativo,c.tipo_cliente,c.observacao_operacional)).map(c=>`<tr><td><b>${esc(c.nome||c.razao_social||'-')}</b><div class="hint">${esc(c.email||'')}</div></td><td>${esc(c.cpf_cnpj||c.documento||c.cnpj_cpf||'-')}</td><td>${badge(c.ativo===false?'Inativo':'Ativo')}</td><td>${badge(c.tipo_cliente||'EVENTUAL')}</td><td>${esc(c.observacao_operacional||'Cliente eventual / fora da rotina mensal')}</td></tr>`);
+ document.getElementById('eventuais-view').innerHTML=table(['Cliente','CPF/CNPJ','Status','Classificacao','Observacao'],rows,'Nenhum cliente eventual encontrado.');
+}
 function openDrawer(type){const body=document.getElementById('drawer-body');document.getElementById('drawer').classList.add('open');if(type==='importar'){document.getElementById('drawer-title').textContent='Importar base operacional';body.innerHTML=importForm();return}document.getElementById('drawer-title').textContent='Novo cliente operacional';body.innerHTML=clienteForm()}
 function closeDrawer(){document.getElementById('drawer').classList.remove('open')}
 function clienteForm(c={}){
