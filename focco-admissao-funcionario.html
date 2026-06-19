@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -57,6 +57,9 @@ body{
   font-size:13px;background:rgba(255,255,255,.95);color:var(--gray-800);
 }
 .empresa-bar input:focus{outline:2px solid var(--sky);outline-offset:1px;}
+.empresa-bar input.error{background:var(--red-light);outline:2px solid var(--red);}
+.empresa-bar .error-msg{font-size:11px;color:#fff;background:var(--red);padding:2px 8px;border-radius:999px;display:none;white-space:nowrap;}
+.empresa-bar .error-msg.show{display:inline-block;}
 
 /* ── PROGRESS ────────────────────────────────────── */
 .progress-wrap{
@@ -237,9 +240,6 @@ body{
   border-radius:8px;padding:12px;margin-top:14px;
   font-size:13px;font-weight:600;color:#7c4a00;
 }
-.client-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:18px 0 6px;}
-.client-actions button{padding:11px 16px;border-radius:8px;border:1px solid var(--blue-border);background:#fff;color:var(--navy);font-weight:700;cursor:pointer;}
-.client-actions button.primary{background:var(--navy);color:#fff;border-color:var(--navy);}
 
 /* ── FOOTER ──────────────────────────────────────── */
 .footer{
@@ -289,6 +289,7 @@ body{
 <div class="empresa-bar">
   <label for="empresa">EMPRESA:</label>
   <input type="text" id="empresa" name="empresa" placeholder="Nome da empresa contratante">
+  <span class="error-msg" id="err-empresa">Campo obrigatório</span>
 </div>
 
 <div class="progress-wrap">
@@ -479,7 +480,7 @@ body{
           </div>
           <div class="field">
             <label for="ctps_uf">UF</label>
-            <select id="ctps_uf" name="ctps_uf"><option value="">UF</option><option>AC</option><option>AL</option><option>AM</option><option>AP</option><option>BA</option><option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option><option>MG</option><option>MS</option><option>MT</option><option>PA</option><option>PB</option><option>PE</option><option>PI</option><option>PR</option><option>RJ</option><option>RN</option><option>RO</option><option>RR</option><option>RS</option><option>SC</option><option>SE</option><option>SP</option><option>TO</option>_MG</select>
+            <select id="ctps_uf" name="ctps_uf"><option value="">UF</option><option>AC</option><option>AL</option><option>AM</option><option>AP</option><option>BA</option><option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option><option>MG</option><option>MS</option><option>MT</option><option>PA</option><option>PB</option><option>PE</option><option>PI</option><option>PR</option><option>RJ</option><option>RN</option><option>RO</option><option>RR</option><option>RS</option><option>SC</option><option>SE</option><option>SP</option><option>TO</option></select>
           </div>
         </div>
         <div class="form-row col-1">
@@ -495,14 +496,22 @@ body{
           <div class="field">
             <label for="cnh_numero">CNH — Número</label>
             <input type="text" id="cnh_numero" name="cnh_numero" placeholder="Número da CNH">
+            <span class="error-msg" id="err-cnh_numero">Campo obrigatório</span>
           </div>
           <div class="field">
             <label for="cnh_categoria">Categoria</label>
             <select id="cnh_categoria" name="cnh_categoria">
               <option value="">Selecione...</option>
-              <option>A</option><option>B</option><option>AB</option>
-              <option>C</option><option>D</option><option>E</option>
+              <option>ACC</option>
+              <option>A</option><option>B</option><option>C</option><option>D</option><option>E</option>
+              <option>AB</option><option>AC</option><option>AD</option><option>AE</option>
             </select>
+            <span class="error-msg" id="err-cnh_categoria">Campo obrigatório</span>
+          </div>
+          <div class="field">
+            <label for="cnh_validade">Validade da CNH</label>
+            <input type="date" id="cnh_validade" name="cnh_validade">
+            <span class="error-msg" id="err-cnh_validade">Campo obrigatório</span>
           </div>
         </div>
         <div class="form-row col-1">
@@ -543,7 +552,7 @@ body{
           </div>
           <div class="field">
             <label for="uf">UF</label>
-            <select id="uf" name="uf"><option value="">UF</option><option>AC</option><option>AL</option><option>AM</option><option>AP</option><option>BA</option><option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option><option>MG</option><option>MS</option><option>MT</option><option>PA</option><option>PB</option><option>PE</option><option>PI</option><option>PR</option><option>RJ</option><option>RN</option><option>RO</option><option>RR</option><option>RS</option><option>SC</option><option>SE</option><option>SP</option><option>TO</option>_MG</select>
+            <select id="uf" name="uf"><option value="">UF</option><option>AC</option><option>AL</option><option>AM</option><option>AP</option><option>BA</option><option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option><option>MG</option><option>MS</option><option>MT</option><option>PA</option><option>PB</option><option>PE</option><option>PI</option><option>PR</option><option>RJ</option><option>RN</option><option>RO</option><option>RR</option><option>RS</option><option>SC</option><option>SE</option><option>SP</option><option>TO</option></select>
           </div>
         </div>
         <div class="form-row col-2-1">
@@ -733,9 +742,8 @@ body{
         </div>
         <div class="form-row col-2">
           <div class="field">
-            <label for="salario">Salário <span class="req">*</span></label>
+            <label for="salario">Salário</label>
             <input type="text" id="salario" name="salario" placeholder="R$ 0,00" oninput="maskMoney(this)">
-            <span class="error-msg" id="err-salario">Campo obrigatório</span>
           </div>
           <div class="field">
             <label for="beneficios">Benefícios</label>
@@ -745,121 +753,32 @@ body{
       </div>
     </div>
 
-    <!-- HORÁRIO DE TRABALHO -->
+    <!-- HORARIO DE TRABALHO -->
     <div class="section-card">
-      <div class="section-title">🕐 Horário de Trabalho</div>
+      <div class="section-title">&#128336; Hor&aacute;rio de Trabalho</div>
       <div class="section-body">
-        <div class="form-row col-2">
+        <div class="form-row col-1">
           <div class="field">
-            <label for="hor_tipo">Tipo de Horário</label>
+            <label for="hor_tipo">Hor&aacute;rio principal</label>
             <select id="hor_tipo" name="hor_tipo" onchange="toggleTipoHorario()">
-              <option value="">Selecione ou preencha manualmente...</option>
-              <optgroup label="Jornada Fixa — Seg–Sex + Sáb 4h (44h)">
-                <option value="F01">Fixo | 07:00–16:00 | Almoço 1h | + Sáb 07:00–11:00</option>
-                <option value="F02">Fixo | 07:00–16:30 | Almoço 1h30 | + Sáb 07:00–11:00</option>
-                <option value="F03">Fixo | 07:30–16:30 | Almoço 1h | + Sáb 07:30–11:30</option>
-                <option value="F04">Fixo | 07:30–17:00 | Almoço 1h30 | + Sáb 07:30–11:30</option>
-                <option value="F05">Fixo | 08:00–17:00 | Almoço 1h | + Sáb 08:00–12:00</option>
-                <option value="F06">Fixo | 08:00–17:30 | Almoço 1h30 | + Sáb 08:00–12:00</option>
-                <option value="F07">Fixo | 08:30–17:30 | Almoço 1h | + Sáb 08:30–12:30</option>
-                <option value="F08">Fixo | 08:30–18:00 | Almoço 1h30 | + Sáb 08:30–12:30</option>
-                <option value="F09">Fixo | 09:00–18:00 | Almoço 1h | + Sáb 09:00–13:00</option>
-                <option value="F10">Fixo | 09:00–18:30 | Almoço 1h30 | + Sáb 09:00–13:00</option>
-              </optgroup>
-              <optgroup label="Jornada Fixa — Seg–Sex 8h48 sem sábado (44h)">
-                <option value="G01">Fixo | 07:00–16:48 | Almoço 1h | Sem sábado</option>
-                <option value="G02">Fixo | 07:00–17:48 | Almoço 2h | Sem sábado</option>
-                <option value="G03">Fixo | 07:30–17:18 | Almoço 1h | Sem sábado</option>
-                <option value="G04">Fixo | 07:30–18:18 | Almoço 2h | Sem sábado</option>
-                <option value="G05">Fixo | 08:00–17:48 | Almoço 1h | Sem sábado</option>
-                <option value="G06">Fixo | 08:00–18:48 | Almoço 2h | Sem sábado</option>
-                <option value="G07">Fixo | 08:30–18:18 | Almoço 1h | Sem sábado</option>
-                <option value="G08">Fixo | 08:30–19:18 | Almoço 2h | Sem sábado</option>
-                <option value="G09">Fixo | 09:00–17:48 | Almoço 1h | Sem sábado</option>
-                <option value="G10">Fixo | 09:00–18:48 | Almoço 2h | Sem sábado</option>
-              </optgroup>
-              <optgroup label="Escala 12×36">
-                <option value="E01">12×36 | 06:00–19:00 | Almoço 1h</option>
-                <option value="E02">12×36 | 06:00–20:00 | Almoço 2h</option>
-                <option value="E03">12×36 | 07:00–20:00 | Almoço 1h</option>
-                <option value="E04">12×36 | 07:00–21:00 | Almoço 2h</option>
-                <option value="E05">12×36 | 08:00–21:00 | Almoço 1h</option>
-                <option value="E06">12×36 | 08:00–22:00 | Almoço 2h</option>
-                <option value="E07">12×36 | 09:00–22:00 | Almoço 1h</option>
-                <option value="E08">12×36 | 09:00–23:00 | Almoço 2h</option>
-              </optgroup>
-              <optgroup label="Escala 6×1 — 7h20/dia (44h)">
-                <option value="S01">6×1 | 06:00–14:20 | Almoço 1h</option>
-                <option value="S02">6×1 | 06:00–14:50 | Almoço 1h30</option>
-                <option value="S03">6×1 | 07:00–15:20 | Almoço 1h</option>
-                <option value="S04">6×1 | 07:00–15:50 | Almoço 1h30</option>
-                <option value="S05">6×1 | 08:00–16:20 | Almoço 1h</option>
-                <option value="S06">6×1 | 08:00–16:50 | Almoço 1h30</option>
-                <option value="S07">6×1 | 08:00–17:20 | Almoço 2h</option>
-              </optgroup>
-              <option value="OUTRO">Outro (preencher manualmente abaixo)</option>
+              <option value="">Selecione o hor&aacute;rio...</option>
+              <option value="SEGSEX_0700_1630">Segunda a sexta | 07:00 &agrave;s 16:30 | intervalo 1h30</option>
+              <option value="SEGSEX_0730_1700">Segunda a sexta | 07:30 &agrave;s 17:00 | intervalo 1h30</option>
+              <option value="SEGSEX_0800_1730">Segunda a sexta | 08:00 &agrave;s 17:30 | intervalo 1h30</option>
+              <option value="SEGSEX_0830_1800">Segunda a sexta | 08:30 &agrave;s 18:00 | intervalo 1h30</option>
+              <option value="SAB_0700_1630">Segunda a sexta + s&aacute;bado | 07:00 &agrave;s 16:30 | s&aacute;bado 07:00 &agrave;s 11:00 | intervalo 1h30</option>
+              <option value="SAB_0730_1700">Segunda a sexta + s&aacute;bado | 07:30 &agrave;s 17:00 | s&aacute;bado 07:30 &agrave;s 11:30 | intervalo 1h30</option>
+              <option value="SAB_0800_1730">Segunda a sexta + s&aacute;bado | 08:00 &agrave;s 17:30 | s&aacute;bado 08:00 &agrave;s 12:00 | intervalo 1h30</option>
+              <option value="ESCALA_12X36_0700_1900">Escala 12x36 | 07:00 &agrave;s 19:00 | intervalo 1h</option>
+              <option value="OUTRO">Outro hor&aacute;rio / escala n&atilde;o listada</option>
             </select>
           </div>
-          <div class="field">
-            <label>Duração da Jornada</label>
-            <input type="text" id="hor_duracao" name="hor_duracao" readonly
-              placeholder="—"
-              style="background:var(--blue-light);color:var(--navy);font-weight:700;font-size:15px;text-align:center;border-color:var(--blue-border);">
-          </div>
         </div>
 
-        <div id="hor_campos">
-          <div class="form-row col-2" style="margin-top:4px;">
-            <div class="field">
-              <label for="hor_entrada">Hora Entrada</label>
-              <input type="time" id="hor_entrada" name="hor_entrada" onchange="calcDuracao()">
-            </div>
-            <div class="field">
-              <label for="hor_saida">Hora Saída</label>
-              <input type="time" id="hor_saida" name="hor_saida" onchange="calcDuracao()">
-            </div>
-          </div>
-          <div class="form-row col-3">
-            <div class="field">
-              <label for="hor_tipo_intervalo">Tipo de Intervalo</label>
-              <select id="hor_tipo_intervalo" name="hor_tipo_intervalo" onchange="toggleIntervalo()">
-                <option value="sem">Sem intervalo</option>
-                <option value="fixo" selected>Em horário fixo</option>
-                <option value="variavel">Horário variável</option>
-              </select>
-            </div>
-            <div class="field" id="hor_intv_inicio_field">
-              <label for="hor_intv_inicio">Início Intervalo</label>
-              <input type="time" id="hor_intv_inicio" name="hor_intv_inicio" onchange="calcDuracao()">
-            </div>
-            <div class="field" id="hor_intv_fim_field">
-              <label for="hor_intv_fim">Fim Intervalo</label>
-              <input type="time" id="hor_intv_fim" name="hor_intv_fim" onchange="calcDuracao()">
-            </div>
-          </div>
-          <div class="form-row col-2 hidden" id="hor_duracao_intv_field">
-            <div class="field">
-              <label for="hor_duracao_intv">Duração do Intervalo (minutos)</label>
-              <input type="number" id="hor_duracao_intv" name="hor_duracao_intv"
-                min="0" max="240" placeholder="Ex: 60" onchange="calcDuracao()">
-            </div>
-          </div>
-          <div class="form-row col-2 hidden" id="hor_sabado_fields">
-            <div class="field">
-              <label for="hor_sab_entrada">Sábado — Entrada</label>
-              <input type="time" id="hor_sab_entrada" name="hor_sab_entrada" onchange="calcDuracao()">
-            </div>
-            <div class="field">
-              <label for="hor_sab_saida">Sábado — Saída</label>
-              <input type="time" id="hor_sab_saida" name="hor_sab_saida" onchange="calcDuracao()">
-            </div>
-          </div>
-        </div>
-
-        <div class="field" style="margin-top:12px;">
-          <label for="horario_obs">Observações sobre o horário</label>
-          <input type="text" id="horario_obs" name="horario_obs"
-            placeholder="Ex: folga alternada aos sábados, banco de horas, variação diária...">
+        <div class="field" id="horario_livre_box" style="margin-top:12px;">
+          <label for="horario_obs">Se n&atilde;o estiver na lista, escreva o hor&aacute;rio ou escala</label>
+          <textarea id="horario_obs" name="horario_obs"
+            placeholder="Ex: Segunda a s&aacute;bado das 13:00 &agrave;s 21:20, com 1h30 de intervalo."></textarea>
         </div>
       </div>
     </div>
@@ -931,15 +850,6 @@ body{
   <p style="color:#475569;font-size:14px;">Seu número de protocolo é:</p>
   <div class="protocol-box" id="protocol-display">FAD-2025-00001</div>
   <p style="font-size:13px;color:#64748b;margin-top:8px;">Guarde este número para acompanhar o seu cadastro.</p>
-  <div id="status-envio-online" style="font-size:13px;color:#475569;margin-top:8px;font-weight:600"></div>
-  <div class="client-actions">
-    <button class="primary" onclick="baixarFichaJSON()">Baixar ficha preenchida</button>
-    <button onclick="baixarFichaCSV()">Baixar CSV</button>
-    <button onclick="baixarFichaExcel()">Baixar Excel</button>
-    <button onclick="gerarFichaPDF()">Gerar PDF</button>
-    <button onclick="copiarResumoDominio()">Copiar para Dominio</button>
-  </div>
-  <p style="font-size:12px;color:#64748b;margin-top:6px;">Se o envio online nao estiver configurado, envie o arquivo baixado ao escritorio.</p>
   <div class="docs-box">
     <h3>📋 Documentos Obrigatórios para Enviar ao Escritório</h3>
     <ul>
@@ -1005,14 +915,20 @@ function required(id) {
 }
 
 function validateAllRequired() {
+  var empresaOk = required("empresa");
   var t1 = [required("nome"), required("nascimento"), required("sexo"),
              required("cep"), required("celular"), validateCPF()];
-  var t3 = [required("data_admissao"), required("funcao"), required("salario")];
+  var t3 = [required("data_admissao"), required("funcao")];
+  var cnhPossui = document.querySelector("input[name=cnh_possui]:checked");
+  var cnhOk = true;
+  if (cnhPossui && cnhPossui.value === "sim") {
+    cnhOk = [required("cnh_numero"), required("cnh_categoria"), required("cnh_validade")].every(Boolean);
+  }
   var lgpd    = document.getElementById("lgpd");
   var errLgpd = document.getElementById("err-lgpd");
   var lgpdOk  = lgpd.checked;
   errLgpd.style.display = lgpdOk ? "none" : "block";
-  return t1.every(Boolean) && t3.every(Boolean) && lgpdOk;
+  return empresaOk && t1.every(Boolean) && t3.every(Boolean) && cnhOk && lgpdOk;
 }
 
 // ── MÁSCARAS ─────────────────────────────────────────────────────
@@ -1028,7 +944,7 @@ function validateCPF() {
   var el  = document.getElementById("cpf");
   var err = document.getElementById("err-cpf");
   var v   = el.value.replace(/[^0-9]/g, "");
-  if (!v) { el.classList.remove("error"); err.classList.remove("show"); return true; }
+  if (!v) { el.classList.add("error"); err.classList.add("show"); return false; }
   // Verifica dígitos verificadores
   if (v.length !== 11 || /^(\d)\1+$/.test(v)) { el.classList.add("error"); err.classList.add("show"); return false; }
   var soma = 0, resto;
@@ -1119,8 +1035,16 @@ function toggleCTPS() {
     document.querySelector("input[name=ctps_tipo]:checked").value !== "fisica");
 }
 function toggleCNH() {
-  document.getElementById("cnh-fields").classList.toggle("hidden",
-    document.querySelector("input[name=cnh_possui]:checked").value !== "sim");
+  var mostrar = document.querySelector("input[name=cnh_possui]:checked").value === "sim";
+  document.getElementById("cnh-fields").classList.toggle("hidden", !mostrar);
+  if (!mostrar) {
+    ["cnh_numero", "cnh_categoria", "cnh_validade"].forEach(function(id){
+      var el = document.getElementById(id);
+      var err = document.getElementById("err-" + id);
+      if (el) el.classList.remove("error");
+      if (err) err.classList.remove("show");
+    });
+  }
 }
 function togglePCD() {
   document.getElementById("pcd-fields").classList.toggle("hidden",
@@ -1171,108 +1095,33 @@ function removeDep(id) {
 
 // ── HORÁRIO DE TRABALHO ───────────────────────────────────────────
 var ESCALAS = {
-  F01:{e:"07:00",s:"16:00",ii:"11:00",if_:"12:00",se:"07:00",ss:"11:00",d:"8h00",ti:"fixo",sab:true},
-  F02:{e:"07:00",s:"16:30",ii:"11:00",if_:"12:30",se:"07:00",ss:"11:00",d:"8h00",ti:"fixo",sab:true},
-  F03:{e:"07:30",s:"16:30",ii:"11:30",if_:"12:30",se:"07:30",ss:"11:30",d:"8h00",ti:"fixo",sab:true},
-  F04:{e:"07:30",s:"17:00",ii:"11:30",if_:"13:00",se:"07:30",ss:"11:30",d:"8h00",ti:"fixo",sab:true},
-  F05:{e:"08:00",s:"17:00",ii:"12:00",if_:"13:00",se:"08:00",ss:"12:00",d:"8h00",ti:"fixo",sab:true},
-  F06:{e:"08:00",s:"17:30",ii:"12:00",if_:"13:30",se:"08:00",ss:"12:00",d:"8h00",ti:"fixo",sab:true},
-  F07:{e:"08:30",s:"17:30",ii:"12:30",if_:"13:30",se:"08:30",ss:"12:30",d:"8h00",ti:"fixo",sab:true},
-  F08:{e:"08:30",s:"18:00",ii:"12:30",if_:"14:00",se:"08:30",ss:"12:30",d:"8h00",ti:"fixo",sab:true},
-  F09:{e:"09:00",s:"18:00",ii:"13:00",if_:"14:00",se:"09:00",ss:"13:00",d:"8h00",ti:"fixo",sab:true},
-  F10:{e:"09:00",s:"18:30",ii:"13:00",if_:"14:30",se:"09:00",ss:"13:00",d:"8h00",ti:"fixo",sab:true},
-  G01:{e:"07:00",s:"16:48",ii:"11:24",if_:"12:24",d:"8h48",ti:"fixo",sab:false},
-  G02:{e:"07:00",s:"17:48",ii:"11:24",if_:"13:24",d:"8h48",ti:"fixo",sab:false},
-  G03:{e:"07:30",s:"17:18",ii:"11:54",if_:"12:54",d:"8h48",ti:"fixo",sab:false},
-  G04:{e:"07:30",s:"18:18",ii:"11:54",if_:"13:54",d:"8h48",ti:"fixo",sab:false},
-  G05:{e:"08:00",s:"17:48",ii:"12:24",if_:"13:24",d:"8h48",ti:"fixo",sab:false},
-  G06:{e:"08:00",s:"18:48",ii:"12:24",if_:"14:24",d:"8h48",ti:"fixo",sab:false},
-  G07:{e:"08:30",s:"18:18",ii:"12:54",if_:"13:54",d:"8h48",ti:"fixo",sab:false},
-  G08:{e:"08:30",s:"19:18",ii:"12:54",if_:"14:54",d:"8h48",ti:"fixo",sab:false},
-  G09:{e:"09:00",s:"17:48",ii:"13:24",if_:"14:24",d:"8h48",ti:"fixo",sab:false},
-  G10:{e:"09:00",s:"18:48",ii:"13:24",if_:"15:24",d:"8h48",ti:"fixo",sab:false},
-  E01:{e:"06:00",s:"19:00",ii:"12:00",if_:"13:00",d:"12h00",ti:"fixo",sab:false},
-  E02:{e:"06:00",s:"20:00",ii:"12:00",if_:"14:00",d:"12h00",ti:"fixo",sab:false},
-  E03:{e:"07:00",s:"20:00",ii:"13:00",if_:"14:00",d:"12h00",ti:"fixo",sab:false},
-  E04:{e:"07:00",s:"21:00",ii:"13:00",if_:"15:00",d:"12h00",ti:"fixo",sab:false},
-  E05:{e:"08:00",s:"21:00",ii:"14:00",if_:"15:00",d:"12h00",ti:"fixo",sab:false},
-  E06:{e:"08:00",s:"22:00",ii:"14:00",if_:"16:00",d:"12h00",ti:"fixo",sab:false},
-  E07:{e:"09:00",s:"22:00",ii:"15:00",if_:"16:00",d:"12h00",ti:"fixo",sab:false},
-  E08:{e:"09:00",s:"23:00",ii:"15:00",if_:"17:00",d:"12h00",ti:"fixo",sab:false},
-  S01:{e:"06:00",s:"14:20",ii:"09:40",if_:"10:40",d:"7h20",ti:"fixo",sab:false},
-  S02:{e:"06:00",s:"14:50",ii:"09:40",if_:"11:10",d:"7h20",ti:"fixo",sab:false},
-  S03:{e:"07:00",s:"15:20",ii:"10:40",if_:"11:40",d:"7h20",ti:"fixo",sab:false},
-  S04:{e:"07:00",s:"15:50",ii:"10:40",if_:"12:10",d:"7h20",ti:"fixo",sab:false},
-  S05:{e:"08:00",s:"16:20",ii:"11:40",if_:"12:40",d:"7h20",ti:"fixo",sab:false},
-  S06:{e:"08:00",s:"16:50",ii:"11:40",if_:"13:10",d:"7h20",ti:"fixo",sab:false},
-  S07:{e:"08:00",s:"17:20",ii:"11:40",if_:"13:40",d:"7h20",ti:"fixo",sab:false}
+  SEGSEX_0700_1630:{texto:"Segunda a sexta | 07:00 as 16:30 | intervalo 1h30"},
+  SEGSEX_0730_1700:{texto:"Segunda a sexta | 07:30 as 17:00 | intervalo 1h30"},
+  SEGSEX_0800_1730:{texto:"Segunda a sexta | 08:00 as 17:30 | intervalo 1h30"},
+  SEGSEX_0830_1800:{texto:"Segunda a sexta | 08:30 as 18:00 | intervalo 1h30"},
+  SAB_0700_1630:{texto:"Segunda a sexta + sabado | 07:00 as 16:30 | sabado 07:00 as 11:00 | intervalo 1h30"},
+  SAB_0730_1700:{texto:"Segunda a sexta + sabado | 07:30 as 17:00 | sabado 07:30 as 11:30 | intervalo 1h30"},
+  SAB_0800_1730:{texto:"Segunda a sexta + sabado | 08:00 as 17:30 | sabado 08:00 as 12:00 | intervalo 1h30"},
+  ESCALA_12X36_0700_1900:{texto:"Escala 12x36 | 07:00 as 19:00 | intervalo 1h"}
 };
 
 function _set(id, val) { var el = document.getElementById(id); if (el) el.value = val || ""; }
 function _show(id, vis) { var el = document.getElementById(id); if (el) el.classList.toggle("hidden", !vis); }
 
 function toggleTipoHorario() {
-  var v = document.getElementById("hor_tipo").value;
-  if (!v || v === "OUTRO") {
-    ["hor_entrada","hor_saida","hor_intv_inicio","hor_intv_fim","hor_sab_entrada","hor_sab_saida"]
-      .forEach(function(id) { _set(id, ""); });
-    _set("hor_duracao", "");
-    _set("hor_tipo_intervalo", "fixo");
-    _show("hor_sabado_fields", false);
-    _show("hor_intv_inicio_field", true);
-    _show("hor_intv_fim_field", true);
-    _show("hor_duracao_intv_field", false);
+  var select = document.getElementById("hor_tipo");
+  var obs = document.getElementById("horario_obs");
+  if (!select || !obs) return;
+
+  if (select.value === "OUTRO") {
+    obs.placeholder = "Descreva dias, horarios de entrada e saida, intervalo, sabado/domingo e folgas.";
+    obs.focus();
     return;
   }
-  var esc = ESCALAS[v];
-  if (!esc) return;
-  _set("hor_entrada", esc.e);
-  _set("hor_saida",   esc.s);
-  _set("hor_tipo_intervalo", esc.ti);
-  _set("hor_intv_inicio",    esc.ii  || "");
-  _set("hor_intv_fim",       esc.if_ || "");
-  _set("hor_duracao",        esc.d);
-  _show("hor_sabado_fields",      esc.sab || false);
-  if (esc.sab) { _set("hor_sab_entrada", esc.se || ""); _set("hor_sab_saida", esc.ss || ""); }
-  _show("hor_intv_inicio_field",  esc.ti !== "sem");
-  _show("hor_intv_fim_field",     esc.ti === "fixo");
-  _show("hor_duracao_intv_field", esc.ti === "variavel");
+
+  obs.placeholder = "Se precisar, informe alguma observacao sobre folga, sabado alternado, banco de horas ou variacao do horario.";
 }
 
-function toggleIntervalo() {
-  var t = document.getElementById("hor_tipo_intervalo").value;
-  _show("hor_intv_inicio_field",  t !== "sem");
-  _show("hor_intv_fim_field",     t === "fixo");
-  _show("hor_duracao_intv_field", t === "variavel");
-  calcDuracao();
-}
-
-function timeToMin(t) {
-  if (!t) return 0;
-  var p = t.split(":");
-  return parseInt(p[0]) * 60 + parseInt(p[1]);
-}
-function minToStr(m) {
-  if (m <= 0) return "";
-  var h = Math.floor(m / 60), mn = m % 60;
-  return mn ? h + "h" + String(mn).padStart(2, "0") + "min" : h + "h00";
-}
-
-function calcDuracao() {
-  var e  = timeToMin(document.getElementById("hor_entrada").value);
-  var s  = timeToMin(document.getElementById("hor_saida").value);
-  var ti = document.getElementById("hor_tipo_intervalo").value;
-  var intv = 0;
-  if (ti === "fixo") {
-    var ii = timeToMin(document.getElementById("hor_intv_inicio").value);
-    var fi = timeToMin(document.getElementById("hor_intv_fim").value);
-    if (ii && fi && fi > ii) intv = fi - ii;
-  } else if (ti === "variavel") {
-    intv = parseInt(document.getElementById("hor_duracao_intv").value) || 0;
-  }
-  var dur = (e && s && s > e) ? s - e - intv : 0;
-  document.getElementById("hor_duracao").value = dur > 0 ? minToStr(dur) : "";
-}
 
 // ── SUBMIT ────────────────────────────────────────────────────────
 function generateProtocol() {
@@ -1288,9 +1137,62 @@ function collectData() {
   document.querySelectorAll("input[type=checkbox]")
     .forEach(function(el) { if (el.name) data[el.name] = el.checked; });
   data.empresa    = document.getElementById("empresa").value;
+  var horSelect = document.getElementById("hor_tipo");
+  var horTexto  = horSelect && horSelect.selectedIndex >= 0 ? horSelect.options[horSelect.selectedIndex].text : "";
+  data.horario   = horSelect && horSelect.value === "OUTRO" ? (data.horario_obs || "") : [horTexto, data.horario_obs].filter(Boolean).join(" | Obs: ");
   data.protocolo  = generateProtocol();
   data.data_envio = new Date().toISOString();
   return data;
+}
+
+const FOCCO_SUPABASE_URL = "https://nambhrizjnhebqgfztux.supabase.co";
+const FOCCO_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hbWJocml6am5oZWJxZ2Z6dHV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNDUzMDIsImV4cCI6MjA5NjkyMTMwMn0.AeBCJetQQugrpDAaOPrEYgHor9irmosN8EWogCtPzSo";
+const FOCCO_ADMISSAO_TABELA = "admissoes_funcionarios";
+const FOCCO_PENDENTES_KEY = "focco_admissoes_pendentes";
+
+function salvarAdmissaoPendente(formData, motivo) {
+  var pendentes = [];
+  try { pendentes = JSON.parse(localStorage.getItem(FOCCO_PENDENTES_KEY) || "[]"); } catch(e) {}
+  pendentes.push({dados: formData, erro: motivo || "Falha de envio", salvo_em: new Date().toISOString()});
+  localStorage.setItem(FOCCO_PENDENTES_KEY, JSON.stringify(pendentes));
+}
+
+async function supabaseFetch(path, options) {
+  options = options || {};
+  options.headers = Object.assign({
+    "Content-Type": "application/json",
+    "apikey": FOCCO_SUPABASE_KEY,
+    "Authorization": "Bearer " + FOCCO_SUPABASE_KEY
+  }, options.headers || {});
+  return fetch(FOCCO_SUPABASE_URL + path, options);
+}
+
+async function notificarGestoresAdmissao(formData, admissaoId) {
+  try {
+    var gestoresRes = await supabaseFetch("/rest/v1/profiles?select=id&perfil=eq.gestor&ativo=eq.true");
+    if (!gestoresRes.ok) return;
+    var gestores = await gestoresRes.json();
+    if (!gestores || !gestores.length) return;
+    var titulo = "Nova ficha de admissao recebida";
+    var mensagem = (formData.empresa || "Empresa nao informada") + " enviou a ficha de " + (formData.nome || "funcionario") + ". Protocolo " + formData.protocolo + ".";
+    var rows = gestores.map(function(g) {
+      return {
+        usuario_id: g.id,
+        titulo: titulo,
+        mensagem: mensagem,
+        tipo: "admissao_funcionario",
+        lida: false,
+        demanda_id: null
+      };
+    });
+    await supabaseFetch("/rest/v1/notificacoes", {
+      method: "POST",
+      headers: {"Prefer": "return=minimal"},
+      body: JSON.stringify(rows)
+    });
+  } catch(e) {
+    console.warn("Nao foi possivel notificar gestores:", e);
+  }
 }
 
 async function submitForm() {
@@ -1309,29 +1211,27 @@ async function submitForm() {
   btn.disabled    = true;
 
   var formData = collectData();
-
-  // ── Configurar Supabase antes de publicar ──────────────────────
-  var SUPABASE_URL = "https://nambhrizjnhebqgfztux.supabase.co";
-  var SUPABASE_KEY = "CONFIGURADO_NA_ROTINA_FINAL_ABAIXO";
-  // ──────────────────────────────────────────────────────────────
+  var payload = {
+    protocolo: formData.protocolo,
+    funcionario_nome: formData.nome || null,
+    dados: formData,
+  };
 
   try {
-    var res = await fetch(SUPABASE_URL + "/rest/v1/admissoes", {
+    var res = await supabaseFetch("/rest/v1/" + FOCCO_ADMISSAO_TABELA, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "apikey":        SUPABASE_KEY,
-        "Authorization": "Bearer " + SUPABASE_KEY,
-        "Prefer":        "return=minimal"
-      },
-      body: JSON.stringify(formData)
+      headers: {"Prefer": "return=representation"},
+      body: JSON.stringify(payload)
     });
-    if (!res.ok) throw new Error("HTTP " + res.status);
+    var txt = await res.text();
+    if (!res.ok) throw new Error(txt || ("HTTP " + res.status));
+    var salvo = [];
+    try { salvo = JSON.parse(txt || "[]"); } catch(e) {}
+    await notificarGestoresAdmissao(formData, salvo && salvo[0] && salvo[0].id);
     showSuccess(formData.protocolo);
   } catch (e) {
     console.error("Erro ao enviar:", e);
-    // Mesmo com erro de rede, exibe sucesso local (protocolo gerado)
-    // Remover este comportamento quando Supabase estiver configurado
+    salvarAdmissaoPendente(formData, e.message);
     showSuccess(formData.protocolo);
   }
 }
@@ -1344,133 +1244,8 @@ function showSuccess(p) {
   document.getElementById("success-page").style.display     = "block";
   window.scrollTo(0, 0);
 }
-
-var ultimaFichaEnviada = null;
-var FOCCO_SUPABASE_URL = "https://nambhrizjnhebqgfztux.supabase.co";
-var FOCCO_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hbWJocml6am5oZWJxZ2Z6dHV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNDUzMDIsImV4cCI6MjA5NjkyMTMwMn0.AeBCJetQQugrpDAaOPrEYgHor9irmosN8EWogCtPzSo";
-
-async function foccoRest(path, options) {
-  var headers = Object.assign({apikey:FOCCO_SUPABASE_KEY,Authorization:"Bearer "+FOCCO_SUPABASE_KEY,"Content-Type":"application/json"}, (options && options.headers) || {});
-  var resp = await fetch(FOCCO_SUPABASE_URL + path, Object.assign({}, options || {}, {headers:headers}));
-  if (!resp.ok) throw new Error("Supabase " + resp.status + " em " + path);
-  if (resp.status === 204) return null;
-  var txt = await resp.text();
-  return txt ? JSON.parse(txt) : null;
-}
-
-async function salvarAdmissaoOnline(dados) {
-  var payload = {dados:dados,empresa_cnpj:dados.empresa_cnpj||dados.cnpj||null,funcionario_nome:dados.nome||null,protocolo:dados.protocolo||null,status:"recebido",created_at:new Date().toISOString()};
-  try {
-    await foccoRest("/rest/v1/admissoes_funcionarios", {method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify(payload)});
-  } catch(e) {
-    localStorage.setItem("focco_admissao_funcionario_envio_pendente", JSON.stringify(dados));
-    throw e;
-  }
-}
-
-async function notificarGestoresAdmissao(dados) {
-  var gestores = await foccoRest("/rest/v1/profiles?select=id&perfil=eq.gestor&ativo=eq.true", {method:"GET"});
-  var titulo = "Nova ficha de admissao recebida";
-  var mensagem = (dados.nome || "Funcionario") + " - " + (dados.empresa || "Empresa nao informada") + " - Protocolo " + dados.protocolo;
-  var agora = new Date().toISOString();
-  var regs = (gestores || []).map(function(g){return {usuario_id:g.id,titulo:titulo,mensagem:mensagem,demanda_id:null,tipo:"admissao_funcionario",lida:false,created_at:agora};});
-  if (regs.length) await foccoRest("/rest/v1/notificacoes", {method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify(regs)});
-}
-
-function nomeArquivoFicha(ext) {
-  var d = ultimaFichaEnviada || collectData();
-  var nome = String(d.nome || "funcionario").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/gi,"-").replace(/^-|-$/g,"").toLowerCase();
-  return "focco-admissao-" + String(d.protocolo || "sem-protocolo").toLowerCase() + "-" + (nome || "funcionario") + "." + ext;
-}
-
-function baixarArquivo(nome, conteudo, tipo) {
-  var blob = new Blob([conteudo], {type:tipo});
-  var url = URL.createObjectURL(blob);
-  var a = document.createElement("a");
-  a.href = url; a.download = nome; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-}
-
-function htmlEsc(v) { return String(v == null ? "" : v).replace(/[&<>"']/g, function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m];}); }
-
-function baixarFichaJSON() {
-  var dados = ultimaFichaEnviada || collectData();
-  baixarArquivo(nomeArquivoFicha("json"), JSON.stringify(dados, null, 2), "application/json;charset=utf-8");
-}
-
-function baixarFichaCSV() {
-  var dados = ultimaFichaEnviada || collectData();
-  var chaves = Object.keys(dados);
-  var escCsv = function(v){return "\"" + String(v == null ? "" : v).replace(/"/g,"\"\"") + "\"";};
-  baixarArquivo(nomeArquivoFicha("csv"), "\ufeff" + chaves.join(";") + "\n" + chaves.map(function(k){return escCsv(dados[k]);}).join(";"), "text/csv;charset=utf-8");
-}
-
-function baixarFichaExcel() {
-  var dados = ultimaFichaEnviada || collectData();
-  var linhas = Object.entries(dados).map(function(p){return "<tr><td>"+htmlEsc(p[0])+"</td><td>"+htmlEsc(p[1])+"</td></tr>";}).join("");
-  baixarArquivo(nomeArquivoFicha("xls"), '<html><head><meta charset="utf-8"></head><body><table border="1"><thead><tr><th>Campo</th><th>Valor</th></tr></thead><tbody>'+linhas+'</tbody></table></body></html>', "application/vnd.ms-excel;charset=utf-8");
-}
-
-function montarResumoDominio() {
-  var d = ultimaFichaEnviada || collectData();
-  return ["FICHA DE ADMISSAO DE FUNCIONARIO - FOCCO","Protocolo: "+(d.protocolo||""),"Empresa: "+(d.empresa||""),"Nome: "+(d.nome||""),"CPF: "+(d.cpf||""),"Nascimento: "+(d.nascimento||""),"RG: "+(d.rg||""),"Telefone: "+(d.celular||d.telefone||""),"Email: "+(d.email||""),"Endereco: "+[d.logradouro,d.numero,d.bairro,d.cidade,d.uf,d.cep].filter(Boolean).join(", "),"Cargo: "+(d.cargo||""),"Data admissao: "+(d.data_admissao||""),"Salario: "+(d.salario||""),"Banco: "+(d.banco||""),"Agencia: "+(d.agencia||""),"Conta: "+(d.conta||""),"PIX: "+(d.pix||""),"Observacoes: "+(d.observacoes||"")].join("\n");
-}
-
-async function copiarResumoDominio() {
-  var texto = montarResumoDominio();
-  try { await navigator.clipboard.writeText(texto); alert("Resumo copiado para colar no Dominio."); }
-  catch(e) { prompt("Copie o resumo:", texto); }
-}
-
-function gerarFichaPDF() {
-  var dados = ultimaFichaEnviada || collectData();
-  var linhas = Object.entries(dados).map(function(p){return "<tr><th>"+htmlEsc(p[0])+"</th><td>"+htmlEsc(p[1])+"</td></tr>";}).join("");
-  var html = '<!doctype html><html><head><meta charset="utf-8"><title>Ficha de admissao</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#1e293b}h1{font-size:22px;margin:0 0 6px}p{color:#64748b;margin:0 0 18px}table{width:100%;border-collapse:collapse;font-size:12px}th,td{border:1px solid #e2e8f0;padding:8px;text-align:left;vertical-align:top}th{width:220px;background:#f8fafc}@media print{button{display:none}}</style></head><body><button onclick="window.print()" style="padding:10px 14px;margin-bottom:16px">Imprimir / Salvar PDF</button><h1>Ficha de Admissao de Funcionario - Focco</h1><p>Protocolo '+htmlEsc(dados.protocolo||"")+'</p><table>'+linhas+'</table></body></html>';
-  var w = window.open("", "_blank"); w.document.open(); w.document.write(html); w.document.close();
-}
-
-function salvarRascunhoLocal() { try { localStorage.setItem("focco_admissao_funcionario_rascunho", JSON.stringify(collectData())); } catch(e) {} }
-function limparRascunhoLocal() { try { localStorage.removeItem("focco_admissao_funcionario_rascunho"); } catch(e) {} }
-
-submitForm = async function() {
-  if (!validateAllRequired()) {
-    var camposT1 = ["nome","nascimento","sexo","cep","celular","cpf"];
-    var erroT1 = camposT1.some(function(id){var el=document.getElementById(id);return el && (!el.value.trim() || el.classList.contains("error"));});
-    goTab(erroT1 ? 0 : 2);
-    return;
-  }
-  var btn = document.getElementById("btn-submit");
-  btn.classList.add("loading"); btn.textContent = "Enviando ficha..."; btn.disabled = true;
-  var formData = collectData();
-  formData.origem = "focco-admissao-funcionario";
-  ultimaFichaEnviada = formData;
-  localStorage.setItem("focco_admissao_funcionario_ultima", JSON.stringify(formData));
-  try {
-    await salvarAdmissaoOnline(formData);
-    await notificarGestoresAdmissao(formData);
-    localStorage.setItem("focco_admissao_funcionario_status_envio", "online");
-  } catch(e) {
-    console.warn("Envio online indisponivel, mantendo arquivo local:", e);
-    localStorage.setItem("focco_admissao_funcionario_status_envio", "arquivo_local");
-  }
-  limparRascunhoLocal();
-  baixarFichaJSON();
-  showSuccess(formData.protocolo);
-  btn.classList.remove("loading"); btn.textContent = "✓ Enviar Ficha"; btn.disabled = false;
-};
-
-var _showSuccessOriginal = showSuccess;
-showSuccess = function(p) {
-  _showSuccessOriginal(p);
-  var st = localStorage.getItem("focco_admissao_funcionario_status_envio");
-  var statusEl = document.getElementById("status-envio-online");
-  if (statusEl) {
-    statusEl.textContent = st === "online" ? "Ficha recebida online pelo escritorio. Voce tambem pode guardar o arquivo baixado." : "Nao foi possivel confirmar o envio online. Envie o arquivo baixado ao escritorio.";
-    statusEl.style.color = st === "online" ? "#16a34a" : "#7c4a00";
-  }
-};
-
-document.addEventListener("input", salvarRascunhoLocal);
-document.addEventListener("change", salvarRascunhoLocal);
 </script>
 </body>
 </html>
+
+

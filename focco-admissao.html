@@ -480,7 +480,7 @@ body{
           </div>
           <div class="field">
             <label for="ctps_uf">UF</label>
-            <select id="ctps_uf" name="ctps_uf"><option value="">UF</option><option>AC</option><option>AL</option><option>AM</option><option>AP</option><option>BA</option><option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option><option>MG</option><option>MS</option><option>MT</option><option>PA</option><option>PB</option><option>PE</option><option>PI</option><option>PR</option><option>RJ</option><option>RN</option><option>RO</option><option>RR</option><option>RS</option><option>SC</option><option>SE</option><option>SP</option><option>TO</option>_MG</select>
+            <select id="ctps_uf" name="ctps_uf"><option value="">UF</option><option>AC</option><option>AL</option><option>AM</option><option>AP</option><option>BA</option><option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option><option>MG</option><option>MS</option><option>MT</option><option>PA</option><option>PB</option><option>PE</option><option>PI</option><option>PR</option><option>RJ</option><option>RN</option><option>RO</option><option>RR</option><option>RS</option><option>SC</option><option>SE</option><option>SP</option><option>TO</option></select>
           </div>
         </div>
         <div class="form-row col-1">
@@ -496,14 +496,22 @@ body{
           <div class="field">
             <label for="cnh_numero">CNH — Número</label>
             <input type="text" id="cnh_numero" name="cnh_numero" placeholder="Número da CNH">
+            <span class="error-msg" id="err-cnh_numero">Campo obrigatório</span>
           </div>
           <div class="field">
             <label for="cnh_categoria">Categoria</label>
             <select id="cnh_categoria" name="cnh_categoria">
               <option value="">Selecione...</option>
-              <option>A</option><option>B</option><option>AB</option>
-              <option>C</option><option>D</option><option>E</option>
+              <option>ACC</option>
+              <option>A</option><option>B</option><option>C</option><option>D</option><option>E</option>
+              <option>AB</option><option>AC</option><option>AD</option><option>AE</option>
             </select>
+            <span class="error-msg" id="err-cnh_categoria">Campo obrigatório</span>
+          </div>
+          <div class="field">
+            <label for="cnh_validade">Validade da CNH</label>
+            <input type="date" id="cnh_validade" name="cnh_validade">
+            <span class="error-msg" id="err-cnh_validade">Campo obrigatório</span>
           </div>
         </div>
         <div class="form-row col-1">
@@ -544,7 +552,7 @@ body{
           </div>
           <div class="field">
             <label for="uf">UF</label>
-            <select id="uf" name="uf"><option value="">UF</option><option>AC</option><option>AL</option><option>AM</option><option>AP</option><option>BA</option><option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option><option>MG</option><option>MS</option><option>MT</option><option>PA</option><option>PB</option><option>PE</option><option>PI</option><option>PR</option><option>RJ</option><option>RN</option><option>RO</option><option>RR</option><option>RS</option><option>SC</option><option>SE</option><option>SP</option><option>TO</option>_MG</select>
+            <select id="uf" name="uf"><option value="">UF</option><option>AC</option><option>AL</option><option>AM</option><option>AP</option><option>BA</option><option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option><option>MG</option><option>MS</option><option>MT</option><option>PA</option><option>PB</option><option>PE</option><option>PI</option><option>PR</option><option>RJ</option><option>RN</option><option>RO</option><option>RR</option><option>RS</option><option>SC</option><option>SE</option><option>SP</option><option>TO</option></select>
           </div>
         </div>
         <div class="form-row col-2-1">
@@ -911,11 +919,16 @@ function validateAllRequired() {
   var t1 = [required("nome"), required("nascimento"), required("sexo"),
              required("cep"), required("celular"), validateCPF()];
   var t3 = [required("data_admissao"), required("funcao")];
+  var cnhPossui = document.querySelector("input[name=cnh_possui]:checked");
+  var cnhOk = true;
+  if (cnhPossui && cnhPossui.value === "sim") {
+    cnhOk = [required("cnh_numero"), required("cnh_categoria"), required("cnh_validade")].every(Boolean);
+  }
   var lgpd    = document.getElementById("lgpd");
   var errLgpd = document.getElementById("err-lgpd");
   var lgpdOk  = lgpd.checked;
   errLgpd.style.display = lgpdOk ? "none" : "block";
-  return empresaOk && t1.every(Boolean) && t3.every(Boolean) && lgpdOk;
+  return empresaOk && t1.every(Boolean) && t3.every(Boolean) && cnhOk && lgpdOk;
 }
 
 // ── MÁSCARAS ─────────────────────────────────────────────────────
@@ -1022,8 +1035,16 @@ function toggleCTPS() {
     document.querySelector("input[name=ctps_tipo]:checked").value !== "fisica");
 }
 function toggleCNH() {
-  document.getElementById("cnh-fields").classList.toggle("hidden",
-    document.querySelector("input[name=cnh_possui]:checked").value !== "sim");
+  var mostrar = document.querySelector("input[name=cnh_possui]:checked").value === "sim";
+  document.getElementById("cnh-fields").classList.toggle("hidden", !mostrar);
+  if (!mostrar) {
+    ["cnh_numero", "cnh_categoria", "cnh_validade"].forEach(function(id){
+      var el = document.getElementById(id);
+      var err = document.getElementById("err-" + id);
+      if (el) el.classList.remove("error");
+      if (err) err.classList.remove("show");
+    });
+  }
 }
 function togglePCD() {
   document.getElementById("pcd-fields").classList.toggle("hidden",
@@ -1226,8 +1247,5 @@ function showSuccess(p) {
 </script>
 </body>
 </html>
-
-
-
 
 
