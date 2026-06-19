@@ -134,7 +134,7 @@ async function carregarOperacionalSupabase(){
   FoccoCore.sbFetch('operacional_responsaveis','select=*&order=operacional_codigo.asc'),
   FoccoCore.sbFetch('operacional_coleta','select=*&order=operacional_codigo.asc'),
   FoccoCore.sbFetch('operacional_obrigacoes','select=*&order=operacional_codigo.asc'),
-  FoccoCore.sbFetch('operacional_procedimentos_cliente','select=*&eq.ativo=true&order=operacional_codigo.asc'),
+  FoccoCore.sbFetch('operacional_procedimentos_cliente','select=*&ativo=eq.true&order=operacional_codigo.asc'),
   FoccoCore.sbFetch('operacional_pendencias_importacao','select=*&order=created_at.desc')
  ]);
  const nomePorCodigo=new Map(clientes.map(c=>[String(c.codigo),c.razao_social_planilha||c.razao_receita||c.nome_fantasia||'']));
