@@ -940,7 +940,7 @@ function primeiraAbaComErro() {
     var el = document.getElementById(id);
     var err = document.getElementById("err-" + id);
     return (el && el.classList.contains("error")) || (err && err.classList.contains("show"));
-  });
+  }) || !!document.querySelector("input[name^='dep_cpf_'].error");
   if (erroAba1) return 0;
   var erroAba3 = aba3.some(function(id) {
     var el = document.getElementById(id);
@@ -960,6 +960,8 @@ function validateAllRequired() {
   var cepOk = required("cep"); if (!cepOk) faltando.push("CEP");
   var celularOk = required("celular"); if (!celularOk) faltando.push("Celular principal");
   var cpfOk = validateCPF(); if (!cpfOk) faltando.push("CPF válido");
+  var depsCpf = validateDependentesCPF();
+  if (!depsCpf.ok) faltando.push("CPF válido dos dependentes");
   var dataAdmOk = required("data_admissao"); if (!dataAdmOk) faltando.push("Data de admissão");
   var funcaoOk = required("funcao"); if (!funcaoOk) faltando.push("Função / Cargo");
   var cnhPossui = document.querySelector("input[name=cnh_possui]:checked");
@@ -975,7 +977,7 @@ function validateAllRequired() {
   var lgpdOk  = lgpd.checked;
   errLgpd.style.display = lgpdOk ? "none" : "block";
   if (!lgpdOk) faltando.push("Aceite da declaração LGPD");
-  var ok = empresaOk && nomeOk && nascOk && sexoOk && cepOk && celularOk && cpfOk && dataAdmOk && funcaoOk && cnhOk && lgpdOk;
+  var ok = empresaOk && nomeOk && nascOk && sexoOk && cepOk && celularOk && cpfOk && depsCpf.ok && dataAdmOk && funcaoOk && cnhOk && lgpdOk;
   setSubmitAlert(ok ? [] : faltando);
   return ok;
 }
@@ -993,18 +995,38 @@ function validateCPF() {
   var el  = document.getElementById("cpf");
   var err = document.getElementById("err-cpf");
   var v   = el.value.replace(/[^0-9]/g, "");
-  if (!v) { el.classList.add("error"); err.classList.add("show"); return false; }
-  // Verifica dígitos verificadores
-  if (v.length !== 11 || /^(\d)\1+$/.test(v)) { el.classList.add("error"); err.classList.add("show"); return false; }
+  if (!v || !cpfValido(v)) { el.classList.add("error"); err.classList.add("show"); return false; }
+  el.classList.remove("error"); err.classList.remove("show"); return true;
+}
+
+function cpfValido(valor) {
+  var v = String(valor || "").replace(/[^0-9]/g, "");
+  if (v.length !== 11 || /^(\d)\1+$/.test(v)) return false;
   var soma = 0, resto;
   for (var i = 0; i < 9; i++) soma += +v[i] * (10 - i);
   resto = (soma * 10) % 11; if (resto === 10 || resto === 11) resto = 0;
-  if (resto !== +v[9]) { el.classList.add("error"); err.classList.add("show"); return false; }
+  if (resto !== +v[9]) return false;
   soma = 0;
   for (var i = 0; i < 10; i++) soma += +v[i] * (11 - i);
   resto = (soma * 10) % 11; if (resto === 10 || resto === 11) resto = 0;
-  if (resto !== +v[10]) { el.classList.add("error"); err.classList.add("show"); return false; }
-  el.classList.remove("error"); err.classList.remove("show"); return true;
+  return resto === +v[10];
+}
+
+function validateDependenteCPF(input) {
+  var el = typeof input === "string" ? document.querySelector("[name='" + input + "']") : input;
+  if (!el) return true;
+  var err = el.parentElement ? el.parentElement.querySelector(".dep-cpf-error") : null;
+  var v = el.value.replace(/[^0-9]/g, "");
+  var ok = !v || cpfValido(v);
+  el.classList.toggle("error", !ok);
+  if (err) err.classList.toggle("show", !ok);
+  return ok;
+}
+
+function validateDependentesCPF() {
+  var inputs = Array.prototype.slice.call(document.querySelectorAll("input[name^='dep_cpf_']"));
+  var invalidos = inputs.filter(function(input) { return !validateDependenteCPF(input); });
+  return {ok: invalidos.length === 0, total: invalidos.length};
 }
 
 function maskPhone(el) {
@@ -1132,8 +1154,9 @@ function addDependente() {
       '<div class="field"><label>Data de Nascimento</label>' +
         '<input type="date" name="dep_nascimento_' + depCount + '"></div>' +
       '<div class="field"><label>CPF do Dependente</label>' +
-        '<input type="text" name="dep_cpf_' + depCount + '" placeholder="000.000.000-00"' +
-        ' maxlength="14" oninput="maskCPF(this)"></div>' +
+      '<input type="text" name="dep_cpf_' + depCount + '" placeholder="000.000.000-00"' +
+        ' maxlength="14" oninput="maskCPF(this)" onblur="validateDependenteCPF(this)">' +
+        '<span class="error-msg dep-cpf-error">CPF inválido</span></div>' +
     '</div>';
   document.getElementById("dependentes-container").appendChild(div);
 }
