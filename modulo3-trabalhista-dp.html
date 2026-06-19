@@ -129,7 +129,9 @@ async function carregarAdmissoesRecebidas(){
     el.innerHTML=fichasAdmissao.map((f,i)=>{
       const d=f.dados||{};
       const data=f.created_at?new Date(f.created_at).toLocaleString('pt-BR'):'';
-      return `<div class="item"><div class="item-top"><input type="checkbox" class="chk-ficha" value="${i}" aria-label="Selecionar ficha de ${esc(d.nome||f.funcionario_nome||'funcionario')}"><div><b>${esc(d.nome||f.funcionario_nome||'Funcionario sem nome')}</b><span>${esc(d.empresa||'Empresa nao informada')} - ${esc(f.protocolo||d.protocolo||'sem protocolo')} - ${data}</span></div></div><div class="actions"><button class="btn" onclick="verFicha(${i})">Ver detalhes</button><button class="btn" onclick="baixarFicha(${i})">Baixar JSON</button><button class="btn" onclick="copiarFicha(${i})">Copiar resumo</button><button class="btn" onclick="copiarDominioFicha(${i})">Copiar Dominio</button><button class="btn" onclick="imprimirFichaCompleta(${i})">Imprimir ficha completa</button><button class="btn" onclick="gerarPDFFicha(${i})">PDF Dominio</button></div></div>`;
+      const nome = d.nome||f.funcionario_nome||'Funcionario sem nome';
+      const empresa = d.empresa||'Empresa nao informada';
+      return `<div class="item"><div class="item-top"><div><b>${esc(nome)}</b><span>${esc(empresa)} <label style="display:inline-flex;align-items:center;gap:5px;margin-left:8px;color:var(--text);font-weight:700"><input type="checkbox" class="chk-ficha" value="${i}" aria-label="Selecionar ficha de ${esc(nome)}"> selecionar</label> - ${esc(f.protocolo||d.protocolo||'sem protocolo')} - ${data}</span></div></div><div class="actions"><button class="btn" onclick="verFicha(${i})">Ver detalhes</button><button class="btn" onclick="copiarFicha(${i})">Copiar resumo</button><button class="btn" onclick="copiarDominioFicha(${i})">Copiar Dominio</button><button class="btn" onclick="imprimirFichaCompleta(${i})">Imprimir ficha completa</button><button class="btn" onclick="gerarPDFFicha(${i})">PDF ficha completa</button></div></div>`;
     }).join('');
     renderPreviewDominio();
   }catch(e){
@@ -217,11 +219,44 @@ function resumoFicha(i){
 
 function verFicha(i){alert(resumoFicha(i));}
 
+const GRAU_INSTRUCAO_LABELS = {
+  '1':'Analfabeto',
+  '2':'Fundamental Incompleto',
+  '3':'Fundamental Completo',
+  '4':'Médio Incompleto',
+  '5':'Médio Completo',
+  '6':'Superior Incompleto',
+  '7':'Superior Completo',
+  '8':'Pós-Graduação / Especialização',
+  '9':'Mestrado',
+  '10':'Doutorado / PhD'
+};
+
+function formatarDataBR(v){
+  if(!v) return v;
+  const s = String(v).trim();
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ].*)?$/);
+  if(m) return `${m[3]}/${m[2]}/${m[1]}`;
+  return s;
+}
+
+function formatarValorFicha(key, v){
+  if(v === true) return 'SIM';
+  if(v === false) return 'NAO';
+  if(v == null || v === '') return '-';
+  if(key === 'grau_instrucao') v = GRAU_INSTRUCAO_LABELS[String(v)] || v;
+  if(/data|nascimento|validade|admissao/i.test(key)) v = formatarDataBR(v);
+  return String(v).toLocaleUpperCase('pt-BR');
+}
+
+function valorDependente(key, v){
+  if(v == null || v === '') return '';
+  return formatarValorFicha(key, v);
+}
+
 function valorFicha(d, key){
   const v = d && d[key];
-  if(v === true) return 'Sim';
-  if(v === false) return 'Nao';
-  return v == null || v === '' ? '-' : String(v);
+  return formatarValorFicha(key, v);
 }
 
 function campoFicha(label, value){
@@ -236,15 +271,18 @@ function secaoFicha(titulo, campos){
 
 function htmlFichaCompleta(f){
   const d = fichaDados(f);
-  const protocolo = f.protocolo || d.protocolo || '-';
+  const protocolo = formatarValorFicha('protocolo', f.protocolo || d.protocolo || '-');
   const enviado = f.created_at ? new Date(f.created_at).toLocaleString('pt-BR') : (d.data_envio ? new Date(d.data_envio).toLocaleString('pt-BR') : '-');
-  const dependentes = Object.keys(d).filter(k=>/^dep_\d+_nome$/.test(k)).map(k=>{
-    const n = k.match(/dep_(\d+)_nome/)[1];
+  const depIds = Array.from(new Set(Object.keys(d).map(k=>{
+    const m = k.match(/^dep_(?:nome|cpf|nascimento|parentesco)_(\d+)$/) || k.match(/^dep_(\d+)_(?:nome|cpf|nascimento|parentesco)$/);
+    return m ? m[1] : null;
+  }).filter(Boolean)));
+  const dependentes = depIds.map(n=>{
     return [
-      d[`dep_${n}_nome`],
-      d[`dep_${n}_cpf`],
-      d[`dep_${n}_nascimento`],
-      d[`dep_${n}_parentesco`]
+      valorDependente('dep_nome', d[`dep_nome_${n}`] || d[`dep_${n}_nome`]),
+      valorDependente('dep_cpf', d[`dep_cpf_${n}`] || d[`dep_${n}_cpf`]),
+      valorDependente('dep_nascimento', d[`dep_nascimento_${n}`] || d[`dep_${n}_nascimento`]),
+      valorDependente('dep_parentesco', d[`dep_parentesco_${n}`] || d[`dep_${n}_parentesco`])
     ].filter(Boolean).join(' | ');
   }).filter(Boolean);
 
@@ -344,7 +382,7 @@ function abrirPDF(rows,titulo){
 
 function gerarPDFAdmissoes(){abrirPDF(linhasDominio(),'Admissoes recebidas - Focco');}
 
-function gerarPDFFicha(i){abrirPDF([linhaDominio(fichasAdmissao[i])],'Ficha de admissao - Focco');}
+function gerarPDFFicha(i){imprimirFichaCompleta(i);}
 
 carregarAdmissoesRecebidas();
 </script>
