@@ -5,10 +5,247 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Focco - Modulo 2 - Central de Operacoes</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<style>:root{--accent:#059669;--accent-pale:#05966914}</style>
-<style>:root{--bg:#F7F7F5;--surface:#fff;--surface2:#F1F1EF;--border:#E8E8E5;--text:#1C1C1A;--text2:#6B6B67;--text3:#A3A39E;--accent:#2563EB;--accent-h:#1D4ED8;--accent-pale:#EFF6FF;--sidebar-w:244px;--hdr:52px;--sh:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04)}*{box-sizing:border-box;margin:0;padding:0}body{font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}.app{display:flex;min-height:100vh}.sidebar{width:var(--sidebar-w);background:var(--surface);border-right:1px solid var(--border);position:fixed;inset:0 auto 0 0;overflow:auto}.brand{padding:14px 12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border)}.brand-icon{width:34px;height:34px;background:var(--accent);border-radius:9px;display:grid;place-items:center;color:#fff;font-weight:800}.brand b{display:block;font-size:14px}.brand span{display:block;font-size:10px;color:var(--text3)}.sb-section{padding:12px 14px 4px;font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.08em}.nav{display:flex;align-items:center;gap:8px;margin:1px 6px;padding:7px 10px;border-radius:7px;color:var(--text2);text-decoration:none;font-size:13px;font-weight:500}.nav:hover{background:var(--surface2);color:var(--text)}.nav.active{background:var(--accent-pale);color:var(--accent);font-weight:700}.nav .ni{width:24px;text-align:center;font-size:11px;font-weight:800}.topbar{position:fixed;left:var(--sidebar-w);right:0;top:0;height:var(--hdr);background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;padding:0 20px;z-index:10}.top-title{font-size:15px;font-weight:700;flex:1}.main{margin-left:var(--sidebar-w);margin-top:var(--hdr);padding:28px;min-height:calc(100vh - var(--hdr));width:100%}.ph{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:22px}.ph h1{font-size:22px;line-height:1.2}.ph p{font-size:13px;color:var(--text3);margin-top:4px}.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:7px;border:1px solid var(--border);background:var(--surface);color:var(--text);font:600 13px Inter;cursor:pointer;text-decoration:none;white-space:nowrap}.btn:hover{background:var(--surface2)}.btn-p{background:var(--accent);border-color:var(--accent);color:#fff}.btn-p:hover{background:var(--accent-h)}.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}.kcard{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;box-shadow:var(--sh);min-height:96px}.kcard .ki{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;background:var(--accent-pale);margin-bottom:10px;color:var(--accent);font-size:11px;font-weight:800}.kcard .kv{font-size:26px;font-weight:800}.kcard .kl{font-size:12px;color:var(--text3)}.cols{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:var(--sh)}.ch{padding:14px 16px;border-bottom:1px solid var(--border);font-weight:800}.cb{padding:16px;color:var(--text2)}.actions{display:flex;gap:8px;flex-wrap:wrap}.module-strip{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}.module-strip a{font-size:12px}@media(max-width:980px){.sidebar{display:none}.topbar{left:0}.main{margin-left:0}.kpi-grid,.cols{grid-template-columns:1fr}.ph{flex-direction:column}}</style>
+<style>
+:root{--bg:#F7F7F5;--surface:#fff;--surface2:#F1F1EF;--border:#E8E8E5;--border2:#D0D0CC;--text:#1C1C1A;--text2:#6B6B67;--text3:#A3A39E;--accent:#2563EB;--accent-h:#1D4ED8;--accent-pale:#EFF6FF;--green:#059669;--green-pale:#ECFDF5;--amber:#D97706;--amber-pale:#FFFBEB;--red:#DC2626;--red-pale:#FEF2F2;--purple:#7C3AED;--purple-pale:#F5F3FF;--navy:#111827;--sky:#0EA5E9;--sky-pale:#F0F9FF;--sidebar-w:244px;--hdr:52px;--r:8px;--rl:12px;--sh:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);--sh-md:0 4px 12px rgba(0,0,0,.08)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+button,input,select,textarea{font:inherit}
+.app{display:flex;min-height:100vh}
+.sidebar{width:var(--sidebar-w);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:100;overflow-y:auto;overflow-x:hidden}
+.brand{padding:14px 12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);margin-bottom:4px}
+.brand-icon{width:34px;height:34px;background:var(--accent);border-radius:9px;display:grid;place-items:center;color:#fff;font-weight:800;font-size:15px}
+.brand b{display:block;font-size:14px;letter-spacing:-.2px}.brand span{display:block;font-size:10px;color:var(--text3);margin-top:1px}
+.sb-section{padding:10px 14px 3px;font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.08em}
+.nav{display:flex;align-items:center;gap:8px;margin:1px 6px;padding:7px 10px;border-radius:7px;color:var(--text2);text-decoration:none;font-size:13px;font-weight:500;transition:all .1s;user-select:none}
+.nav:hover{background:var(--surface2);color:var(--text)}
+.nav.active{background:var(--accent-pale);color:var(--accent);font-weight:700}
+.nav .ni{width:20px;text-align:center;font-size:15px;flex-shrink:0;opacity:.85}.nav.active .ni{opacity:1}
+.module-nav{background:linear-gradient(90deg,var(--module-pale),transparent);border-left:3px solid var(--module-color);margin-left:6px;border-radius:0 7px 7px 0}
+.sb-foot{margin-top:auto;padding:10px 6px;border-top:1px solid var(--border)}.user-card{display:flex;align-items:center;gap:9px;padding:8px;border-radius:8px}.u-av{width:30px;height:30px;border-radius:8px;background:var(--accent);display:grid;place-items:center;color:#fff;font-size:11px;font-weight:800}.u-name{font-size:13px;font-weight:700}.u-role{font-size:10px;color:var(--text3)}
+.topbar{position:fixed;left:var(--sidebar-w);right:0;top:0;height:var(--hdr);background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;padding:0 20px;z-index:90}
+.top-title{font-size:15px;font-weight:700;flex:1;letter-spacing:-.2px}
+.main{margin-left:var(--sidebar-w);margin-top:var(--hdr);padding:28px;min-height:calc(100vh - var(--hdr));width:100%}
+.ph{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px}
+.ph h1{font-size:22px;line-height:1.2}.ph p{font-size:13px;color:var(--text3);margin-top:4px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 13px;border-radius:7px;border:1px solid var(--border);background:var(--surface);color:var(--text2);font-weight:600;font-size:13px;cursor:pointer;text-decoration:none;white-space:nowrap;transition:all .12s}
+.btn:hover{background:var(--surface2);border-color:var(--border2)}.btn-p{background:var(--accent);border-color:var(--accent);color:#fff}.btn-p:hover{background:var(--accent-h);border-color:var(--accent-h);transform:translateY(-1px);box-shadow:var(--sh)}
+.btn-blue{background:var(--blue);border-color:var(--blue);color:#fff}.btn-danger{background:var(--red-pale);border-color:#FECACA;color:#991B1B}
+.actions{display:flex;gap:8px;flex-wrap:wrap}.module-strip{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}.module-strip a{font-size:12px}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}.kcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:18px;box-shadow:none;min-height:104px;position:relative;overflow:hidden;transition:all .15s}.kcard:hover{transform:translateY(-2px);box-shadow:var(--sh-md);border-color:var(--border2)}.kcard::before{content:'';position:absolute;top:0;left:0;right:0;height:2.5px;background:var(--accent)}.kcard.kg::before{background:var(--green)}.kcard.ka::before{background:var(--amber)}.kcard.kr::before{background:var(--red)}.kcard .ki{width:36px;height:36px;border-radius:9px;display:grid;place-items:center;background:var(--accent-pale);margin-bottom:14px;color:var(--accent);font-size:14px;font-weight:800}.kcard .kv{font-size:28px;font-weight:800;line-height:1}.kcard .kl{font-size:12px;color:var(--text3);margin-top:5px;font-weight:500}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 14px}.tab{border:1px solid var(--border);background:var(--surface);border-radius:999px;padding:8px 12px;color:var(--text2);font-size:12px;font-weight:800;cursor:pointer}.tab.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.panel{display:none}.panel.active{display:block}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);box-shadow:none;overflow:hidden;margin-bottom:16px}.ch{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;justify-content:space-between}.ch b{font-size:14px}.ch span{font-size:12px;color:var(--text3);font-weight:500}.cb{padding:18px}
+.toolbar{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px}.search{display:flex;gap:8px;align-items:center;flex:1;min-width:260px}.search input,.search select,.field input,.field select,.field textarea{width:100%;border:1px solid var(--border);border-radius:7px;background:#fff;padding:8px 10px;color:var(--text);outline:none}.search input:focus,.search select:focus,.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-pale)}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.field label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--text3);font-weight:800;margin-bottom:4px}.field.full{grid-column:1/-1}.field.two{grid-column:span 2}
+.table-wrap{overflow:auto;border:1px solid var(--border);border-radius:10px}table{width:100%;border-collapse:collapse;min-width:920px;background:#fff}th,td{padding:10px 11px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}th{font-size:11px;color:var(--text3);text-transform:uppercase;background:#FAFAF9;letter-spacing:.04em}td{font-size:13px}.row-actions{display:flex;gap:6px;flex-wrap:wrap}.mini{font-size:11px;padding:5px 8px;border-radius:6px}.badge{display:inline-flex;align-items:center;border-radius:999px;padding:3px 8px;font-size:11px;font-weight:800;background:var(--surface2);color:var(--text2)}.badge.ok{background:#DCFCE7;color:#166534}.badge.warn{background:#FEF3C7;color:#92400E}.badge.bad{background:#FEE2E2;color:#991B1B}.empty{padding:34px;text-align:center;color:var(--text3);border:1px dashed var(--border);border-radius:10px;background:#fff}.hint{font-size:12px;color:var(--text3);margin-top:6px}
+.drawer{position:fixed;inset:0;background:rgba(15,23,42,.38);display:none;z-index:30;align-items:stretch;justify-content:flex-end}.drawer.open{display:flex}.drawer-panel{width:min(760px,100%);background:var(--surface);height:100%;overflow:auto;box-shadow:-16px 0 32px rgba(0,0,0,.18)}.drawer-head{position:sticky;top:0;background:var(--surface);border-bottom:1px solid var(--border);padding:16px;display:flex;align-items:center;justify-content:space-between;z-index:1}.drawer-body{padding:16px}
+.import-box{border:1px dashed var(--border);border-radius:10px;padding:12px;background:#fff}.import-box code{font-size:12px;background:var(--surface2);padding:2px 5px;border-radius:5px}
+@media(max-width:980px){.sidebar{display:none}.topbar{left:0}.main{margin-left:0}.kpi-grid,.grid{grid-template-columns:1fr}.field.two{grid-column:1}.ph{flex-direction:column}table{min-width:760px}}
+</style>
 </head>
 <body>
-<div class="app"><aside class="sidebar"><div class="brand"><div class="brand-icon">F</div><div><b>Focco</b><span>Sistema Operacional</span></div></div><div class="sb-section">Principal</div><a class="nav" href="index.html"><span class="ni">CX</span>Minha Caixa</a><a class="nav" href="index.html"><span class="ni">DM</span>Demandas</a><div class="sb-section">Modulos</div><a class="nav " href="index.html"><span class="ni">M1</span>M1 Hub</a><a class="nav active" href="central_operacoes.html"><span class="ni">M2</span>M2 Central</a><a class="nav " href="modulo3-trabalhista-dp.html"><span class="ni">M3</span>M3 Trabalhista</a><a class="nav " href="modulo4-financeiro.html"><span class="ni">M4</span>M4 Financeiro</a><a class="nav " href="modulo5-gestao-documentos.html"><span class="ni">M5</span>M5 Documentos</a><a class="nav " href="modulo6-area-cliente.html"><span class="ni">M6</span>M6 Cliente</a><a class="nav " href="modulo7-gestao-estrategica.html"><span class="ni">M7</span>M7 Estrategia</a><a class="nav " href="modulo8-comunicacao-whatsapp.html"><span class="ni">M8</span>M8 Comunicacao</a><a class="nav " href="modulo9-focco-ia.html"><span class="ni">M9</span>M9 IA</a><a class="nav " href="modulo10-meu-focco-mobile.html"><span class="ni">M10</span>M10 Mobile</a><a class="nav " href="modulo11-focco-redes-sociais.html"><span class="ni">M11</span>M11 Redes</a></aside><header class="topbar"><div class="top-title">Modulo 2 - Central de Operacoes</div><a class="btn" href="index.html">Voltar</a><a class="btn btn-p" href="index.html">Abrir Hub de Demandas</a></header><main class="main"><section class="ph"><div><h1>Central de Operacoes</h1><p>Organizacao operacional do escritorio: filas, processos, prioridades e execucao.</p></div><div class="actions"><a class="btn btn-p" href="index.html">Abrir Hub de Demandas</a></div></section><nav class="module-strip"><a class="btn " href="index.html">M1 Hub</a><a class="btn btn-p" href="central_operacoes.html">M2 Central</a><a class="btn " href="modulo3-trabalhista-dp.html">M3 Trabalhista</a><a class="btn " href="modulo4-financeiro.html">M4 Financeiro</a><a class="btn " href="modulo5-gestao-documentos.html">M5 Documentos</a><a class="btn " href="modulo6-area-cliente.html">M6 Cliente</a><a class="btn " href="modulo7-gestao-estrategica.html">M7 Estrategia</a><a class="btn " href="modulo8-comunicacao-whatsapp.html">M8 Comunicacao</a><a class="btn " href="modulo9-focco-ia.html">M9 IA</a><a class="btn " href="modulo10-meu-focco-mobile.html">M10 Mobile</a><a class="btn " href="modulo11-focco-redes-sociais.html">M11 Redes</a></nav><section class="kpi-grid"><div class="kcard"><div class="ki">OP</div><div class="kv">0</div><div class="kl">Operacoes ativas</div></div><div class="kcard"><div class="ki">FL</div><div class="kv">0</div><div class="kl">Filas abertas</div></div><div class="kcard"><div class="ki">AL</div><div class="kv">0</div><div class="kl">Alertas operacionais</div></div><div class="kcard"><div class="ki">OK</div><div class="kv">0%</div><div class="kl">Execucao do dia</div></div></section><section class="cols"><div class="card"><div class="ch">Painel operacional</div><div class="cb">Visao das rotinas em andamento, gargalos e pendencias por area.</div></div><div class="card"><div class="ch">Fluxos de trabalho</div><div class="cb">Padronizacao dos passos das rotinas para reduzir perda de informacao.</div></div><div class="card"><div class="ch">Prioridades</div><div class="cb">Classificacao do que precisa de decisao, acao imediata ou acompanhamento.</div></div></section></main></div>
+<div class="app">
+<aside class="sidebar">
+  <div class="brand"><div class="brand-icon">F</div><div><b>Focco</b><span>Sistema Operacional</span></div></div>
+  <div class="sb-section">Principal</div>
+  <a class="nav" href="index.html"><span class="ni">⊞</span>Dashboard</a>
+  <a class="nav" href="index.html"><span class="ni">📥</span>Minha Caixa</a>
+  <a class="nav active" href="central_operacoes.html"><span class="ni">⚙</span>Central de Operações</a>
+  <a class="nav" href="index.html"><span class="ni">📅</span>Central de Agenda</a>
+  <a class="nav" href="index.html"><span class="ni">🗓️</span>Calendário Fiscal</a>
+  <div class="sb-section">Cadastros fixos</div>
+  <a class="nav" href="index.html"><span class="ni">👥</span>Clientes</a>
+  <a class="nav" href="index.html"><span class="ni">🏢</span>Departamentos</a>
+  <div class="sb-section">Gestão</div>
+  <a class="nav" href="index.html"><span class="ni">👤</span>Usuários</a>
+  <a class="nav" href="index.html"><span class="ni">📊</span>Relatórios</a>
+  <div class="sb-section">Módulos</div>
+  <a class="nav module-nav" style="--module-color:#4F46E5;--module-pale:#EEF2FF" href="index.html"><span class="ni">🏠</span><span>Módulo 1 — Hub de Demandas</span></a>
+  <a class="nav module-nav active" style="--module-color:#059669;--module-pale:#ECFDF5" href="central_operacoes.html"><span class="ni">⚙</span><span>Módulo 2 — Central de Operações</span></a>
+  <a class="nav module-nav" style="--module-color:#7C3AED;--module-pale:#F5F3FF" href="modulo3-trabalhista-dp.html"><span class="ni">👷</span><span>Módulo 3 — Trabalhista (DP)</span></a>
+  <a class="nav module-nav" style="--module-color:#D97706;--module-pale:#FFF7ED" href="modulo4-financeiro.html"><span class="ni">💰</span><span>Módulo 4 — Financeiro</span></a>
+  <a class="nav module-nav" style="--module-color:#2563EB;--module-pale:#EFF6FF" href="modulo5-gestao-documentos.html"><span class="ni">📁</span><span>Módulo 5 — Gestão de Documentos</span></a>
+  <a class="nav module-nav" style="--module-color:#059669;--module-pale:#ECFDF5" href="modulo6-area-cliente.html"><span class="ni">👤</span><span>Módulo 6 — Área do Cliente</span></a>
+  <a class="nav module-nav" style="--module-color:#DB2777;--module-pale:#FDF2F8" href="modulo7-gestao-estrategica.html"><span class="ni">📊</span><span>Módulo 7 — Gestão Estratégica</span></a>
+  <a class="nav module-nav" style="--module-color:#0D9488;--module-pale:#F0FDFA" href="modulo8-comunicacao-whatsapp.html"><span class="ni">💬</span><span>Módulo 8 — Comunicação</span></a>
+  <a class="nav module-nav" style="--module-color:#8B5CF6;--module-pale:#F5F3FF" href="modulo9-focco-ia.html"><span class="ni">🤖</span><span>Módulo 9 — Focco IA</span></a>
+  <a class="nav module-nav" style="--module-color:#0284C7;--module-pale:#EFF6FF" href="modulo10-meu-focco-mobile.html"><span class="ni">📱</span><span>Módulo 10 — Meu Focco</span></a>
+  <a class="nav module-nav" style="--module-color:#E11D48;--module-pale:#FFF1F2" href="modulo11-focco-redes-sociais.html"><span class="ni">🌐</span><span>Módulo 11 — Redes Sociais</span></a>
+  <div class="sb-foot"><div class="user-card"><div class="u-av" id="sbAv">EO</div><div><div class="u-name" id="sbNome">Focco</div><div class="u-role" id="sbPerfil">Sistema Operacional</div></div></div></div>
+</aside>
+<header class="topbar"><div class="top-title">Módulo 2 - Central de Operações</div><div class="search"><span style="color:var(--text3);font-size:13px">🔍</span><input type="text" id="busca-topo" placeholder="Busca inteligente..." oninput="buscaInteligente(this.value)"></div><button class="btn" onclick="openDrawer('importar')">Importar</button><button class="btn btn-p" onclick="openDrawer('cliente')">+ Novo</button></header>
+<main class="main">
+  <section class="ph">
+    <div><h1>Central de Operações</h1><p>Cadastro operacional conectado aos dados fixos do sistema: clientes, usuarios, departamentos, responsaveis e rotinas.</p></div>
+    <div class="actions"><button class="btn btn-p" onclick="openDrawer('cliente')">Novo cliente</button><button class="btn" onclick="openDrawer('importar')">Importar base</button><button class="btn" onclick="exportarJSON()">Exportar JSON</button></div>
+  </section>
+  <nav class="module-strip"><a class="btn" href="index.html">Dashboard</a><a class="btn" href="index.html">Minha Caixa</a><a class="btn btn-p" href="central_operacoes.html">Central de Operações</a><a class="btn" href="index.html">Clientes fixo</a><a class="btn" href="index.html">Departamentos</a></nav>
+  <section class="kpi-grid">
+    <div class="kcard"><div class="ki">CL</div><div class="kv" id="k-clientes">0</div><div class="kl">Clientes operacionais</div></div>
+    <div class="kcard kg"><div class="ki">CF</div><div class="kv" id="k-clientes-fixo">0</div><div class="kl">Clientes fixos na base</div></div>
+    <div class="kcard ka"><div class="ki">PR</div><div class="kv" id="k-proc">0</div><div class="kl">Procedimentos ativos</div></div>
+    <div class="kcard kr"><div class="ki">RV</div><div class="kv" id="k-revisar">0</div><div class="kl">Revisões e duplicidades</div></div>
+  </section>
+  <section class="card"><div class="ch"><div><b>Dados compartilhados entre módulos</b><br><span>Clientes, usuários e departamentos devem ser uma base única para todo o sistema.</span></div><button class="btn" onclick="auditarClientesFixos()">Auditar clientes</button></div><div class="cb"><div id="shared-audit" class="hint">Aguardando leitura da base fixa de clientes.</div></div></section>
+  <div class="tabs">
+    <button class="tab active" data-tab="clientes">Clientes x Operação</button>
+    <button class="tab" data-tab="responsaveis">Responsaveis</button>
+    <button class="tab" data-tab="coleta">Coleta</button>
+    <button class="tab" data-tab="obrigacoes">Obrigacoes</button>
+    <button class="tab" data-tab="procedimentos">Procedimentos</button>
+    <button class="tab" data-tab="pendencias">Pendencias</button>
+  </div>
+  <section class="panel active" id="tab-clientes">
+    <div class="card"><div class="ch"><div><b>Clientes x Operação</b><br><span>Vincula a base fixa de clientes aos regimes, atividades, responsáveis e procedimentos operacionais.</span></div><button class="btn btn-p" onclick="openDrawer('cliente')">Cadastrar vínculo</button></div><div class="cb"><div class="toolbar"><div class="search"><input id="busca-clientes" placeholder="Buscar por cliente, CNPJ, regime ou procedimento" oninput="render()"><select id="filtro-regime" onchange="render()"><option value="">Todos os regimes</option><option>MEI</option><option>Simples Nacional</option><option>Lucro Presumido</option><option>Lucro Real</option><option>Produtor Rural</option><option>Sem Fins Lucrativos</option></select></div></div><div id="clientes-view"></div></div></div>
+  </section>
+  <section class="panel" id="tab-responsaveis"><div class="card"><div class="ch"><div><b>Responsaveis por cliente</b><br><span>Quem faz fiscal, folha, coleta, contabil, atendimento e auditoria.</span></div></div><div class="cb"><div class="toolbar"><div class="search"><input id="busca-responsaveis" placeholder="Buscar responsavel, cliente ou setor" oninput="render()"></div></div><div id="responsaveis-view"></div></div></div></section>
+  <section class="panel" id="tab-coleta"><div class="card"><div class="ch"><div><b>Coleta de documentos</b><br><span>Como buscar notas, extratos, boletos e documentos de cada cliente.</span></div></div><div class="cb"><div class="toolbar"><div class="search"><input id="busca-coleta" placeholder="Buscar metodo, cliente, origem ou responsavel" oninput="render()"></div></div><div id="coleta-view"></div></div></div></section>
+  <section class="panel" id="tab-obrigacoes"><div class="card"><div class="ch"><div><b>Obrigacoes fiscais</b><br><span>Parametros que alimentam os checklists fiscais.</span></div></div><div class="cb"><div class="toolbar"><div class="search"><input id="busca-obrigacoes" placeholder="Buscar cliente ou obrigacao fiscal" oninput="render()"></div></div><div id="obrigacoes-view"></div></div></div></section>
+  <section class="panel" id="tab-procedimentos"><div class="card"><div class="ch"><div><b>Procedimentos vinculados</b><br><span>Rotinas mensais sugeridas por cliente.</span></div><button class="btn" onclick="gerarProcedimentosPadrao()">Gerar padrao</button></div><div class="cb"><div class="toolbar"><div class="search"><input id="busca-procedimentos" placeholder="Buscar procedimento, cliente, prazo ou periodicidade" oninput="render()"></div></div><div id="procedimentos-view"></div></div></div></section>
+  <section class="panel" id="tab-pendencias"><div class="card"><div class="ch"><div><b>Pendencias de importacao</b><br><span>O que precisa ser revisado antes de gerar tarefas automaticas.</span></div></div><div class="cb"><div class="toolbar"><div class="search"><input id="busca-pendencias" placeholder="Buscar pendencia, cliente, status ou tipo" oninput="render()"></div></div><div id="pendencias-view"></div></div></div></section>
+</main>
+</div>
+
+<div class="drawer" id="drawer">
+  <div class="drawer-panel">
+    <div class="drawer-head"><b id="drawer-title">Cadastro</b><button class="btn" onclick="closeDrawer()">Fechar</button></div>
+    <div class="drawer-body" id="drawer-body"></div>
+  </div>
+</div>
+
+<script src="js/focco-core.js"></script>
+<script src="js/focco-cadastros-compartilhados.js"></script>
+<script>
+const STORAGE_KEY='focco_cadastro_operacional_v1';
+const emptyState={clientes:[],responsaveis:[],coleta:[],obrigacoes:[],procedimentos:[],pendencias:[]};
+let state=loadState();
+let fonteDados='local';
+function loadState(){try{return {...emptyState,...JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}')}}catch(e){return {...emptyState}}}
+function saveState(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state));render()}
+function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function id(){return 'op_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7)}
+function simNao(v){return v===true?'Sim':v===false?'Nao':(v||'Nao')}
+function badge(v){const s=String(v||'');const cls=/ativa|sim|ok|concluido/i.test(s)?'ok':/revisar|pend|inapta|baixada/i.test(s)?'warn':'';return `<span class="badge ${cls}">${esc(s||'-')}</span>`}
+function getCliente(codigo){return state.clientes.find(c=>String(c.codigo)===String(codigo))||{}}
+async function carregarOperacionalSupabase(){
+ if(!window.FoccoCore?.sbFetch)return false;
+ const [clientes,responsaveis,coleta,obrigacoes,procedimentos,pendencias]=await Promise.all([
+  FoccoCore.sbFetch('operacional_clientes','select=*&order=razao_social_planilha.asc'),
+  FoccoCore.sbFetch('operacional_responsaveis','select=*&order=operacional_codigo.asc'),
+  FoccoCore.sbFetch('operacional_coleta','select=*&order=operacional_codigo.asc'),
+  FoccoCore.sbFetch('operacional_obrigacoes','select=*&order=operacional_codigo.asc'),
+  FoccoCore.sbFetch('operacional_procedimentos_cliente','select=*&eq.ativo=true&order=operacional_codigo.asc'),
+  FoccoCore.sbFetch('operacional_pendencias_importacao','select=*&order=created_at.desc')
+ ]);
+ const nomePorCodigo=new Map(clientes.map(c=>[String(c.codigo),c.razao_social_planilha||c.razao_receita||c.nome_fantasia||'']));
+ state={
+  clientes:clientes.map(c=>({
+   id:c.id,codigo:c.codigo,nome:c.razao_social_planilha||c.razao_receita||c.nome_fantasia||'',
+   documento:c.documento,regime:c.regime,atividade:c.atividade,municipio:c.municipio,uf:c.uf,
+   procedimento:'',revisar:c.pendencia?'Sim':'Nao',observacao:c.pendencia||'',cliente_id:c.cliente_id,
+   situacao:c.situacao_receita||c.situacao_sistema
+  })),
+  responsaveis:responsaveis.map(r=>({codigo:r.operacional_codigo,cliente:nomePorCodigo.get(String(r.operacional_codigo))||'',fiscal:r.responsavel_fiscal,folha:r.responsavel_folha,coleta:r.responsavel_coleta,contabil:r.responsavel_contabil,atendimento:r.responsavel_atendimento,auditor:r.gestor_auditor,observacao:r.observacao})),
+  coleta:coleta.map(r=>({codigo:r.operacional_codigo,cliente:nomePorCodigo.get(String(r.operacional_codigo))||'',metodo:r.metodo_coleta,diaLimite:r.dia_limite_coleta,origem:r.origem_sistema||r.forma_original,responsavel:r.responsavel_coleta,observacao:r.observacao||r.mensagem_padrao,pastaFiscal:r.pasta_fiscal,pastaFolha:r.pasta_folha})),
+  obrigacoes:obrigacoes.map(r=>({codigo:r.operacional_codigo,cliente:nomePorCodigo.get(String(r.operacional_codigo))||'',sintegra:simNao(r.sintegra),destda:simNao(r.destda),dapi:simNao(r.dapi),efd:simNao(r.efd_contribuicoes),sped:simNao(r.sped_fiscal),mit:simNao(r.mit),tomador:r.declaracao_tomador,prestador:r.declaracao_prestador,simples:simNao(r.simples),mei:simNao(r.mei),observacao:r.observacao})),
+  procedimentos:procedimentos.map(r=>({codigo:r.operacional_codigo,cliente:nomePorCodigo.get(String(r.operacional_codigo))||'',procedimento:r.procedimento,periodicidade:r.periodicidade,prazo:r.prazo_padrao,auditoria:simNao(r.exige_auditoria),enviaCliente:simNao(r.envia_cliente),observacao:r.observacao})),
+  pendencias:pendencias.map(p=>({codigo:p.operacional_codigo,cliente:nomePorCodigo.get(String(p.operacional_codigo))||'',tipo:p.tipo,descricao:p.descricao,status:p.status||'Aberta'}))
+ };
+ state.clientes.forEach(c=>{const p=state.procedimentos.find(x=>String(x.codigo)===String(c.codigo));if(p)c.procedimento=p.procedimento});
+ localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+ fonteDados='supabase';
+ return true;
+}
+async function inicializar(){
+ document.getElementById('shared-audit').innerHTML='Carregando dados do Supabase...';
+ try{await window.FoccoCadastros?.carregarBasicosDoSupabase?.()}catch(e){console.warn('Base fixa indisponivel',e)}
+ try{await carregarOperacionalSupabase()}catch(e){fonteDados='local';console.warn('Operacional Supabase indisponivel',e)}
+ render();
+}
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.tab,.panel').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.getElementById('tab-'+b.dataset.tab).classList.add('active');aplicarBuscaTopoNaAba();render()}))
+function table(headers,rows,emptyMsg){if(!rows.length)return `<div class="empty">${emptyMsg||'Nenhum registro cadastrado ainda.'}</div>`;return `<div class="table-wrap"><table><thead><tr>${headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>`}
+function buscaValor(id){return (document.getElementById(id)?.value||'').trim().toLowerCase()}
+function textoBusca(...values){return values.join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()}
+function combinaBusca(q,...values){if(!q)return true;const hay=textoBusca(...values);return textoBusca(q).split(/\s+/).filter(Boolean).every(p=>hay.includes(p))}
+function buscaInteligente(value){
+ const active=document.querySelector('.tab.active')?.dataset.tab||'clientes';
+ const map={clientes:'busca-clientes',responsaveis:'busca-responsaveis',coleta:'busca-coleta',obrigacoes:'busca-obrigacoes',procedimentos:'busca-procedimentos',pendencias:'busca-pendencias'};
+ const target=document.getElementById(map[active]||'busca-clientes');
+ if(target)target.value=value;
+ render();
+}
+function aplicarBuscaTopoNaAba(){const v=document.getElementById('busca-topo')?.value||'';if(v)buscaInteligente(v)}
+function filteredClientes(){const q=buscaValor('busca-clientes');const reg=document.getElementById('filtro-regime')?.value||'';return state.clientes.filter(c=>combinaBusca(q,c.codigo,c.nome,c.documento,c.regime,c.atividade,c.procedimento,c.municipio,c.uf)&&(!reg||c.regime===reg))}
+function render(){
+ const fixos=window.FoccoCadastros?.clientes?.()||[];
+ const audit=auditOperacionalEFixo();
+ document.getElementById('k-clientes').textContent=state.clientes.length;
+ document.getElementById('k-clientes-fixo').textContent=fixos.length;
+ document.getElementById('k-proc').textContent=state.procedimentos.length;
+ document.getElementById('k-revisar').textContent=state.pendencias.length+state.clientes.filter(c=>c.revisar==='Sim').length+audit.total;
+ renderClientes();renderResponsaveis();renderColeta();renderObrigacoes();renderProcedimentos();renderPendencias();
+ renderSharedAudit(audit,fixos);
+}
+function auditOperacionalEFixo(){
+ const fixos=window.FoccoCadastros?.clientes?.()||[];
+ const porDoc=new Map();
+ const add=(doc,origem,cliente)=>{const key=(window.FoccoCore?.onlyDigits?.(doc)||String(doc||'').replace(/\D+/g,''));if(!key)return;porDoc.set(key,[...(porDoc.get(key)||[]),{origem,cliente}])};
+ fixos.forEach(c=>add(c.cpf_cnpj||c.documento||c.cnpj_cpf,'Clientes fixo',c.nome||c.razao_social));
+ state.clientes.forEach(c=>add(c.documento,'Operacional',c.nome));
+ const documentos=[...porDoc.entries()].filter(([,v])=>v.length>1);
+ const internos=window.FoccoCadastros?.auditoriaClientesDuplicados?.(fixos)||{total:0,documentos:[],nomes:[]};
+ return {total:documentos.length+internos.total,cruzados:documentos,internos};
+}
+function renderSharedAudit(audit,fixos){
+ const el=document.getElementById('shared-audit');if(!el)return;
+ const usuarios=window.FoccoCadastros?.usuarios?.()||[];
+ const depts=window.FoccoCadastros?.departamentos?.()||[];
+ if(!fixos.length&&!usuarios.length&&!depts.length){el.innerHTML='Base fixa ainda nao carregada neste navegador. Quando o Hub carregar clientes, usuarios e departamentos, o Modulo 2 passa a usar a mesma origem.';return}
+ const problemas=audit.total?`<span class="badge warn">${audit.total} possivel(is) duplicidade(s)</span>`:'<span class="badge ok">Sem duplicidade aparente</span>';
+ const origem=fonteDados==='supabase'?'<span class="badge ok">Dados operacionais no Supabase</span>':'<span class="badge warn">Usando base local deste navegador</span>';
+ el.innerHTML=`<div class="row-actions"><span class="badge ok">${fixos.length} clientes fixos</span><span class="badge ok">${usuarios.length} usuarios</span><span class="badge ok">${depts.length} departamentos</span>${problemas}${origem}</div><div class="hint">A Central de Operacoes deve vincular rotinas ao cliente fixo, nao criar outro cliente separado.</div>`;
+}
+function auditarClientesFixos(){
+ const audit=auditOperacionalEFixo();
+ if(!audit.total){alert('Nao encontrei duplicidades aparentes entre a base fixa e a base operacional.');return}
+ const lista=audit.cruzados.slice(0,12).map(([doc,items])=>doc+' - '+items.map(i=>i.origem+': '+i.cliente).join(' | ')).join('\n');
+ alert('Possiveis duplicidades encontradas:\n\n'+(lista||'Verifique nomes/documentos repetidos na base fixa.'));
+}
+function renderClientes(){
+ const rows=filteredClientes().map(c=>`<tr><td><b>${esc(c.codigo)}</b></td><td><b>${esc(c.nome)}</b><div class="hint">${esc(c.documento||'')}</div></td><td>${badge(c.regime)}</td><td>${esc(c.atividade||'-')}</td><td>${esc(c.municipio||'-')}/${esc(c.uf||'')}</td><td>${esc(c.procedimento||'-')}</td><td>${badge(c.revisar||'Nao')}</td><td><div class="row-actions"><button class="btn mini" onclick="editarCliente('${esc(c.id)}')">Editar</button><button class="btn mini" onclick="verCliente('${esc(c.id)}')">Ver</button></div></td></tr>`);
+ document.getElementById('clientes-view').innerHTML=table(['Codigo','Cliente','Regime','Atividade','Cidade','Procedimento','Revisar','Acoes'],rows,'Nenhum cliente operacional cadastrado. Use Importar base ou Novo cliente.');
+}
+function renderResponsaveis(){const q=buscaValor('busca-responsaveis');const rows=state.responsaveis.filter(r=>combinaBusca(q,r.codigo,getCliente(r.codigo).nome,r.cliente,r.fiscal,r.folha,r.coleta,r.contabil,r.atendimento,r.auditor)).map(r=>`<tr><td><b>${esc(r.codigo)}</b></td><td>${esc(getCliente(r.codigo).nome||r.cliente||'-')}</td><td>${esc(r.fiscal||'-')}</td><td>${esc(r.folha||'-')}</td><td>${esc(r.coleta||'-')}</td><td>${esc(r.contabil||'-')}</td><td>${esc(r.atendimento||'-')}</td><td>${esc(r.auditor||'-')}</td></tr>`);document.getElementById('responsaveis-view').innerHTML=table(['Codigo','Cliente','Fiscal','Folha','Coleta','Contabil','Atendimento','Auditor'],rows,'Nenhum responsavel encontrado para esta busca.')}
+function renderColeta(){const q=buscaValor('busca-coleta');const rows=state.coleta.filter(r=>combinaBusca(q,r.codigo,getCliente(r.codigo).nome,r.cliente,r.metodo,r.diaLimite,r.origem,r.responsavel,r.observacao)).map(r=>`<tr><td><b>${esc(r.codigo)}</b></td><td>${esc(getCliente(r.codigo).nome||r.cliente||'-')}</td><td>${badge(r.metodo)}</td><td>${esc(r.diaLimite||'-')}</td><td>${esc(r.origem||'-')}</td><td>${esc(r.responsavel||'-')}</td><td>${esc(r.observacao||'')}</td></tr>`);document.getElementById('coleta-view').innerHTML=table(['Codigo','Cliente','Metodo','Dia limite','Origem/Sistema','Responsavel','Observacao'],rows,'Nenhuma coleta encontrada para esta busca.')}
+function renderObrigacoes(){const q=buscaValor('busca-obrigacoes');const rows=state.obrigacoes.filter(r=>combinaBusca(q,r.codigo,getCliente(r.codigo).nome,r.cliente,r.sintegra,r.destda,r.dapi,r.efd,r.sped,r.mit,r.tomador,r.prestador)).map(r=>`<tr><td><b>${esc(r.codigo)}</b></td><td>${esc(getCliente(r.codigo).nome||r.cliente||'-')}</td><td>${badge(r.sintegra)}</td><td>${badge(r.destda)}</td><td>${badge(r.dapi)}</td><td>${badge(r.efd)}</td><td>${badge(r.sped)}</td><td>${badge(r.mit)}</td><td>${badge(r.tomador)}</td><td>${badge(r.prestador)}</td></tr>`);document.getElementById('obrigacoes-view').innerHTML=table(['Codigo','Cliente','SINTEGRA','DESTDA','DAPI','EFD','SPED','MIT','Tomador','Prestador'],rows,'Nenhuma obrigacao encontrada para esta busca.')}
+function renderProcedimentos(){const q=buscaValor('busca-procedimentos');const rows=state.procedimentos.filter(r=>combinaBusca(q,r.codigo,getCliente(r.codigo).nome,r.cliente,r.procedimento,r.periodicidade,r.prazo,r.auditoria,r.enviaCliente)).map(r=>`<tr><td><b>${esc(r.codigo)}</b></td><td>${esc(getCliente(r.codigo).nome||r.cliente||'-')}</td><td>${esc(r.procedimento)}</td><td>${esc(r.periodicidade||'Mensal')}</td><td>${esc(r.prazo||'Dia 20')}</td><td>${badge(r.auditoria||'Sim')}</td><td>${badge(r.enviaCliente||'Sim')}</td></tr>`);document.getElementById('procedimentos-view').innerHTML=table(['Codigo','Cliente','Procedimento','Periodicidade','Prazo','Auditoria','Envia cliente'],rows,'Nenhum procedimento encontrado para esta busca.')}
+function renderPendencias(){const q=buscaValor('busca-pendencias');const rows=state.pendencias.filter(p=>combinaBusca(q,p.codigo,getCliente(p.codigo).nome,p.cliente,p.tipo,p.descricao,p.status)).map(p=>`<tr><td><b>${esc(p.codigo)}</b></td><td>${esc(getCliente(p.codigo).nome||p.cliente||'-')}</td><td>${esc(p.tipo||'Revisao')}</td><td>${esc(p.descricao||'')}</td><td>${badge(p.status||'Aberta')}</td></tr>`);document.getElementById('pendencias-view').innerHTML=table(['Codigo','Cliente','Tipo','Descricao','Status'],rows,'Nenhuma pendencia encontrada para esta busca.')}
+function openDrawer(type){const body=document.getElementById('drawer-body');document.getElementById('drawer').classList.add('open');if(type==='importar'){document.getElementById('drawer-title').textContent='Importar base operacional';body.innerHTML=importForm();return}document.getElementById('drawer-title').textContent='Novo cliente operacional';body.innerHTML=clienteForm()}
+function closeDrawer(){document.getElementById('drawer').classList.remove('open')}
+function clienteForm(c={}){
+ return `<form onsubmit="salvarCliente(event,'${esc(c.id||'')}')"><div class="grid">
+ <div class="field"><label>Codigo</label><input name="codigo" required value="${esc(c.codigo||'')}"></div>
+ <div class="field two"><label>Cliente</label><input name="nome" required value="${esc(c.nome||'')}"></div>
+ <div class="field"><label>CNPJ/CPF</label><input name="documento" value="${esc(c.documento||'')}"></div>
+ <div class="field"><label>Regime</label><select name="regime"><option>${esc(c.regime||'Simples Nacional')}</option><option>MEI</option><option>Simples Nacional</option><option>Lucro Presumido</option><option>Lucro Real</option><option>Produtor Rural</option><option>Sem Fins Lucrativos</option></select></div>
+ <div class="field"><label>Atividade</label><select name="atividade"><option>${esc(c.atividade||'Comercio')}</option><option>Comercio</option><option>Servico</option><option>Comercio + Servico</option><option>Industria</option><option>Misto completo</option><option>Revisar</option></select></div>
+ <div class="field"><label>Municipio</label><input name="municipio" value="${esc(c.municipio||'')}"></div>
+ <div class="field"><label>UF</label><input name="uf" value="${esc(c.uf||'MG')}"></div>
+ <div class="field two"><label>Procedimento sugerido</label><input name="procedimento" value="${esc(c.procedimento||'')}"></div>
+ <div class="field"><label>Revisar?</label><select name="revisar"><option>${esc(c.revisar||'Nao')}</option><option>Sim</option><option>Nao</option></select></div>
+ <div class="field full"><label>Observacao</label><textarea name="observacao" rows="4">${esc(c.observacao||'')}</textarea></div>
+ </div><div class="actions" style="margin-top:14px"><button class="btn btn-p" type="submit">Salvar cliente</button><button class="btn" type="button" onclick="closeDrawer()">Cancelar</button></div></form>`
+}
+function salvarCliente(ev,editId){ev.preventDefault();const f=Object.fromEntries(new FormData(ev.target).entries());const item={id:editId||id(),...f};const ix=state.clientes.findIndex(c=>c.id===editId);if(ix>=0)state.clientes[ix]=item;else state.clientes.push(item);criarVinculosPadrao(item);saveState();closeDrawer()}
+function criarVinculosPadrao(c){if(!state.responsaveis.some(r=>r.codigo===c.codigo))state.responsaveis.push({codigo:c.codigo,cliente:c.nome,fiscal:'',folha:'',coleta:'',contabil:'',atendimento:'',auditor:'Edniel'});if(!state.coleta.some(r=>r.codigo===c.codigo))state.coleta.push({codigo:c.codigo,cliente:c.nome,metodo:'Revisar',diaLimite:'5',origem:'',responsavel:'',observacao:''});if(!state.obrigacoes.some(r=>r.codigo===c.codigo))state.obrigacoes.push({codigo:c.codigo,cliente:c.nome,sintegra:'Nao',destda:'Nao',dapi:'Nao',efd:'Nao',sped:'Nao',mit:'Nao',tomador:c.atividade?.includes('Servico')?'Revisar':'Nao',prestador:c.atividade?.includes('Servico')?'Revisar':'Nao'});if(c.procedimento&&!state.procedimentos.some(r=>r.codigo===c.codigo&&r.procedimento===c.procedimento))state.procedimentos.push({codigo:c.codigo,cliente:c.nome,procedimento:c.procedimento,periodicidade:'Mensal',prazo:'Dia 20',auditoria:'Sim',enviaCliente:'Sim'});if(c.revisar==='Sim'&&!state.pendencias.some(p=>p.codigo===c.codigo))state.pendencias.push({codigo:c.codigo,cliente:c.nome,tipo:'Cadastro',descricao:'Cliente marcado para revisao operacional',status:'Aberta'})}
+function editarCliente(editId){const c=state.clientes.find(x=>x.id===editId);document.getElementById('drawer-title').textContent='Editar cliente operacional';document.getElementById('drawer-body').innerHTML=clienteForm(c);document.getElementById('drawer').classList.add('open')}
+function verCliente(editId){const c=state.clientes.find(x=>x.id===editId)||{};const resp=state.responsaveis.find(r=>r.codigo===c.codigo)||{};const col=state.coleta.find(r=>r.codigo===c.codigo)||{};const obr=state.obrigacoes.find(r=>r.codigo===c.codigo)||{};document.getElementById('drawer-title').textContent='Resumo operacional';document.getElementById('drawer-body').innerHTML=`<div class="card"><div class="ch"><b>${esc(c.nome)}</b>${badge(c.regime)}</div><div class="cb"><p><b>Documento:</b> ${esc(c.documento||'-')}</p><p><b>Atividade:</b> ${esc(c.atividade||'-')}</p><p><b>Procedimento:</b> ${esc(c.procedimento||'-')}</p><p><b>Fiscal:</b> ${esc(resp.fiscal||'-')} | <b>Folha:</b> ${esc(resp.folha||'-')} | <b>Auditor:</b> ${esc(resp.auditor||'-')}</p><p><b>Coleta:</b> ${esc(col.metodo||'-')} ate dia ${esc(col.diaLimite||'-')}</p><p><b>Obrigacoes:</b> SINTEGRA ${esc(obr.sintegra||'-')}, DESTDA ${esc(obr.destda||'-')}, EFD ${esc(obr.efd||'-')}, MIT ${esc(obr.mit||'-')}</p></div></div>`;document.getElementById('drawer').classList.add('open')}
+function importForm(){return `<div class="import-box"><b>Importar JSON da base operacional</b><p class="hint">Essa importacao cria vinculos operacionais. A base oficial de Clientes deve continuar unica e compartilhada entre todos os modulos.</p><p class="hint">Nao suba esse JSON para o GitHub, porque ele contem dados reais dos clientes.</p><p class="hint">Formato esperado: um JSON com chaves <code>clientes</code>, <code>responsaveis</code>, <code>coleta</code>, <code>obrigacoes</code>, <code>procedimentos</code> e <code>pendencias</code>.</p><input type="file" id="import-file" accept=".json,application/json" style="margin-top:12px"><div class="actions" style="margin-top:12px"><button class="btn btn-p" onclick="importarJSON()">Importar</button><button class="btn btn-danger" onclick="limparBase()">Limpar base local</button></div></div>`}
+function importarJSON(){const input=document.getElementById('import-file');const file=input?.files?.[0];if(!file){alert('Selecione um arquivo JSON.');return}const reader=new FileReader();reader.onload=()=>{try{const data=JSON.parse(reader.result);state={...emptyState,...data};saveState();closeDrawer();alert('Base importada com sucesso.')}catch(e){alert('Arquivo invalido: '+e.message)}};reader.readAsText(file)}
+function exportarJSON(){const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='cadastro_operacional_focco.json';a.click();URL.revokeObjectURL(a.href)}
+function limparBase(){if(confirm('Limpar a base local deste navegador?')){state={...emptyState};saveState();closeDrawer()}}
+function gerarProcedimentosPadrao(){state.clientes.forEach(c=>{if(c.procedimento&&!state.procedimentos.some(p=>p.codigo===c.codigo&&p.procedimento===c.procedimento)){state.procedimentos.push({codigo:c.codigo,cliente:c.nome,procedimento:c.procedimento,periodicidade:'Mensal',prazo:'Dia 20',auditoria:'Sim',enviaCliente:'Sim'})}});saveState()}
+inicializar();
+</script>
 </body>
 </html>
