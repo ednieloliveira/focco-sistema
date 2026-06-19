@@ -143,6 +143,10 @@ body{
 .field input.error,.field select.error{border-color:var(--red);background:var(--red-light);}
 .field .error-msg{font-size:11px;color:var(--red);display:none;}
 .field .error-msg.show{display:block;}
+.submit-alert{display:none;margin-top:12px;background:var(--red-light);border:1px solid #fecaca;color:#991b1b;border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.45;}
+.submit-alert.show{display:block;}
+.submit-alert b{display:block;margin-bottom:4px;}
+.submit-alert ul{margin:6px 0 0 18px;}
 .field .hint{font-size:11px;color:var(--gray-400);}
 .field textarea{resize:vertical;min-height:80px;}
 .age-badge{
@@ -834,6 +838,7 @@ body{
         Você deve aceitar os termos para enviar.
       </span>
     </div>
+    <div class="submit-alert" id="submit-alert"></div>
 
     <div class="nav-row">
       <button class="btn-nav btn-prev" onclick="goTab(1)">← Anterior</button>
@@ -914,21 +919,65 @@ function required(id) {
   return ok;
 }
 
+function setSubmitAlert(items) {
+  var box = document.getElementById("submit-alert");
+  if (!box) return;
+  if (!items || !items.length) {
+    box.classList.remove("show");
+    box.innerHTML = "";
+    return;
+  }
+  box.innerHTML = "<b>Antes de enviar, confira os campos obrigatórios:</b><ul>" +
+    items.map(function(item) { return "<li>" + item + "</li>"; }).join("") +
+    "</ul>";
+  box.classList.add("show");
+}
+
+function primeiraAbaComErro() {
+  var aba1 = ["nome","nascimento","sexo","cep","celular","cpf","cnh_numero","cnh_categoria","cnh_validade"];
+  var aba3 = ["data_admissao","funcao"];
+  var erroAba1 = aba1.some(function(id) {
+    var el = document.getElementById(id);
+    var err = document.getElementById("err-" + id);
+    return (el && el.classList.contains("error")) || (err && err.classList.contains("show"));
+  });
+  if (erroAba1) return 0;
+  var erroAba3 = aba3.some(function(id) {
+    var el = document.getElementById(id);
+    var err = document.getElementById("err-" + id);
+    return (el && el.classList.contains("error")) || (err && err.classList.contains("show"));
+  });
+  return erroAba3 ? 2 : 2;
+}
+
 function validateAllRequired() {
   var empresaOk = required("empresa");
-  var t1 = [required("nome"), required("nascimento"), required("sexo"),
-             required("cep"), required("celular"), validateCPF()];
-  var t3 = [required("data_admissao"), required("funcao")];
+  var faltando = [];
+  if (!empresaOk) faltando.push("Nome da empresa");
+  var nomeOk = required("nome"); if (!nomeOk) faltando.push("Nome completo");
+  var nascOk = required("nascimento"); if (!nascOk) faltando.push("Data de nascimento");
+  var sexoOk = required("sexo"); if (!sexoOk) faltando.push("Sexo");
+  var cepOk = required("cep"); if (!cepOk) faltando.push("CEP");
+  var celularOk = required("celular"); if (!celularOk) faltando.push("Celular principal");
+  var cpfOk = validateCPF(); if (!cpfOk) faltando.push("CPF válido");
+  var dataAdmOk = required("data_admissao"); if (!dataAdmOk) faltando.push("Data de admissão");
+  var funcaoOk = required("funcao"); if (!funcaoOk) faltando.push("Função / Cargo");
   var cnhPossui = document.querySelector("input[name=cnh_possui]:checked");
   var cnhOk = true;
   if (cnhPossui && cnhPossui.value === "sim") {
-    cnhOk = [required("cnh_numero"), required("cnh_categoria"), required("cnh_validade")].every(Boolean);
+    var cnhNumeroOk = required("cnh_numero"); if (!cnhNumeroOk) faltando.push("Número da CNH");
+    var cnhCategoriaOk = required("cnh_categoria"); if (!cnhCategoriaOk) faltando.push("Categoria da CNH");
+    var cnhValidadeOk = required("cnh_validade"); if (!cnhValidadeOk) faltando.push("Validade da CNH");
+    cnhOk = cnhNumeroOk && cnhCategoriaOk && cnhValidadeOk;
   }
   var lgpd    = document.getElementById("lgpd");
   var errLgpd = document.getElementById("err-lgpd");
   var lgpdOk  = lgpd.checked;
   errLgpd.style.display = lgpdOk ? "none" : "block";
-  return empresaOk && t1.every(Boolean) && t3.every(Boolean) && cnhOk && lgpdOk;
+  if (!lgpdOk) faltando.push("Aceite da declaração LGPD");
+  var ok = empresaOk && nomeOk && nascOk && sexoOk && cepOk && celularOk && cpfOk && dataAdmOk && funcaoOk && cnhOk && lgpdOk;
+  setSubmitAlert(ok ? [] : faltando);
+  return ok;
 }
 
 // ── MÁSCARAS ─────────────────────────────────────────────────────
@@ -1197,12 +1246,9 @@ async function notificarGestoresAdmissao(formData, admissaoId) {
 
 async function submitForm() {
   if (!validateAllRequired()) {
-    // Navega para aba com erro
-    var camposT1 = ["nome","nascimento","sexo","cep","celular","cpf"];
-    var erroT1   = camposT1.some(function(id) {
-      var el = document.getElementById(id); return el && (!el.value.trim() || el.classList.contains("error"));
-    });
-    goTab(erroT1 ? 0 : 2);
+    goTab(primeiraAbaComErro());
+    var alerta = document.getElementById("submit-alert");
+    if (alerta) setTimeout(function(){ alerta.scrollIntoView({behavior:"smooth", block:"center"}); }, 120);
     return;
   }
   var btn = document.getElementById("btn-submit");
@@ -1233,6 +1279,10 @@ async function submitForm() {
     console.error("Erro ao enviar:", e);
     salvarAdmissaoPendente(formData, e.message);
     showSuccess(formData.protocolo);
+  } finally {
+    btn.classList.remove("loading");
+    btn.textContent = "✓ Enviar Ficha";
+    btn.disabled = false;
   }
 }
 
@@ -1247,4 +1297,3 @@ function showSuccess(p) {
 </script>
 </body>
 </html>
-
