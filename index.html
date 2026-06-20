@@ -818,7 +818,6 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
       <option value="sem30">Parada +30 dias</option>
     </select>
   </div>
-
   <div class="card" style="margin-bottom:0">
     <div style="overflow-x:auto">
       <table>
@@ -855,6 +854,7 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
       <input type="file" id="importCliFile" accept=".xlsx,.xls,.csv" style="display:none" onchange="importarClientesExcel(this)">
       <button class="btn btn-s" onclick="exportarExcelClientes()">📊 Exportar</button>
       <button class="btn btn-s btn-er" onclick="limparTodosClientes()" title="Apaga todos os clientes do sistema">🗑️ Limpar base</button>
+      <button class="btn btn-s btn-er" onclick="excluirClientesSelecionados()" title="Exclui apenas os clientes selecionados">🗑️ Selecionados</button>
       <button class="btn btn-p" onclick="abrirModalCliente()">+ Novo Cliente</button>
     </div>
   </div>
@@ -897,7 +897,7 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
   </div>
 
   <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
-    <input class="fi" id="cliBusca" placeholder="🔍 Buscar por nome, CPF/CNPJ, regime..." style="flex:1;min-width:200px;margin-bottom:0" oninput="filtCli()">
+    <input class="fi" id="cliBusca" placeholder="🔍 Busca inteligente: código, nome, CNPJ, IE, regime, cidade, email..." style="flex:1;min-width:200px;margin-bottom:0" oninput="filtCli()">
     <select class="fi" id="cliTipo" style="width:155px;margin-bottom:0" onchange="filtCli()">
       <option value="">Todos os tipos</option>
       <option value="juridica">Pessoa Jurídica</option>
@@ -912,6 +912,18 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
       <option value="produtor_rural">Produtor Rural</option>
       <option value="isento">Isento</option>
     </select>
+    <select class="fi" id="cliClasse" style="width:160px;margin-bottom:0" onchange="filtCli()">
+      <option value="">Todos cadastros</option>
+      <option value="OPERACIONAL">Operacional</option>
+      <option value="EVENTUAL">Eventual</option>
+    </select>
+  </div>
+  <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
+    <button class="btn btn-s" onclick="selecionarClientesVisiveis(true)">Selecionar visíveis</button>
+    <button class="btn btn-s" onclick="selecionarClientesVisiveis(false)">Limpar seleção</button>
+    <button class="btn btn-s" onclick="limparFiltrosClientes()">Limpar filtros</button>
+    <button class="btn btn-p" onclick="consultarCnpjSelecionados()">Consultar CNPJ selecionados</button>
+    <span id="cliSelInfo" style="font-size:12px;color:var(--text3)">0 selecionado(s)</span>
   </div>
 
   <div class="card" style="margin-bottom:0">
@@ -919,13 +931,28 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
       <table>
         <thead>
           <tr>
+            <th style="width:34px"><input type="checkbox" id="cliSelTodos" onchange="selecionarClientesVisiveis(this.checked)"></th>
+            <th style="width:90px">Código</th>
             <th>Nome / Razão Social</th>
             <th>CPF / CNPJ</th>
+            <th>I.E</th>
+            <th>Cadastro</th>
             <th>Tipo</th>
             <th>Regime</th>
+            <th>Receita</th>
             <th>WhatsApp</th>
-            <th>E-mail</th>
-            <th style="width:80px"></th>
+          </tr>
+          <tr>
+            <th></th>
+            <th><select class="fi" id="cliFiltroCodigo" style="min-width:86px;margin:0;padding:6px" onchange="filtCli()"><option value="">Todos</option></select></th>
+            <th><select class="fi" id="cliFiltroNome" style="min-width:240px;margin:0;padding:6px" onchange="filtCli()"><option value="">Todos</option></select></th>
+            <th><select class="fi" id="cliFiltroDoc" style="min-width:150px;margin:0;padding:6px" onchange="filtCli()"><option value="">Todos</option></select></th>
+            <th><select class="fi" id="cliFiltroIE" style="min-width:110px;margin:0;padding:6px" onchange="filtCli()"><option value="">Todos</option></select></th>
+            <th><select class="fi" id="cliFiltroCadastro" style="min-width:120px;margin:0;padding:6px" onchange="filtCli()"><option value="">Todos</option></select></th>
+            <th><select class="fi" id="cliFiltroTipo" style="min-width:90px;margin:0;padding:6px" onchange="filtCli()"><option value="">Todos</option></select></th>
+            <th><select class="fi" id="cliFiltroRegimeTabela" style="min-width:140px;margin:0;padding:6px" onchange="filtCli()"><option value="">Todos</option></select></th>
+            <th><select class="fi" id="cliFiltroReceita" style="min-width:140px;margin:0;padding:6px" onchange="filtCli()"><option value="">Todos</option></select></th>
+            <th><select class="fi" id="cliFiltroWhatsapp" style="min-width:120px;margin:0;padding:6px" onchange="filtCli()"><option value="">Todos</option></select></th>
           </tr>
         </thead>
         <tbody id="cliTabela">
@@ -1622,6 +1649,14 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
     <div class="mh"><div class="mt" id="mCliTit">Novo Cliente</div><button class="mc" onclick="fm('mCli')">×</button></div>
     <div class="mb">
       <input type="hidden" id="mcId">
+      <div style="display:flex;gap:8px;margin-bottom:14px;border-bottom:1px solid var(--border);padding-bottom:10px">
+        <button type="button" class="btn btn-s btn-p" id="mcTabEmpresaBtn" onclick="trocarAbaCliente('empresa')">Empresa</button>
+        <button type="button" class="btn btn-s" id="mcTabAtividadesBtn" onclick="trocarAbaCliente('atividades')">Atividades</button>
+        <button type="button" class="btn btn-s" id="mcTabObsBtn" onclick="trocarAbaCliente('observacoes')">Observações</button>
+        <button type="button" class="btn btn-s" id="mcTabOperBtn" onclick="trocarAbaCliente('operacional')">Dados operacionais</button>
+        <button type="button" class="btn btn-s" id="mcTabHistBtn" onclick="trocarAbaCliente('historico')">Histórico</button>
+      </div>
+      <div id="mcTabEmpresa">
       <div class="fr">
         <div class="fg">
           <label class="fl">CPF / CNPJ</label>
@@ -1640,17 +1675,36 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
       </div>
       <div class="fr">
         <div class="fg"><label class="fl">Nome / Razão Social *</label><input type="text" class="fi" id="mcNome" placeholder="Nome completo ou razão social"></div>
+        <div class="fg"><label class="fl">Código da Empresa</label><input type="text" class="fi" id="mcCodEmp" placeholder="Código interno / Domínio"></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Razão Social Receita</label><input type="text" class="fi" id="mcRazao" placeholder="Razão social conforme Receita"></div>
+        <div class="fg"><label class="fl">Nome Fantasia</label><input type="text" class="fi" id="mcFantasia" placeholder="Nome fantasia"></div>
+      </div>
+      <div class="fr">
         <div class="fg"><label class="fl">Regime Tributário</label>
-          <select class="fi" id="mcReg">
-            <option value="">Não informado</option>
-            <option value="mei">MEI</option>
-            <option value="simples_nacional">Simples Nacional</option>
-            <option value="lucro_presumido">Lucro Presumido</option>
-            <option value="lucro_real">Lucro Real</option>
-            <option value="isento">Isento / Não contribuinte</option>
-            <option value="produtor_rural">Produtor Rural</option>
-          </select>
+          <div style="display:flex;gap:6px">
+            <select class="fi" id="mcReg" style="flex:1;margin:0">
+              <option value="">Não informado</option>
+              <option value="mei">MEI</option>
+              <option value="simples_nacional">Simples Nacional</option>
+              <option value="lucro_presumido">Lucro Presumido</option>
+              <option value="lucro_real">Lucro Real</option>
+              <option value="isento">Isento / Não contribuinte</option>
+              <option value="produtor_rural">Produtor Rural</option>
+            </select>
+            <button type="button" class="btn btn-s" onclick="consultarRegimeCliente()" title="Consulta Simples/MEI pelo CNPJ">Regime</button>
+          </div>
         </div>
+        <div class="fg"><label class="fl">Inscrição Estadual</label><div style="display:flex;gap:6px"><input type="text" class="fi" id="mcIE" placeholder="IE MG com 13 dígitos" maxlength="18" style="flex:1;margin:0" onblur="validarIEMGCampo()"><button type="button" class="btn btn-s" onclick="consultarInscricaoEstadual()" title="Abrir consulta online da IE">IE</button></div><div id="ieStatus" style="font-size:11px;margin-top:4px"></div></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Situação Receita</label><input type="text" class="fi" id="mcSitReceita" placeholder="ATIVA, BAIXADA, INAPTA..."></div>
+        <div class="fg"><label class="fl">Data de Abertura</label><input type="date" class="fi" id="mcAbertura"></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Natureza Jurídica</label><input type="text" class="fi" id="mcNatureza" placeholder="Ex: Empresário Individual, LTDA, Associação..."></div>
+        <div class="fg"><label class="fl">Porte</label><input type="text" class="fi" id="mcPorte" placeholder="ME, EPP, demais..."></div>
       </div>
       <div class="fr">
         <div class="fg"><label class="fl">WhatsApp (com DDD)</label><input type="text" class="fi" id="mcWa" placeholder="34 9 9999-9999"></div>
@@ -1658,16 +1712,47 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
       </div>
       <div class="fr">
         <div class="fg"><label class="fl">E-mail</label><input type="email" class="fi" id="mcEmail" placeholder="email@cliente.com.br"></div>
-        <div class="fg"><label class="fl">Tipo de Cliente</label>
-          <select class="fi" id="mcTC">
-            <option value="urbano">Urbano</option>
-            <option value="rural">Produtor Rural</option>
-            <option value="pf">Pessoa Física</option>
-          </select>
-        </div>
+        <div class="fg"><label class="fl">CEP</label><input type="text" class="fi" id="mcCEP" placeholder="00000-000"></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Município</label><input type="text" class="fi" id="mcMunicipio" placeholder="Cidade"></div>
+        <div class="fg"><label class="fl">UF</label><input type="text" class="fi" id="mcUF" maxlength="2" placeholder="MG"></div>
       </div>
       <div class="fg"><label class="fl">Endereço</label><input type="text" class="fi" id="mcEnd" placeholder="Rua, número, bairro, cidade — MG"></div>
-      <div class="fg"><label class="fl">Observações</label><textarea class="fi" id="mcObs" rows="3" style="resize:vertical" placeholder="Informações adicionais sobre o cliente..."></textarea></div>
+      </div>
+      <div id="mcTabAtividades" style="display:none">
+        <div class="fr">
+          <div class="fg"><label class="fl">CNAE Principal</label><input type="text" class="fi" id="mcCnae" placeholder="Código CNAE"></div>
+          <div class="fg"><label class="fl">Descrição CNAE</label><input type="text" class="fi" id="mcCnaeDesc" placeholder="Descrição da atividade"></div>
+        </div>
+        <div class="fr">
+          <div class="fg"><label class="fl">CNAE Secundário</label><input type="text" class="fi" id="mcCnaeSec" placeholder="Código CNAE secundário"></div>
+          <div class="fg"><label class="fl">Descrição CNAE Secundário</label><input type="text" class="fi" id="mcCnaeSecDesc" placeholder="Descrição da atividade secundária"></div>
+        </div>
+      </div>
+      <div id="mcTabObs" style="display:none">
+        <div class="fg"><label class="fl">Observações</label><textarea class="fi" id="mcObs" rows="8" style="resize:vertical" placeholder="Informações adicionais sobre o cliente..."></textarea></div>
+      </div>
+      <div id="mcTabOperacional" style="display:none">
+        <div class="fr">
+          <div class="fg"><label class="fl">Tipo de Cliente</label>
+            <select class="fi" id="mcTC">
+              <option value="OPERACIONAL">Operacional</option>
+              <option value="EVENTUAL">Eventual</option>
+              <option value="rural">Produtor Rural</option>
+              <option value="pf">Pessoa Física</option>
+            </select>
+          </div>
+          <div class="fg"><label class="fl">Atividade operacional</label><input type="text" class="fi" id="mcAtivOper" placeholder="Comércio, serviço, misto..."></div>
+        </div>
+        <div class="fr">
+          <div class="fg"><label class="fl">Pasta Fiscal</label><input type="text" class="fi" id="mcPastaFiscal" placeholder="Caminho da pasta fiscal"></div>
+          <div class="fg"><label class="fl">Pasta Folha</label><input type="text" class="fi" id="mcPastaFolha" placeholder="Caminho da pasta folha"></div>
+        </div>
+      </div>
+      <div id="mcTabHistorico" style="display:none">
+        <div id="mcHistBody" class="loading">Abra um cliente salvo para ver o histórico.</div>
+      </div>
     </div>
     <div class="mf"><button class="btn btn-s" onclick="fm('mCli')">Cancelar</button><button class="btn btn-p" onclick="salvarCli()">💾 Salvar Cliente</button></div>
   </div>
@@ -3892,6 +3977,57 @@ function verTodasDemCli(){
 // ================================================================
 // 2. CONSULTA CPF/CNPJ — Brasil API (gratuita, sem chave)
 // ================================================================
+let _receitaClienteAtual = null;
+const clientesSelecionados = new Set();
+function trocarAbaCliente(aba){
+  const emp=aba==='empresa';
+  const ativ=aba==='atividades';
+  const obs=aba==='observacoes';
+  const oper=aba==='operacional';
+  const hist=aba==='historico';
+  document.getElementById('mcTabEmpresa').style.display=emp?'block':'none';
+  document.getElementById('mcTabAtividades').style.display=ativ?'block':'none';
+  document.getElementById('mcTabObs').style.display=obs?'block':'none';
+  document.getElementById('mcTabOperacional').style.display=oper?'block':'none';
+  document.getElementById('mcTabHistorico').style.display=hist?'block':'none';
+  document.getElementById('mcTabEmpresaBtn').classList.toggle('btn-p',emp);
+  document.getElementById('mcTabAtividadesBtn').classList.toggle('btn-p',ativ);
+  document.getElementById('mcTabObsBtn').classList.toggle('btn-p',obs);
+  document.getElementById('mcTabOperBtn').classList.toggle('btn-p',oper);
+  document.getElementById('mcTabHistBtn').classList.toggle('btn-p',hist);
+}
+function validarIEMG(ie){
+  const d=String(ie||'').replace(/\D/g,'');
+  return !d || d.length===13;
+}
+function validarIEMGCampo(){
+  const el=document.getElementById('mcIE');
+  const st=document.getElementById('ieStatus');
+  const d=String(el?.value||'').replace(/\D/g,'');
+  if(!d){st.innerHTML='';return true}
+  if(d.length!==13){st.innerHTML='<span style="color:var(--red)">IE/MG deve ter 13 dígitos.</span>';return false}
+  st.innerHTML='<span style="color:var(--green)">IE/MG com 13 dígitos.</span>';
+  return true;
+}
+function consultarInscricaoEstadual(){
+  validarIEMGCampo();
+  window.open('https://www.sintegra.gov.br/', '_blank');
+  toast('Consulta de IE aberta. Após conferir, atualize o campo Inscrição Estadual e salve o cliente.','ok');
+}
+async function consultarRegimeCliente(){
+  const doc=document.getElementById('mcDoc').value.replace(/\D/g,'');
+  if(doc.length!==14){toast('Informe um CNPJ para consultar Simples/MEI.','err');return}
+  try{
+    const r=await fetch(`https://brasilapi.com.br/api/cnpj/v1/${doc}`);
+    if(!r.ok)throw new Error('CNPJ não encontrado');
+    const d=await r.json();
+    _receitaClienteAtual=d;
+    if(d.opcao_pelo_mei) document.getElementById('mcReg').value='mei';
+    else if(d.opcao_pelo_simples) document.getElementById('mcReg').value='simples_nacional';
+    else toast('CNPJ consultado: não consta como Simples/MEI na fonte pública.','ok');
+    document.getElementById('cnpjStatus').innerHTML=`<span style="color:var(--green)">Regime consultado · Simples: ${d.opcao_pelo_simples?'Sim':'Não'} · MEI: ${d.opcao_pelo_mei?'Sim':'Não'}</span>`;
+  }catch(e){toast('Erro ao consultar regime: '+e.message,'err')}
+}
 async function consultarCNPJ() {
   const doc = document.getElementById('mcDoc').value.replace(/\D/g,'');
   const status = document.getElementById('cnpjStatus');
@@ -3919,11 +4055,30 @@ async function consultarCNPJ() {
     clearTimeout(tmr);
     if(!r.ok) throw new Error('CNPJ não encontrado');
     const d = await r.json();
+    _receitaClienteAtual = d;
     
     // Preencher campos automaticamente
     document.getElementById('mcNome').value = d.razao_social || d.nome_fantasia || '';
+    const setVal=(id,val)=>{const el=document.getElementById(id);if(el&&val!=null)el.value=val;};
+    setVal('mcRazao', d.razao_social || '');
+    setVal('mcFantasia', d.nome_fantasia || '');
+    setVal('mcSitReceita', d.descricao_situacao_cadastral || d.situacao_cadastral || '');
+    setVal('mcAbertura', d.data_inicio_atividade || '');
+    setVal('mcNatureza', d.natureza_juridica || '');
+    setVal('mcPorte', d.porte || '');
+    setVal('mcCnae', d.cnae_fiscal ? String(d.cnae_fiscal) : '');
+    setVal('mcCnaeDesc', d.cnae_fiscal_descricao || '');
+    const cnaeSec=(d.cnaes_secundarios||[])[0]||{};
+    setVal('mcCnaeSec', cnaeSec.codigo ? String(cnaeSec.codigo) : '');
+    setVal('mcCnaeSecDesc', cnaeSec.descricao || '');
+    setVal('mcMunicipio', d.municipio || '');
+    setVal('mcUF', d.uf || '');
+    setVal('mcCEP', d.cep ? String(d.cep).replace(/^(\d{5})(\d{3})$/,'$1-$2') : '');
+    const logradouro = d.logradouro || d.descricao_logradouro || d.endereco_logradouro || d.street || '';
+    const tipoLogradouro = d.descricao_tipo_de_logradouro || d.tipo_logradouro || '';
+    const ruaCompleta = [tipoLogradouro, logradouro].filter(Boolean).join(' ').trim();
     const endParts = [
-      [d.descricao_tipo_de_logradouro,d.logradouro].filter(Boolean).join(' '),
+      ruaCompleta,
       d.numero || 's/n',
       d.complemento,
       d.bairro,
@@ -6050,6 +6205,7 @@ async function loadCli(){
     localStorage.setItem('focco_cache_clientes', JSON.stringify(allCli));
   }
   document.getElementById('cliTotal').textContent=`${allCli.length} cliente(s)`;
+  popularFiltrosClientes();
   filtCli();
 }
 
@@ -6265,45 +6421,279 @@ async function limparTodosClientes() {
 }
 
 
+function valorFiltroCliente(id){
+  return document.getElementById(id)?.value || '';
+}
+function textoSelectCliente(v){
+  return String(v||'').trim();
+}
+function labelRegimeCliente(v){
+  const rg={simples_nacional:'Simples Nacional',lucro_presumido:'Lucro Presumido',lucro_real:'Lucro Real',mei:'MEI',isento:'Isento',produtor_rural:'Produtor Rural'};
+  return rg[v] || v || '—';
+}
+function labelTipoPessoaCliente(v){
+  if(v==='juridica')return 'PJ';
+  if(v==='fisica')return 'PF';
+  return v || '—';
+}
+function preencherFiltroCliente(id, valores, primeiroRotulo='Todos', labels={}){
+  const sel=document.getElementById(id);
+  if(!sel)return;
+  const atual=sel.value;
+  const unicos=[...new Set((valores||[]).map(v=>String(v||'').trim()).filter(Boolean))];
+  unicos.sort((a,b)=>a.localeCompare(b,'pt-BR',{numeric:true,sensitivity:'base'}));
+  sel.innerHTML=`<option value="">${primeiroRotulo}</option>`+unicos.map(v=>`<option value="${esc(v)}">${esc(labels[v]||v)}</option>`).join('');
+  sel.value=unicos.includes(atual)?atual:'';
+}
+function popularFiltrosClientes(){
+  const tipoLabels={juridica:'PJ',fisica:'PF'};
+  const cadastroLabels={OPERACIONAL:'Operacional',EVENTUAL:'Eventual'};
+  const whatsappValores=[];
+  if(allCli.some(c=>c.whatsapp))whatsappValores.push('COM');
+  if(allCli.some(c=>!c.whatsapp))whatsappValores.push('SEM');
+  preencherFiltroCliente('cliFiltroCodigo', allCli.map(c=>c.codigo_empresa));
+  preencherFiltroCliente('cliFiltroNome', allCli.map(c=>c.nome||c.razao_social||c.nome_fantasia));
+  preencherFiltroCliente('cliFiltroDoc', allCli.map(c=>c.cpf_cnpj));
+  preencherFiltroCliente('cliFiltroIE', allCli.map(c=>c.inscricao_estadual));
+  preencherFiltroCliente('cliFiltroCadastro', allCli.map(c=>c.tipo_cliente), 'Todos', cadastroLabels);
+  preencherFiltroCliente('cliFiltroTipo', allCli.map(c=>c.tipo_pessoa), 'Todos', tipoLabels);
+  preencherFiltroCliente('cliFiltroRegimeTabela', allCli.map(c=>c.regime_tributario||c.tributacao_original), 'Todos', {
+    simples_nacional:'Simples Nacional',
+    lucro_presumido:'Lucro Presumido',
+    lucro_real:'Lucro Real',
+    mei:'MEI',
+    isento:'Isento',
+    produtor_rural:'Produtor Rural'
+  });
+  preencherFiltroCliente('cliFiltroReceita', allCli.map(c=>c.situacao_receita));
+  preencherFiltroCliente('cliFiltroWhatsapp', whatsappValores, 'Todos', {COM:'Com WhatsApp',SEM:'Sem WhatsApp'});
+}
+function limparFiltrosClientes(){
+  ['cliFiltroCodigo','cliFiltroNome','cliFiltroDoc','cliFiltroIE','cliFiltroCadastro','cliFiltroTipo','cliFiltroRegimeTabela','cliFiltroReceita','cliFiltroWhatsapp'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.value='';
+  });
+  filtCli();
+}
 function filtCli(){
-  const b=document.getElementById('cliBusca').value.toLowerCase();
+  const normBusca=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  const b=normBusca(document.getElementById('cliBusca').value);
+  const fc=textoSelectCliente(valorFiltroCliente('cliFiltroCodigo'));
+  const fn=textoSelectCliente(valorFiltroCliente('cliFiltroNome'));
+  const fd=String(valorFiltroCliente('cliFiltroDoc')).replace(/\D/g,'');
+  const fie=String(valorFiltroCliente('cliFiltroIE')).replace(/\D/g,'');
+  const fCadastro=valorFiltroCliente('cliFiltroCadastro');
+  const fTipo=valorFiltroCliente('cliFiltroTipo');
+  const fRegTabela=valorFiltroCliente('cliFiltroRegimeTabela');
+  const fReceita=valorFiltroCliente('cliFiltroReceita');
+  const fWhats=valorFiltroCliente('cliFiltroWhatsapp');
   const t=document.getElementById('cliTipo').value;
   const reg=document.getElementById('cliRegime')?.value||'';
+  const classe=document.getElementById('cliClasse')?.value||'';
   const f=allCli.filter(c=>{
-    const mb=!b||c.nome.toLowerCase().includes(b)||(c.cpf_cnpj||'').includes(b)||(c.email||'').toLowerCase().includes(b);
-    return mb&&(!t||c.tipo_pessoa===t)&&(!reg||c.regime_tributario===reg);
+    const txt=normBusca([
+      c.codigo_empresa,
+      c.nome,
+      c.razao_social,
+      c.nome_fantasia,
+      c.cpf_cnpj,
+      String(c.cpf_cnpj||'').replace(/\D/g,''),
+      c.inscricao_estadual,
+      c.tipo_cliente,
+      c.tipo_pessoa,
+      c.regime_tributario,
+      c.tributacao_original,
+      c.situacao_receita,
+      c.situacao_sistema,
+      c.atividade_operacional,
+      c.cnae_principal,
+      c.cnae_descricao,
+      c.municipio,
+      c.uf,
+      c.email,
+      c.whatsapp,
+      c.telefone,
+      c.endereco,
+      c.pasta_fiscal,
+      c.pasta_folha,
+      c.observacoes
+    ].join(' '));
+    const termos=b.split(/\s+/).filter(Boolean);
+    const mb=!termos.length||termos.every(p=>txt.includes(p));
+    const okCodigo=!fc||String(c.codigo_empresa||'').trim()===fc;
+    const okNome=!fn||String(c.nome||c.razao_social||c.nome_fantasia||'').trim()===fn;
+    const okDoc=!fd||String(c.cpf_cnpj||'').replace(/\D/g,'')===fd;
+    const okIE=!fie||String(c.inscricao_estadual||'').replace(/\D/g,'')===fie;
+    const okCadastro=!fCadastro||String(c.tipo_cliente||'')===fCadastro;
+    const okTipoTabela=!fTipo||String(c.tipo_pessoa||'')===fTipo;
+    const okRegTabela=!fRegTabela||String(c.regime_tributario||c.tributacao_original||'')===fRegTabela;
+    const okReceita=!fReceita||String(c.situacao_receita||'')===fReceita;
+    const okWhats=!fWhats||(fWhats==='COM'?!!c.whatsapp:!c.whatsapp);
+    return mb&&okCodigo&&okNome&&okDoc&&okIE&&okCadastro&&okTipoTabela&&okRegTabela&&okReceita&&okWhats&&(!t||c.tipo_pessoa===t)&&(!reg||c.regime_tributario===reg)&&(!classe||c.tipo_cliente===classe);
   });
-  const rg={simples_nacional:'Simples Nacional',lucro_presumido:'Lucro Presumido',lucro_real:'Lucro Real',mei:'MEI',isento:'Isento',produtor_rural:'Produtor Rural'};
   document.getElementById('cliTotal').textContent=f.length+' de '+allCli.length+' clientes';
-  document.getElementById('cliTabela').innerHTML=f.length?f.map(c=>`<tr onclick="editCli('${c.id}')"><td><strong style="color:var(--accent)">${c.nome}</strong>${c.tipo_cliente==='rural'?'<span class="tag ta" style="margin-left:6px;font-size:10px">🌾 Rural</span>':''}</td><td style="font-size:12px;color:var(--text3);font-family:monospace">${c.cpf_cnpj||'—'}</td><td><span class="tag ${c.tipo_pessoa==='juridica'?'ts':'tg'}">${c.tipo_pessoa==='juridica'?'PJ':'PF'}</span></td><td style="font-size:12px">${rg[c.regime_tributario]||'—'}</td><td>${c.whatsapp?`<a href="https://wa.me/55${c.whatsapp}" target="_blank" onclick="event.stopPropagation()" style="color:var(--green);font-size:12px">📱 ${c.whatsapp}</a>`:'—'}</td><td style="font-size:12px;color:var(--text3)">${c.email||'—'}</td><td style="display:flex;gap:4px">
-        <button class="btn btn-s" style="padding:4px 10px;font-size:12px" onclick="event.stopPropagation();abrirHistoricoCliente('${c.id}','${c.nome}')">📋 Histórico</button>
-        ${U?.perfil==='gestor'?`<button class="btn btn-er" style="padding:4px 10px;font-size:12px" onclick="event.stopPropagation();excluirCliente('${c.id}','${c.nome}')">🗑️</button>`:''}
-      </td></tr>`).join(''):'<tr><td colspan="6" class="vazio">Nenhum cliente.</td></tr>';}
+  window._clientesVisiveis=f.map(c=>c.id);
+  document.getElementById('cliTabela').innerHTML=f.length?f.map(c=>`<tr onclick="editCli('${c.id}')"><td onclick="event.stopPropagation()"><input type="checkbox" class="cliSel" data-id="${c.id}" ${clientesSelecionados.has(c.id)?'checked':''} onchange="toggleClienteSelecionado('${c.id}',this.checked)"></td><td style="font-size:12px;font-family:monospace;font-weight:800;color:var(--accent)">${c.codigo_empresa||'—'}</td><td><strong style="color:var(--accent)">${c.nome}</strong><div style="font-size:11px;color:var(--text3)">${c.nome_fantasia||c.razao_social||''}</div></td><td style="font-size:12px;color:var(--text3);font-family:monospace">${c.cpf_cnpj||'—'}</td><td style="font-size:12px;color:var(--text3);font-family:monospace">${c.inscricao_estadual||'—'}</td><td><span class="tag ${c.tipo_cliente==='EVENTUAL'?'ta':'tg'}">${c.tipo_cliente||'—'}</span></td><td><span class="tag ${c.tipo_pessoa==='juridica'?'ts':'tg'}">${labelTipoPessoaCliente(c.tipo_pessoa)}</span></td><td style="font-size:12px">${labelRegimeCliente(c.regime_tributario||c.tributacao_original)}</td><td style="font-size:12px">${c.situacao_receita||'—'}<div style="color:var(--text3)">${c.municipio||''}${c.uf?'/'+c.uf:''}</div></td><td>${c.whatsapp?`<a href="https://wa.me/55${c.whatsapp}" target="_blank" onclick="event.stopPropagation()" style="color:var(--green);font-size:12px">📱 ${c.whatsapp}</a>`:'—'}</td></tr>`).join(''):'<tr><td colspan="10" class="vazio">Nenhum cliente.</td></tr>';
+  atualizarInfoSelecionados();
+}
+function toggleClienteSelecionado(id,checked){
+  if(checked)clientesSelecionados.add(id);else clientesSelecionados.delete(id);
+  atualizarInfoSelecionados();
+}
+function selecionarClientesVisiveis(marcar){
+  (window._clientesVisiveis||[]).forEach(id=>marcar?clientesSelecionados.add(id):clientesSelecionados.delete(id));
+  document.querySelectorAll('.cliSel').forEach(cb=>cb.checked=marcar);
+  const master=document.getElementById('cliSelTodos');if(master)master.checked=marcar;
+  atualizarInfoSelecionados();
+}
+function atualizarInfoSelecionados(){
+  const el=document.getElementById('cliSelInfo');
+  if(el)el.textContent=`${clientesSelecionados.size} selecionado(s)`;
+}
+async function excluirClientesSelecionados(){
+  const ids=[...clientesSelecionados];
+  if(!ids.length){toast('Selecione pelo menos um cliente para excluir.','err');return}
+  if(!confirm(`Excluir ${ids.length} cliente(s) selecionado(s)?`))return;
+  let ok=0,erro=0;
+  for(const id of ids){
+    const {error}=await sb.from('clientes').delete().eq('id',id);
+    if(error)erro++;else ok++;
+  }
+  clientesSelecionados.clear();
+  await loadCli();
+  toast(`Exclusão concluída: ${ok} excluído(s), ${erro} erro(s).`, erro?'err':'ok');
+}
+async function carregarHistoricoClienteCadastro(cliId){
+  const el=document.getElementById('mcHistBody');
+  if(!el)return;
+  el.innerHTML='<div class="loading">Carregando histórico...</div>';
+  const {data,error}=await sb.from('demandas').select('id,numero,resumo,status,prioridade,created_at,ultima_movimentacao').eq('cliente_id',cliId).order('created_at',{ascending:false}).limit(30);
+  if(error){el.innerHTML='<div class="vazio">Não foi possível carregar o histórico.</div>';return}
+  const lista=data||[];
+  if(!lista.length){el.innerHTML='<div class="vazio">Nenhuma demanda encontrada para este cliente.</div>';return}
+  el.innerHTML=lista.map(d=>`<div onclick="fm('mCli');abrirDet('${d.id}')" style="padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer">
+    <div style="display:flex;gap:8px;align-items:center"><strong style="font-family:monospace;color:var(--accent)">${d.numero||''}</strong><span class="tag ${SC[d.status]||'tgr'}">${SL[d.status]||d.status||''}</span></div>
+    <div style="font-size:13px;margin-top:3px">${d.resumo||'—'}</div>
+    <div style="font-size:11px;color:var(--text3);margin-top:3px">${d.created_at?new Date(d.created_at).toLocaleDateString('pt-BR'):''}</div>
+  </div>`).join('');
+}
+function receitaParaPayload(d){
+  const cnaeSec=(d.cnaes_secundarios||[])[0]||{};
+  const telefone=d.ddd_telefone_1||d.ddd_telefone_2||null;
+  const logradouro = d.logradouro || d.descricao_logradouro || d.endereco_logradouro || d.street || '';
+  const tipoLogradouro = d.descricao_tipo_de_logradouro || d.tipo_logradouro || '';
+  const ruaCompleta = [tipoLogradouro, logradouro].filter(Boolean).join(' ').trim();
+  const endereco=[ruaCompleta,d.numero||'s/n',d.complemento,d.bairro,[d.municipio,d.uf].filter(Boolean).join(' - '),d.cep?('CEP '+String(d.cep).replace(/^(\d{5})(\d{3})$/,'$1-$2')):''].filter(Boolean).join(', ');
+  return {
+    nome:d.razao_social||d.nome_fantasia||null,
+    tipo_pessoa:'juridica',
+    cpf_cnpj:String(d.cnpj||'').replace(/\D/g,''),
+    razao_social:d.razao_social||null,
+    nome_fantasia:d.nome_fantasia||null,
+    situacao_receita:d.descricao_situacao_cadastral||d.situacao_cadastral||null,
+    data_abertura:d.data_inicio_atividade||null,
+    cnae_principal:d.cnae_fiscal?String(d.cnae_fiscal):null,
+    cnae_descricao:d.cnae_fiscal_descricao||null,
+    cnae_secundario:cnaeSec.codigo?String(cnaeSec.codigo):null,
+    cnae_secundario_descricao:cnaeSec.descricao||null,
+    municipio:d.municipio||null,
+    uf:d.uf||null,
+    cep:String(d.cep||'').replace(/\D/g,'')||null,
+    endereco:endereco||null,
+    logradouro:ruaCompleta||null,
+    numero:d.numero||null,
+    complemento:d.complemento||null,
+    bairro:d.bairro||null,
+    telefone:telefone,
+    telefone_receita:telefone,
+    email:d.email?String(d.email).toLowerCase():null,
+    email_receita:d.email?String(d.email).toLowerCase():null,
+    porte:d.porte||null,
+    natureza_juridica:d.natureza_juridica||null,
+    opcao_simples:d.opcao_pelo_simples===true,
+    opcao_mei:d.opcao_pelo_mei===true,
+    regime_tributario:d.opcao_pelo_mei?'mei':(d.opcao_pelo_simples?'simples_nacional':null),
+    data_opcao_simples:d.data_opcao_pelo_simples||null,
+    data_exclusao_simples:d.data_exclusao_do_simples||null,
+    data_consulta_receita:new Date().toISOString(),
+    receita_json:d
+  };
+}
+async function consultarCnpjSelecionados(){
+  const ids=[...clientesSelecionados];
+  if(!ids.length){toast('Selecione pelo menos uma empresa.','err');return}
+  if(!confirm(`Consultar e atualizar ${ids.length} empresa(s) pelo CNPJ?`))return;
+  let ok=0,erro=0,semCnpj=0;
+  for(const id of ids){
+    const c=allCli.find(x=>x.id===id);
+    const doc=String(c?.cpf_cnpj||'').replace(/\D/g,'');
+    if(doc.length!==14){semCnpj++;continue}
+    try{
+      const r=await fetch(`https://brasilapi.com.br/api/cnpj/v1/${doc}`);
+      if(!r.ok)throw new Error('CNPJ não encontrado');
+      const d=await r.json();
+      const payload=receitaParaPayload(d);
+      const {error}=await sb.from('clientes').update(payload).eq('id',id);
+      if(error)throw error;
+      ok++;
+    }catch(e){erro++}
+  }
+  await loadCli();
+  toast(`Consulta concluída: ${ok} atualizados, ${semCnpj} sem CNPJ, ${erro} erro(s).`, erro?'err':'ok');
+}
 function abrirModalCliente(){
+  _receitaClienteAtual = null;
   document.getElementById('mcId').value='';
   ['mcNome','mcDoc','mcWa','mcEmail','mcObs'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   ['mcTel','mcEnd'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['mcCodEmp','mcRazao','mcFantasia','mcIE','mcSitReceita','mcAbertura','mcNatureza','mcPorte','mcCnae','mcCnaeDesc','mcCnaeSec','mcCnaeSecDesc','mcMunicipio','mcUF','mcCEP','mcAtivOper','mcPastaFiscal','mcPastaFolha'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   const st=document.getElementById('cnpjStatus');if(st)st.innerHTML='';
+  const ieSt=document.getElementById('ieStatus');if(ieSt)ieSt.innerHTML='';
+  const hist=document.getElementById('mcHistBody');if(hist)hist.innerHTML='Salve o cliente para criar histórico.';
+  trocarAbaCliente('empresa');
   document.getElementById('mcTP').value='juridica';
   document.getElementById('mcReg').value='';
-  const tc=document.getElementById('mcTC');if(tc)tc.value='urbano';
+  const tc=document.getElementById('mcTC');if(tc)tc.value='OPERACIONAL';
   document.getElementById('mCliTit').textContent='Novo Cliente';
   om('mCli');
 }
 function editCli(id){
+  _receitaClienteAtual = null;
   const c=allCli.find(x=>x.id===id);if(!c)return;
   document.getElementById('mcId').value=c.id;
   document.getElementById('mcNome').value=c.nome||'';
+  const setVal=(id,val)=>{const el=document.getElementById(id);if(el)el.value=val||'';};
+  setVal('mcCodEmp',c.codigo_empresa);
+  setVal('mcRazao',c.razao_social);
+  setVal('mcFantasia',c.nome_fantasia);
+  setVal('mcIE',c.inscricao_estadual);
+  setVal('mcSitReceita',c.situacao_receita);
+  setVal('mcAbertura',c.data_abertura);
+  setVal('mcNatureza',c.natureza_juridica);
+  setVal('mcPorte',c.porte);
+  setVal('mcCnae',c.cnae_principal);
+  setVal('mcCnaeDesc',c.cnae_descricao);
+  setVal('mcCnaeSec',c.cnae_secundario);
+  setVal('mcCnaeSecDesc',c.cnae_secundario_descricao);
+  setVal('mcMunicipio',c.municipio);
+  setVal('mcUF',c.uf);
+  setVal('mcCEP',c.cep);
+  setVal('mcAtivOper',c.atividade_operacional);
+  setVal('mcPastaFiscal',c.pasta_fiscal);
+  setVal('mcPastaFolha',c.pasta_folha);
   document.getElementById('mcTP').value=c.tipo_pessoa||'juridica';
   document.getElementById('mcDoc').value=c.cpf_cnpj||'';
   document.getElementById('mcReg').value=c.regime_tributario||'';
   document.getElementById('mcWa').value=c.whatsapp||'';
   const tel=document.getElementById('mcTel');if(tel)tel.value=c.telefone||'';
   document.getElementById('mcEmail').value=c.email||'';
-  const tc=document.getElementById('mcTC');if(tc)tc.value=c.tipo_cliente||'urbano';
+  const tc=document.getElementById('mcTC');if(tc)tc.value=c.tipo_cliente||'OPERACIONAL';
   const end=document.getElementById('mcEnd');if(end)end.value=c.endereco||'';
   document.getElementById('mcObs').value=c.observacoes||'';
   const st=document.getElementById('cnpjStatus');if(st)st.innerHTML='';
+  const ieSt=document.getElementById('ieStatus');if(ieSt)ieSt.innerHTML='';
+  trocarAbaCliente('empresa');
+  carregarHistoricoClienteCadastro(c.id);
   document.getElementById('mCliTit').textContent='Editar Cliente — '+c.nome;
   om('mCli');
 }
@@ -8522,12 +8912,32 @@ async function loadKanban() {
 async function salvarCli() {
   const nome = document.getElementById('mcNome').value.trim();
   if(!nome){toast('Informe o nome do cliente','err');return;}
+  if(!validarIEMGCampo()){toast('Inscrição Estadual de MG deve ter 13 dígitos.','err');return;}
   const payload = {
     nome,
     tipo_pessoa:       document.getElementById('mcTP').value,
     tipo_cliente:      document.getElementById('mcTC')?.value || 'urbano',
     cpf_cnpj:          document.getElementById('mcDoc').value.replace(/\D/g,'').trim()||null,
     regime_tributario: document.getElementById('mcReg').value||null,
+    codigo_empresa:    document.getElementById('mcCodEmp')?.value.trim()||null,
+    razao_social:      document.getElementById('mcRazao')?.value.trim()||null,
+    nome_fantasia:     document.getElementById('mcFantasia')?.value.trim()||null,
+    inscricao_estadual:document.getElementById('mcIE')?.value.trim()||null,
+    situacao_receita:  document.getElementById('mcSitReceita')?.value.trim()||null,
+    data_abertura:     document.getElementById('mcAbertura')?.value||null,
+    natureza_juridica: document.getElementById('mcNatureza')?.value.trim()||null,
+    porte:             document.getElementById('mcPorte')?.value.trim()||null,
+    cnae_principal:    document.getElementById('mcCnae')?.value.trim()||null,
+    cnae_descricao:    document.getElementById('mcCnaeDesc')?.value.trim()||null,
+    cnae_secundario:   document.getElementById('mcCnaeSec')?.value.trim()||null,
+    cnae_secundario_descricao: document.getElementById('mcCnaeSecDesc')?.value.trim()||null,
+    municipio:         document.getElementById('mcMunicipio')?.value.trim()||null,
+    uf:                document.getElementById('mcUF')?.value.trim().toUpperCase()||null,
+    cep:               document.getElementById('mcCEP')?.value.replace(/\D/g,'').trim()||null,
+    atividade_operacional: document.getElementById('mcAtivOper')?.value.trim()||null,
+    pasta_fiscal:      document.getElementById('mcPastaFiscal')?.value.trim()||null,
+    pasta_folha:       document.getElementById('mcPastaFolha')?.value.trim()||null,
+    entra_rotina_operacional: (document.getElementById('mcTC')?.value || '') !== 'EVENTUAL',
     whatsapp:          document.getElementById('mcWa').value.replace(/\D/g,'').trim()||null,
     telefone:          document.getElementById('mcTel')?.value.trim()||null,
     email:             document.getElementById('mcEmail').value.trim()||null,
@@ -8535,6 +8945,10 @@ async function salvarCli() {
     observacoes:       document.getElementById('mcObs').value.trim()||null,
     ativo:             true,
   };
+  if(_receitaClienteAtual){
+    payload.data_consulta_receita = new Date().toISOString();
+    payload.receita_json = _receitaClienteAtual;
+  }
   const id = document.getElementById('mcId').value;
   if(id) {
     const {error} = await sb.from('clientes').update(payload).eq('id',id);

@@ -48,14 +48,14 @@ button,input,select,textarea{font:inherit}
 <aside class="sidebar">
   <div class="brand"><div class="brand-icon">F</div><div><b>Focco</b><span>Sistema Operacional</span></div></div>
   <div class="sb-section">Principal</div>
-  <a class="nav" href="index.html"><span class="ni">⊞</span>Dashboard</a>
-  <a class="nav" href="index.html"><span class="ni">📥</span>Minha Caixa</a>
+  <a class="nav" href="#" onclick="irModulo2('cadastro');return false"><span class="ni">PA</span>Painel Operacional</a>
+  <a class="nav" href="#" onclick="irModulo2('pendencias');return false"><span class="ni">CX</span>Minha Caixa</a>
   <a class="nav active" href="central_operacoes.html"><span class="ni">⚙</span>Central de Operações</a>
   <a class="nav" href="index.html"><span class="ni">📅</span>Central de Agenda</a>
   <a class="nav" href="index.html"><span class="ni">🗓️</span>Calendário Fiscal</a>
   <div class="sb-section">Cadastros fixos</div>
-  <a class="nav" href="index.html"><span class="ni">👥</span>Clientes</a>
-  <a class="nav" href="index.html"><span class="ni">🏢</span>Departamentos</a>
+  <a class="nav" href="#" onclick="irModulo2('cadastro');return false"><span class="ni">CL</span>Clientes</a>
+  <a class="nav" href="#" onclick="irModulo2('responsaveis');return false"><span class="ni">DP</span>Responsaveis</a>
   <div class="sb-section">Gestão</div>
   <a class="nav" href="index.html"><span class="ni">👤</span>Usuários</a>
   <a class="nav" href="index.html"><span class="ni">📊</span>Relatórios</a>
@@ -73,13 +73,13 @@ button,input,select,textarea{font:inherit}
   <a class="nav module-nav" style="--module-color:#E11D48;--module-pale:#FFF1F2" href="modulo11-focco-redes-sociais.html"><span class="ni">🌐</span><span>Módulo 11 — Redes Sociais</span></a>
   <div class="sb-foot"><div class="user-card"><div class="u-av" id="sbAv">EO</div><div><div class="u-name" id="sbNome">Focco</div><div class="u-role" id="sbPerfil">Sistema Operacional</div></div></div></div>
 </aside>
-<header class="topbar"><div class="top-title">Módulo 2 - Central de Operações</div><div class="search"><span style="color:var(--text3);font-size:13px">🔍</span><input type="text" id="busca-topo" placeholder="Busca inteligente..." oninput="buscaInteligente(this.value)"></div><button class="btn" onclick="openDrawer('importar')">Importar</button><button class="btn btn-p" onclick="openDrawer('cliente')">+ Novo</button></header>
+<header class="topbar"><div class="top-title">Módulo 2 - Central de Operações</div><div class="search"><span style="color:var(--text3);font-size:13px">🔍</span><input type="text" id="busca-topo" placeholder="Busca inteligente..." oninput="buscaInteligente(this.value)"></div><button class="btn" onclick="openDrawer('importar')">Importar</button><button class="btn btn-p" onclick="openDrawer('cadastro')">+ Novo cliente</button></header>
 <main class="main">
   <section class="ph">
     <div><h1>Central de Operações</h1><p>Cadastro operacional conectado aos dados fixos do sistema: clientes, usuarios, departamentos, responsaveis e rotinas.</p></div>
-    <div class="actions"><button class="btn btn-p" onclick="openDrawer('cliente')">Novo cliente</button><button class="btn" onclick="openDrawer('importar')">Importar base</button><button class="btn" onclick="exportarJSON()">Exportar JSON</button></div>
+    <div class="actions"><button class="btn btn-p" onclick="openDrawer('cadastro')">Novo cliente</button><button class="btn" onclick="openDrawer('importar')">Importar base operacional</button><button class="btn" onclick="exportarJSON()">Exportar JSON</button></div>
   </section>
-  <nav class="module-strip"><a class="btn" href="index.html">Dashboard</a><a class="btn" href="index.html">Minha Caixa</a><a class="btn btn-p" href="central_operacoes.html">Central de Operações</a><a class="btn" href="index.html">Clientes fixo</a><a class="btn" href="index.html">Departamentos</a></nav>
+  <nav class="module-strip"><button class="btn" onclick="irModulo2('cadastro')">Painel</button><button class="btn" onclick="irModulo2('pendencias')">Minha Caixa</button><button class="btn btn-p" onclick="irModulo2('clientes')">Rotina operacional</button><button class="btn" onclick="irModulo2('cadastro')">Cadastro unico</button><button class="btn" onclick="irModulo2('responsaveis')">Responsaveis</button><a class="btn" href="index.html">Hub de Demandas</a></nav>
   <section class="kpi-grid">
     <div class="kcard"><div class="ki">CL</div><div class="kv" id="k-clientes">0</div><div class="kl">Clientes operacionais</div></div>
     <div class="kcard kg"><div class="ki">CF</div><div class="kv" id="k-clientes-fixo">0</div><div class="kl">Clientes fixos na base</div></div>
@@ -88,7 +88,8 @@ button,input,select,textarea{font:inherit}
   </section>
   <section class="card"><div class="ch"><div><b>Dados compartilhados entre módulos</b><br><span>Clientes, usuários e departamentos devem ser uma base única para todo o sistema.</span></div><button class="btn" onclick="auditarClientesFixos()">Auditar clientes</button></div><div class="cb"><div id="shared-audit" class="hint">Aguardando leitura da base fixa de clientes.</div></div></section>
   <div class="tabs">
-    <button class="tab active" data-tab="clientes">Clientes x Operação</button>
+    <button class="tab active" data-tab="cadastro">Cadastro unico</button>
+    <button class="tab" data-tab="clientes">Rotina operacional</button>
     <button class="tab" data-tab="responsaveis">Responsaveis</button>
     <button class="tab" data-tab="coleta">Coleta</button>
     <button class="tab" data-tab="obrigacoes">Obrigacoes</button>
@@ -96,7 +97,8 @@ button,input,select,textarea{font:inherit}
     <button class="tab" data-tab="pendencias">Pendencias</button>
     <button class="tab" data-tab="eventuais">Eventuais</button>
   </div>
-  <section class="panel active" id="tab-clientes">
+  <section class="panel active" id="tab-cadastro"><div class="card"><div class="ch"><div><b>Cadastro unico de clientes</b><br><span>Base oficial public.clientes, usada por todos os modulos.</span></div><button class="btn btn-p" onclick="openDrawer('cadastro')">Novo cliente</button></div><div class="cb"><div class="toolbar"><div class="search"><input id="busca-cadastro" placeholder="Buscar cliente, CPF/CNPJ, cidade, email ou classificacao" oninput="render()"></div></div><div id="cadastro-view"></div></div></div></section>
+  <section class="panel" id="tab-clientes">
     <div class="card"><div class="ch"><div><b>Clientes x Operação</b><br><span>Vincula a base fixa de clientes aos regimes, atividades, responsáveis e procedimentos operacionais.</span></div><button class="btn btn-p" onclick="openDrawer('cliente')">Cadastrar vínculo</button></div><div class="cb"><div class="toolbar"><div class="search"><input id="busca-clientes" placeholder="Buscar por cliente, CNPJ, regime ou procedimento" oninput="render()"><select id="filtro-regime" onchange="render()"><option value="">Todos os regimes</option><option>MEI</option><option>Simples Nacional</option><option>Lucro Presumido</option><option>Lucro Real</option><option>Produtor Rural</option><option>Sem Fins Lucrativos</option></select></div></div><div id="clientes-view"></div></div></div>
   </section>
   <section class="panel" id="tab-responsaveis"><div class="card"><div class="ch"><div><b>Responsaveis por cliente</b><br><span>Quem faz fiscal, folha, coleta, contabil, atendimento e auditoria.</span></div></div><div class="cb"><div class="toolbar"><div class="search"><input id="busca-responsaveis" placeholder="Buscar responsavel, cliente ou setor" oninput="render()"></div></div><div id="responsaveis-view"></div></div></div></section>
@@ -137,7 +139,7 @@ async function carregarOperacionalSupabase(){
   FoccoCore.sbFetch('operacional_coleta','select=*&order=operacional_codigo.asc'),
   FoccoCore.sbFetch('operacional_obrigacoes','select=*&order=operacional_codigo.asc'),
   FoccoCore.sbFetch('operacional_procedimentos_cliente','select=*&ativo=eq.true&order=operacional_codigo.asc'),
-  FoccoCore.sbFetch('operacional_pendencias_importacao','select=*&order=created_at.desc')
+  FoccoCore.sbFetch('operacional_pendencias_importacao','select=*&status=neq.Resolvida&order=created_at.desc')
  ]);
  const nomePorCodigo=new Map(clientes.map(c=>[String(c.codigo),c.razao_social_planilha||c.razao_receita||c.nome_fantasia||'']));
  state={
@@ -165,13 +167,18 @@ async function inicializar(){
  render();
 }
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.tab,.panel').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.getElementById('tab-'+b.dataset.tab).classList.add('active');aplicarBuscaTopoNaAba();render()}))
+function irModulo2(tab){
+ const btn=document.querySelector(`.tab[data-tab="${tab}"]`)||document.querySelector('.tab[data-tab="cadastro"]');
+ if(btn)btn.click();
+ window.scrollTo({top:0,behavior:'smooth'});
+}
 function table(headers,rows,emptyMsg){if(!rows.length)return `<div class="empty">${emptyMsg||'Nenhum registro cadastrado ainda.'}</div>`;return `<div class="table-wrap"><table><thead><tr>${headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>`}
 function buscaValor(id){return (document.getElementById(id)?.value||'').trim().toLowerCase()}
 function textoBusca(...values){return values.join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()}
 function combinaBusca(q,...values){if(!q)return true;const hay=textoBusca(...values);return textoBusca(q).split(/\s+/).filter(Boolean).every(p=>hay.includes(p))}
 function buscaInteligente(value){
  const active=document.querySelector('.tab.active')?.dataset.tab||'clientes';
- const map={clientes:'busca-clientes',responsaveis:'busca-responsaveis',coleta:'busca-coleta',obrigacoes:'busca-obrigacoes',procedimentos:'busca-procedimentos',pendencias:'busca-pendencias',eventuais:'busca-eventuais'};
+ const map={cadastro:'busca-cadastro',clientes:'busca-clientes',responsaveis:'busca-responsaveis',coleta:'busca-coleta',obrigacoes:'busca-obrigacoes',procedimentos:'busca-procedimentos',pendencias:'busca-pendencias',eventuais:'busca-eventuais'};
  const target=document.getElementById(map[active]||'busca-clientes');
  if(target)target.value=value;
  render();
@@ -194,7 +201,7 @@ function render(){
  document.getElementById('k-clientes-fixo').textContent=fixos.length;
  document.getElementById('k-proc').textContent=state.procedimentos.length;
  document.getElementById('k-revisar').textContent=state.pendencias.length+state.clientes.filter(c=>c.revisar==='Sim').length+audit.total;
- renderClientes();renderResponsaveis();renderColeta();renderObrigacoes();renderProcedimentos();renderPendencias();renderEventuais();
+ renderCadastroUnico();renderClientes();renderResponsaveis();renderColeta();renderObrigacoes();renderProcedimentos();renderPendencias();renderEventuais();
  renderSharedAudit(audit,fixos);
 }
 function auditOperacionalEFixo(){
@@ -202,7 +209,7 @@ function auditOperacionalEFixo(){
  const porDoc=new Map();
  const add=(doc,origem,cliente)=>{const key=(window.FoccoCore?.onlyDigits?.(doc)||String(doc||'').replace(/\D+/g,''));if(!key)return;porDoc.set(key,[...(porDoc.get(key)||[]),{origem,cliente}])};
  fixos.forEach(c=>add(c.cpf_cnpj||c.documento||c.cnpj_cpf,'Clientes fixo',c.nome||c.razao_social));
- state.clientes.forEach(c=>add(c.documento,'Operacional',c.nome));
+ state.clientes.filter(c=>!c.cliente_id).forEach(c=>add(c.documento,'Operacional sem vinculo',c.nome));
  const documentos=[...porDoc.entries()].filter(([,v])=>v.length>1);
  const internos=window.FoccoCadastros?.auditoriaClientesDuplicados?.(fixos)||{total:0,documentos:[],nomes:[]};
  return {total:documentos.length+internos.total,cruzados:documentos,internos};
@@ -227,6 +234,15 @@ function renderClientes(){
  const rows=filteredClientes().map(c=>`<tr><td><b>${esc(c.codigo)}</b></td><td><b>${esc(c.nome)}</b><div class="hint">${esc(c.documento||'')}</div></td><td>${badge(c.regime)}</td><td>${esc(c.atividade||'-')}</td><td>${esc(c.municipio||'-')}/${esc(c.uf||'')}</td><td>${esc(c.procedimento||'-')}</td><td>${badge(c.revisar||'Nao')}</td><td><div class="row-actions"><button class="btn mini" onclick="editarCliente('${esc(c.id)}')">Editar</button><button class="btn mini" onclick="verCliente('${esc(c.id)}')">Ver</button></div></td></tr>`);
  document.getElementById('clientes-view').innerHTML=table(['Codigo','Cliente','Regime','Atividade','Cidade','Procedimento','Revisar','Acoes'],rows,'Nenhum cliente operacional cadastrado. Use Importar base ou Novo cliente.');
 }
+function renderCadastroUnico(){
+ const q=buscaValor('busca-cadastro');
+ const rows=(window.FoccoCadastros?.clientes?.()||[]).filter(c=>combinaBusca(q,c.codigo_empresa,c.nome,c.razao_social,c.nome_fantasia,c.cpf_cnpj,c.documento,c.email,c.municipio,c.uf,c.tipo_cliente,c.situacao_receita,c.regime_tributario,c.inscricao_estadual,c.pasta_fiscal,c.pasta_folha)).map(c=>{
+  const doc=window.FoccoCore?.onlyDigits?.(c.cpf_cnpj||c.documento||'')||'';
+  const podeConsultar=doc.length===14;
+  return `<tr><td><b>${esc(c.codigo_empresa||'-')}</b></td><td><b>${esc(c.nome||c.razao_social||'-')}</b><div class="hint">${esc(c.nome_fantasia||c.email||'')}</div></td><td>${esc(c.cpf_cnpj||c.documento||'-')}<div class="hint">IE: ${esc(c.inscricao_estadual||'-')}</div></td><td>${badge(c.tipo_cliente||'OPERACIONAL')}<div class="hint">${esc(c.regime_tributario||c.tributacao_original||'-')}</div></td><td>${badge(c.situacao_receita||'Nao consultado')}<div class="hint">${esc(c.situacao_sistema||'')}</div></td><td>${esc(c.municipio||'-')}/${esc(c.uf||'')}<div class="hint">${esc(c.cnae_descricao||c.atividade_operacional||'-')}</div></td><td>${c.data_consulta_receita?new Date(c.data_consulta_receita).toLocaleDateString('pt-BR'):'-'}</td><td><div class="row-actions">${podeConsultar?`<button class="btn mini btn-p" onclick="consultarReceitaCliente('${esc(c.id)}')">Consultar CNPJ</button>`:'<span class="badge warn">CPF/manual</span>'}<button class="btn mini" onclick="verCadastroCliente('${esc(c.id)}')">Ver completo</button></div></td></tr>`;
+ });
+ document.getElementById('cadastro-view').innerHTML=table(['Codigo','Cliente','CPF/CNPJ','Tipo/Regime','Receita','Cidade/Atividade','Ultima consulta','Acoes'],rows,'Nenhum cliente na base unica.');
+}
 function renderResponsaveis(){const q=buscaValor('busca-responsaveis');const rows=state.responsaveis.filter(r=>combinaBusca(q,r.codigo,getCliente(r.codigo).nome,r.cliente,r.fiscal,r.folha,r.coleta,r.contabil,r.atendimento,r.auditor)).map(r=>`<tr><td><b>${esc(r.codigo)}</b></td><td>${esc(getCliente(r.codigo).nome||r.cliente||'-')}</td><td>${esc(r.fiscal||'-')}</td><td>${esc(r.folha||'-')}</td><td>${esc(r.coleta||'-')}</td><td>${esc(r.contabil||'-')}</td><td>${esc(r.atendimento||'-')}</td><td>${esc(r.auditor||'-')}</td></tr>`);document.getElementById('responsaveis-view').innerHTML=table(['Codigo','Cliente','Fiscal','Folha','Coleta','Contabil','Atendimento','Auditor'],rows,'Nenhum responsavel encontrado para esta busca.')}
 function renderColeta(){const q=buscaValor('busca-coleta');const rows=state.coleta.filter(r=>combinaBusca(q,r.codigo,getCliente(r.codigo).nome,r.cliente,r.metodo,r.diaLimite,r.origem,r.responsavel,r.observacao)).map(r=>`<tr><td><b>${esc(r.codigo)}</b></td><td>${esc(getCliente(r.codigo).nome||r.cliente||'-')}</td><td>${badge(r.metodo)}</td><td>${esc(r.diaLimite||'-')}</td><td>${esc(r.origem||'-')}</td><td>${esc(r.responsavel||'-')}</td><td>${esc(r.observacao||'')}</td></tr>`);document.getElementById('coleta-view').innerHTML=table(['Codigo','Cliente','Metodo','Dia limite','Origem/Sistema','Responsavel','Observacao'],rows,'Nenhuma coleta encontrada para esta busca.')}
 function renderObrigacoes(){const q=buscaValor('busca-obrigacoes');const rows=state.obrigacoes.filter(r=>combinaBusca(q,r.codigo,getCliente(r.codigo).nome,r.cliente,r.sintegra,r.destda,r.dapi,r.efd,r.sped,r.mit,r.tomador,r.prestador)).map(r=>`<tr><td><b>${esc(r.codigo)}</b></td><td>${esc(getCliente(r.codigo).nome||r.cliente||'-')}</td><td>${badge(r.sintegra)}</td><td>${badge(r.destda)}</td><td>${badge(r.dapi)}</td><td>${badge(r.efd)}</td><td>${badge(r.sped)}</td><td>${badge(r.mit)}</td><td>${badge(r.tomador)}</td><td>${badge(r.prestador)}</td></tr>`);document.getElementById('obrigacoes-view').innerHTML=table(['Codigo','Cliente','SINTEGRA','DESTDA','DAPI','EFD','SPED','MIT','Tomador','Prestador'],rows,'Nenhuma obrigacao encontrada para esta busca.')}
@@ -237,8 +253,40 @@ function renderEventuais(){
  const rows=clientesEventuais().filter(c=>combinaBusca(q,c.nome,c.razao_social,c.cpf_cnpj,c.documento,c.email,c.ativo,c.tipo_cliente,c.observacao_operacional)).map(c=>`<tr><td><b>${esc(c.nome||c.razao_social||'-')}</b><div class="hint">${esc(c.email||'')}</div></td><td>${esc(c.cpf_cnpj||c.documento||c.cnpj_cpf||'-')}</td><td>${badge(c.ativo===false?'Inativo':'Ativo')}</td><td>${badge(c.tipo_cliente||'EVENTUAL')}</td><td>${esc(c.observacao_operacional||'Cliente eventual / fora da rotina mensal')}</td></tr>`);
  document.getElementById('eventuais-view').innerHTML=table(['Cliente','CPF/CNPJ','Status','Classificacao','Observacao'],rows,'Nenhum cliente eventual encontrado.');
 }
-function openDrawer(type){const body=document.getElementById('drawer-body');document.getElementById('drawer').classList.add('open');if(type==='importar'){document.getElementById('drawer-title').textContent='Importar base operacional';body.innerHTML=importForm();return}document.getElementById('drawer-title').textContent='Novo cliente operacional';body.innerHTML=clienteForm()}
+function openDrawer(type){const body=document.getElementById('drawer-body');document.getElementById('drawer').classList.add('open');if(type==='importar'){document.getElementById('drawer-title').textContent='Importar base operacional';body.innerHTML=importForm();return}if(type==='cadastro'){document.getElementById('drawer-title').textContent='Novo cliente na base unica';body.innerHTML=cadastroForm();return}document.getElementById('drawer-title').textContent='Novo vinculo operacional';body.innerHTML=clienteForm()}
 function closeDrawer(){document.getElementById('drawer').classList.remove('open')}
+function cadastroForm(c={}){
+ return `<form onsubmit="salvarCadastroUnico(event)"><div class="grid">
+ <div class="field"><label>Codigo empresa</label><input name="codigo_empresa" value="${esc(c.codigo_empresa||'')}"></div>
+ <div class="field"><label>CPF/CNPJ</label><input name="cpf_cnpj" required value="${esc(c.cpf_cnpj||'')}"></div>
+ <div class="field two"><label>Nome / Razao social</label><input name="nome" required value="${esc(c.nome||c.razao_social||'')}"></div>
+ <div class="field"><label>Tipo pessoa</label><select name="tipo_pessoa"><option value="juridica">Juridica</option><option value="fisica">Fisica</option></select></div>
+ <div class="field"><label>Tipo cliente</label><select name="tipo_cliente"><option>OPERACIONAL</option><option>EVENTUAL</option></select></div>
+ <div class="field"><label>Regime tributario</label><select name="regime_tributario"><option></option><option>MEI</option><option>Simples Nacional</option><option>Lucro Presumido</option><option>Lucro Real</option><option>Produtor Rural</option><option>Sem Fins Lucrativos</option></select></div>
+ <div class="field"><label>Inscricao estadual</label><input name="inscricao_estadual"></div>
+ <div class="field"><label>Telefone</label><input name="telefone"></div>
+ <div class="field two"><label>Email</label><input name="email" type="email"></div>
+ <div class="field two"><label>Endereco</label><input name="endereco"></div>
+ <div class="field"><label>Municipio</label><input name="municipio"></div>
+ <div class="field"><label>UF</label><input name="uf" maxlength="2" value="MG"></div>
+ <div class="field two"><label>Pasta Fiscal</label><input name="pasta_fiscal"></div>
+ <div class="field two"><label>Pasta Folha</label><input name="pasta_folha"></div>
+ <div class="field full"><label>Observacoes</label><textarea name="observacoes" rows="3"></textarea></div>
+ </div><div class="actions" style="margin-top:14px"><button class="btn btn-p" type="submit">Salvar na base unica</button><button class="btn" type="button" onclick="closeDrawer()">Cancelar</button></div></form>`;
+}
+async function salvarCadastroUnico(ev){
+ ev.preventDefault();
+ const f=Object.fromEntries(new FormData(ev.target).entries());
+ const doc=window.FoccoCore?.onlyDigits?.(f.cpf_cnpj)||'';
+ if(!doc){alert('Informe CPF/CNPJ.');return}
+ const payload={...f,cpf_cnpj:doc,ativo:true,entra_rotina_operacional:f.tipo_cliente==='OPERACIONAL',origem_cadastro:'cadastro_manual_central_operacoes'};
+ try{
+  const res=await fetch(`${FoccoCore.SB_URL}/rest/v1/clientes`,{method:'POST',headers:{apikey:FoccoCore.SB_KEY,Authorization:'Bearer '+FoccoCore.SB_KEY,'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify(payload)});
+  if(!res.ok)throw new Error(await res.text());
+  await window.FoccoCadastros?.carregarBasicosDoSupabase?.();
+  closeDrawer();render();alert('Cliente salvo na base unica.');
+ }catch(e){alert('Nao foi possivel salvar: '+(e.message||e))}
+}
 function clienteForm(c={}){
  return `<form onsubmit="salvarCliente(event,'${esc(c.id||'')}')"><div class="grid">
  <div class="field"><label>Codigo</label><input name="codigo" required value="${esc(c.codigo||'')}"></div>
@@ -257,6 +305,103 @@ function salvarCliente(ev,editId){ev.preventDefault();const f=Object.fromEntries
 function criarVinculosPadrao(c){if(!state.responsaveis.some(r=>r.codigo===c.codigo))state.responsaveis.push({codigo:c.codigo,cliente:c.nome,fiscal:'',folha:'',coleta:'',contabil:'',atendimento:'',auditor:'Edniel'});if(!state.coleta.some(r=>r.codigo===c.codigo))state.coleta.push({codigo:c.codigo,cliente:c.nome,metodo:'Revisar',diaLimite:'5',origem:'',responsavel:'',observacao:''});if(!state.obrigacoes.some(r=>r.codigo===c.codigo))state.obrigacoes.push({codigo:c.codigo,cliente:c.nome,sintegra:'Nao',destda:'Nao',dapi:'Nao',efd:'Nao',sped:'Nao',mit:'Nao',tomador:c.atividade?.includes('Servico')?'Revisar':'Nao',prestador:c.atividade?.includes('Servico')?'Revisar':'Nao'});if(c.procedimento&&!state.procedimentos.some(r=>r.codigo===c.codigo&&r.procedimento===c.procedimento))state.procedimentos.push({codigo:c.codigo,cliente:c.nome,procedimento:c.procedimento,periodicidade:'Mensal',prazo:'Dia 20',auditoria:'Sim',enviaCliente:'Sim'});if(c.revisar==='Sim'&&!state.pendencias.some(p=>p.codigo===c.codigo))state.pendencias.push({codigo:c.codigo,cliente:c.nome,tipo:'Cadastro',descricao:'Cliente marcado para revisao operacional',status:'Aberta'})}
 function editarCliente(editId){const c=state.clientes.find(x=>x.id===editId);document.getElementById('drawer-title').textContent='Editar cliente operacional';document.getElementById('drawer-body').innerHTML=clienteForm(c);document.getElementById('drawer').classList.add('open')}
 function verCliente(editId){const c=state.clientes.find(x=>x.id===editId)||{};const resp=state.responsaveis.find(r=>r.codigo===c.codigo)||{};const col=state.coleta.find(r=>r.codigo===c.codigo)||{};const obr=state.obrigacoes.find(r=>r.codigo===c.codigo)||{};document.getElementById('drawer-title').textContent='Resumo operacional';document.getElementById('drawer-body').innerHTML=`<div class="card"><div class="ch"><b>${esc(c.nome)}</b>${badge(c.regime)}</div><div class="cb"><p><b>Documento:</b> ${esc(c.documento||'-')}</p><p><b>Atividade:</b> ${esc(c.atividade||'-')}</p><p><b>Procedimento:</b> ${esc(c.procedimento||'-')}</p><p><b>Fiscal:</b> ${esc(resp.fiscal||'-')} | <b>Folha:</b> ${esc(resp.folha||'-')} | <b>Auditor:</b> ${esc(resp.auditor||'-')}</p><p><b>Coleta:</b> ${esc(col.metodo||'-')} ate dia ${esc(col.diaLimite||'-')}</p><p><b>Obrigacoes:</b> SINTEGRA ${esc(obr.sintegra||'-')}, DESTDA ${esc(obr.destda||'-')}, EFD ${esc(obr.efd||'-')}, MIT ${esc(obr.mit||'-')}</p></div></div>`;document.getElementById('drawer').classList.add('open')}
+function receitaPayload(d){
+ const telefone=d.ddd_telefone_1||d.ddd_telefone_2||'';
+ return {
+  nome:d.razao_social||d.nome_fantasia||'',
+  razao_social:d.razao_social||null,
+  nome_fantasia:d.nome_fantasia||null,
+  tipo_pessoa:'juridica',
+  cpf_cnpj:window.FoccoCore?.onlyDigits?.(d.cnpj)||window.FoccoCore?.onlyDigits?.(d.cnpj_cpf)||'',
+  situacao_receita:d.descricao_situacao_cadastral||d.situacao_cadastral||null,
+  data_abertura:d.data_inicio_atividade||null,
+  porte:d.porte||null,
+  natureza_juridica:d.natureza_juridica||null,
+  cnae_principal:d.cnae_fiscal?String(d.cnae_fiscal):null,
+  cnae_descricao:d.cnae_fiscal_descricao||null,
+  capital_social:d.capital_social?Number(d.capital_social):null,
+  logradouro:d.logradouro||null,
+  numero:d.numero||null,
+  complemento:d.complemento||null,
+  bairro:d.bairro||null,
+  municipio:d.municipio||null,
+  uf:d.uf||null,
+  cep:window.FoccoCore?.onlyDigits?.(d.cep)||null,
+  telefone:telefone||null,
+  telefone_receita:telefone||null,
+  email:d.email||null,
+  email_receita:d.email||null,
+  opcao_simples:d.opcao_pelo_simples===true,
+  opcao_mei:d.opcao_pelo_mei===true,
+  data_opcao_simples:d.data_opcao_pelo_simples||null,
+  data_exclusao_simples:d.data_exclusao_do_simples||null,
+  data_consulta_receita:new Date().toISOString(),
+  receita_json:d
+ };
+}
+async function atualizarClienteSupabase(id,payload){
+ const res=await fetch(`${FoccoCore.SB_URL}/rest/v1/clientes?id=eq.${encodeURIComponent(id)}`,{
+  method:'PATCH',
+  headers:{apikey:FoccoCore.SB_KEY,Authorization:'Bearer '+FoccoCore.SB_KEY,'Content-Type':'application/json',Prefer:'return=representation'},
+  body:JSON.stringify(payload)
+ });
+ if(!res.ok)throw new Error(await res.text());
+ return res.json();
+}
+async function consultarReceitaCliente(id){
+ const lista=window.FoccoCadastros?.clientes?.()||[];
+ const cli=lista.find(c=>String(c.id)===String(id));
+ if(!cli){alert('Cliente nao encontrado na base unica.');return}
+ const doc=window.FoccoCore?.onlyDigits?.(cli.cpf_cnpj||cli.documento||'')||'';
+ if(doc.length!==14){alert('Consulta automatica disponivel apenas para CNPJ. CPF deve ser atualizado manualmente.');return}
+ const ok=confirm(`Consultar CNPJ ${doc} e atualizar o cadastro unico deste cliente?`);
+ if(!ok)return;
+ try{
+  document.getElementById('shared-audit').innerHTML='Consultando Receita e atualizando cadastro unico...';
+  const r=await fetch(`https://brasilapi.com.br/api/cnpj/v1/${doc}`);
+  if(!r.ok)throw new Error('CNPJ nao encontrado na Receita/BrasilAPI');
+  const data=await r.json();
+  const payload=receitaPayload(data);
+  await atualizarClienteSupabase(id,payload);
+  await window.FoccoCadastros?.carregarBasicosDoSupabase?.();
+  render();
+  alert('Cadastro atualizado com dados da Receita.');
+ }catch(e){
+  render();
+  alert('Nao foi possivel consultar/atualizar o CNPJ: '+(e.message||e));
+ }
+}
+function verCadastroCliente(id){
+ const c=(window.FoccoCadastros?.clientes?.()||[]).find(x=>String(x.id)===String(id))||{};
+ document.getElementById('drawer-title').textContent='Cadastro unico do cliente';
+ document.getElementById('drawer-body').innerHTML=`<div class="card"><div class="ch"><b>${esc(c.nome||c.razao_social||'-')}</b>${badge(c.tipo_cliente||'OPERACIONAL')}</div><div class="cb"><div class="grid">
+ <div class="field"><label>Codigo empresa</label><input readonly value="${esc(c.codigo_empresa||'')}"></div>
+ <div class="field"><label>CPF/CNPJ</label><input readonly value="${esc(c.cpf_cnpj||'')}"></div>
+ <div class="field two"><label>Razao social</label><input readonly value="${esc(c.razao_social||c.nome||'')}"></div>
+ <div class="field"><label>Nome fantasia</label><input readonly value="${esc(c.nome_fantasia||'')}"></div>
+ <div class="field"><label>Inscricao estadual</label><input readonly value="${esc(c.inscricao_estadual||'')}"></div>
+ <div class="field"><label>Tipo cliente</label><input readonly value="${esc(c.tipo_cliente||'')}"></div>
+ <div class="field"><label>Regime</label><input readonly value="${esc(c.regime_tributario||c.tributacao_original||'')}"></div>
+ <div class="field"><label>Situacao Receita</label><input readonly value="${esc(c.situacao_receita||'')}"></div>
+ <div class="field"><label>Situacao sistema</label><input readonly value="${esc(c.situacao_sistema||'')}"></div>
+ <div class="field"><label>Abertura</label><input readonly value="${esc(c.data_abertura||'')}"></div>
+ <div class="field two"><label>CNAE principal</label><input readonly value="${esc([c.cnae_principal,c.cnae_descricao].filter(Boolean).join(' - '))}"></div>
+ <div class="field"><label>Atividade operacional</label><input readonly value="${esc(c.atividade_operacional||'')}"></div>
+ <div class="field"><label>Porte</label><input readonly value="${esc(c.porte||'')}"></div>
+ <div class="field two"><label>Endereco</label><input readonly value="${esc([c.logradouro,c.numero,c.complemento,c.bairro].filter(Boolean).join(', '))}"></div>
+ <div class="field"><label>Municipio</label><input readonly value="${esc(c.municipio||'')}"></div>
+ <div class="field"><label>UF</label><input readonly value="${esc(c.uf||'')}"></div>
+ <div class="field"><label>CEP</label><input readonly value="${esc(c.cep||'')}"></div>
+ <div class="field"><label>Telefone</label><input readonly value="${esc(c.telefone||c.telefone_receita||'')}"></div>
+ <div class="field two"><label>Email</label><input readonly value="${esc(c.email||c.email_receita||'')}"></div>
+ <div class="field"><label>Simples</label><input readonly value="${esc(simNao(c.opcao_simples))}"></div>
+ <div class="field"><label>MEI</label><input readonly value="${esc(simNao(c.opcao_mei))}"></div>
+ <div class="field two"><label>Pasta Fiscal</label><input readonly value="${esc(c.pasta_fiscal||'')}"></div>
+ <div class="field two"><label>Pasta Folha</label><input readonly value="${esc(c.pasta_folha||'')}"></div>
+ <div class="field full"><label>Observacoes</label><textarea readonly rows="3">${esc(c.observacoes||c.observacao_operacional||'')}</textarea></div>
+ </div><div class="actions" style="margin-top:14px"><button class="btn btn-p" onclick="consultarReceitaCliente('${esc(c.id)}')">Consultar CNPJ</button><button class="btn" onclick="closeDrawer()">Fechar</button></div></div></div>`;
+ document.getElementById('drawer').classList.add('open');
+}
 function importForm(){return `<div class="import-box"><b>Importar JSON da base operacional</b><p class="hint">Essa importacao cria vinculos operacionais. A base oficial de Clientes deve continuar unica e compartilhada entre todos os modulos.</p><p class="hint">Nao suba esse JSON para o GitHub, porque ele contem dados reais dos clientes.</p><p class="hint">Formato esperado: um JSON com chaves <code>clientes</code>, <code>responsaveis</code>, <code>coleta</code>, <code>obrigacoes</code>, <code>procedimentos</code> e <code>pendencias</code>.</p><input type="file" id="import-file" accept=".json,application/json" style="margin-top:12px"><div class="actions" style="margin-top:12px"><button class="btn btn-p" onclick="importarJSON()">Importar</button><button class="btn btn-danger" onclick="limparBase()">Limpar base local</button></div></div>`}
 function importarJSON(){const input=document.getElementById('import-file');const file=input?.files?.[0];if(!file){alert('Selecione um arquivo JSON.');return}const reader=new FileReader();reader.onload=()=>{try{const data=JSON.parse(reader.result);state={...emptyState,...data};saveState();closeDrawer();alert('Base importada com sucesso.')}catch(e){alert('Arquivo invalido: '+e.message)}};reader.readAsText(file)}
 function exportarJSON(){const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='cadastro_operacional_focco.json';a.click();URL.revokeObjectURL(a.href)}
