@@ -4899,10 +4899,12 @@ async function loadDash(){
 
   const {data:cr}=await sbRest('demandas').select('responsavel_atual_id').not('status','in','(concluida,cancelada)').limit(500);
   const eC=document.getElementById('dCarga');
+  if(eC){
   if(!cr?.length){eC.innerHTML='<div class="vazio">Sem demandas abertas.</div>';}
   else{const profs=dbGet('profiles');const m={};cr.forEach(d=>{const id=d.responsavel_atual_id;const prof=profs.find(p=>p.id===id);const n=prof?.nome||'?';if(!m[id])m[id]={nome:n,n:0};m[id].n++;});
   const l=Object.values(m).sort((a,b)=>b.n-a.n),mx=l[0]?.n||1;
   eC.innerHTML=l.map(c=>{const i=c.nome.split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase(),pct=Math.round(c.n/mx*100),cor=pct>80?'var(--red)':pct>60?'var(--amber)':'var(--sky)';return`<div class="carga-item"><div class="carga-av">${i}</div><div style="font-size:13px;flex:1">${c.nome.split(' ')[0]}</div><div class="carga-bar" style="width:80px"><div class="carga-fill" style="width:${pct}%;background:${cor}"></div></div><div class="carga-n">${c.n}</div></div>`;}).join('');}
+  }
 
   const {data:ap}=await sb.from('aprovacoes').select('*,demandas(numero,clientes(nome)),profiles!aprovacoes_solicitado_por_fkey(nome)').eq('status','pendente').order('solicitado_em');
   document.getElementById('dAprov').innerHTML=ap?.length?ap.map(a=>`<div class="ui" onclick="abrirDet('${a.demanda_id}')"><div class="uc" style="background:var(--green)"></div><div class="uinfo"><div class="utit">${a.demandas?.numero}</div><div class="umeta">${a.demandas?.clientes?.nome} · ${a.profiles?.nome}</div></div><span class="ud tg">Aprovar</span></div>`).join(''):'<div class="vazio">Nenhuma pendente ✅</div>';
@@ -5129,7 +5131,7 @@ async function carregarAtalhoAdmissaoGestor(){
     const ultimas = rows.map(f=>{
       const d = f.dados || {};
       const data = f.created_at ? new Date(f.created_at).toLocaleDateString('pt-BR') : '';
-      return `<div style="font-size:12px;color:var(--text2);margin-top:4px">${esc(d.empresa||'Empresa nao informada')} - ${esc(d.nome||f.funcionario_nome||'Funcionario')} ${data?'- '+data:''}</div>`;
+      return `<div style="font-size:12px;color:var(--text2);margin-top:4px">${agEsc(d.empresa||'Empresa nao informada')} - ${agEsc(d.nome||f.funcionario_nome||'Funcionario')} ${data?'- '+data:''}</div>`;
     }).join('');
     box.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><div style="font-size:14px;font-weight:700;color:var(--text)">${total ? total+' ficha(s) recente(s)' : 'Nenhuma ficha recente'}</div><div style="font-size:12px;color:var(--text3);margin-top:2px">Acesse o Módulo 3 - Trabalhista (DP) para conferir, exportar ou imprimir PDF.</div>${ultimas}</div><button class="btn btn-p" onclick="window.location.href='modulo3-trabalhista-dp.html'">Abrir admissões</button></div>`;
   } catch(e) {
@@ -6442,7 +6444,7 @@ function preencherFiltroCliente(id, valores, primeiroRotulo='Todos', labels={}){
   const atual=sel.value;
   const unicos=[...new Set((valores||[]).map(v=>String(v||'').trim()).filter(Boolean))];
   unicos.sort((a,b)=>a.localeCompare(b,'pt-BR',{numeric:true,sensitivity:'base'}));
-  sel.innerHTML=`<option value="">${primeiroRotulo}</option>`+unicos.map(v=>`<option value="${esc(v)}">${esc(labels[v]||v)}</option>`).join('');
+  sel.innerHTML=`<option value="">${primeiroRotulo}</option>`+unicos.map(v=>`<option value="${agEsc(v)}">${agEsc(labels[v]||v)}</option>`).join('');
   sel.value=unicos.includes(atual)?atual:'';
 }
 function popularFiltrosClientes(){
