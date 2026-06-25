@@ -4325,6 +4325,83 @@ const SC={aberta:'ts',em_andamento:'tg',aguardando_aceite:'ta',aguardando_client
 const PC={baixa:'tgr',normal:'ts',alta:'ta',urgente:'tr'};
 const TL={abertura:'Abertura',documento_recebido:'Recebimento de Documento',documento_solicitado:'Solicitação de Documento',protocolo:'Protocolo Efetuado',exigencia_recebida:'Exigência Recebida',exigencia_respondida:'Exigência Respondida',transferencia:'Transferência',aceite:'Aceite',pendencia_criada:'Pendência criada',pendencia_resolvida:'Pendência resolvida',aprovacao_solicitada:'Aprox. solicitada',aprovacao_concedida:'✅ Aprovado',aprovacao_devolvida:'⚠️ Devolvido',conclusao:'Conclusão',cancelamento:'Cancelamento',movimentacao_geral:'Atualização do Processo'};
 
+const ESTRUTURA_DP_OUTROS = {
+  departamento: {nome:'Departamento Pessoal', cor:'#8B5CF6', icone:'👥', ordem:30},
+  categoria: {nome:'Outros Atendimentos', ordem:999},
+  tipo: {nome:'Atendimentos Diversos', prefixo_numeracao:'DPDIV', prioridade_padrao:'normal', ordem:999}
+};
+
+async function garantirEstruturaDPOutros(silencioso=true){
+  try{
+    const agora = new Date().toISOString();
+    let {data:depsDP,error:depErr}=await sb.from('departamentos').select('*').eq('nome',ESTRUTURA_DP_OUTROS.departamento.nome).limit(1);
+    if(depErr) throw depErr;
+    let dep = depsDP?.[0];
+    if(!dep){
+      const {data,error}=await sb.from('departamentos').insert({
+        ...ESTRUTURA_DP_OUTROS.departamento,
+        ativo:true,
+        created_at:agora
+      }).select('*').single();
+      if(error) throw error;
+      dep=data;
+    }else if(dep.ativo===false){
+      await sb.from('departamentos').update({
+        ativo:true,
+        cor:dep.cor||ESTRUTURA_DP_OUTROS.departamento.cor,
+        icone:dep.icone||ESTRUTURA_DP_OUTROS.departamento.icone
+      }).eq('id',dep.id);
+      dep={...dep,ativo:true};
+    }
+
+    let {data:catsDP,error:catErr}=await sb.from('categorias').select('*').eq('departamento_id',dep.id).eq('nome',ESTRUTURA_DP_OUTROS.categoria.nome).limit(1);
+    if(catErr) throw catErr;
+    let cat = catsDP?.[0];
+    if(!cat){
+      const {data,error}=await sb.from('categorias').insert({
+        nome:ESTRUTURA_DP_OUTROS.categoria.nome,
+        departamento_id:dep.id,
+        ativo:true,
+        ordem:ESTRUTURA_DP_OUTROS.categoria.ordem,
+        created_at:agora
+      }).select('*').single();
+      if(error) throw error;
+      cat=data;
+    }else if(cat.ativo===false){
+      await sb.from('categorias').update({ativo:true}).eq('id',cat.id);
+      cat={...cat,ativo:true};
+    }
+
+    let {data:tiposDP,error:tipoErr}=await sb.from('tipos_demanda').select('*').eq('categoria_id',cat.id).eq('nome',ESTRUTURA_DP_OUTROS.tipo.nome).limit(1);
+    if(tipoErr) throw tipoErr;
+    let tipo = tiposDP?.[0];
+    if(!tipo){
+      const {data,error}=await sb.from('tipos_demanda').insert({
+        nome:ESTRUTURA_DP_OUTROS.tipo.nome,
+        categoria_id:cat.id,
+        prefixo_numeracao:ESTRUTURA_DP_OUTROS.tipo.prefixo_numeracao,
+        prioridade_padrao:ESTRUTURA_DP_OUTROS.tipo.prioridade_padrao,
+        ativo:true,
+        ordem:ESTRUTURA_DP_OUTROS.tipo.ordem,
+        created_at:agora
+      }).select('*').single();
+      if(error) throw error;
+      tipo=data;
+    }else{
+      const upd={ativo:true};
+      if(!tipo.prefixo_numeracao) upd.prefixo_numeracao=ESTRUTURA_DP_OUTROS.tipo.prefixo_numeracao;
+      if(!tipo.prioridade_padrao) upd.prioridade_padrao=ESTRUTURA_DP_OUTROS.tipo.prioridade_padrao;
+      if(tipo.ativo===false||upd.prefixo_numeracao||upd.prioridade_padrao) await sb.from('tipos_demanda').update(upd).eq('id',tipo.id);
+      tipo={...tipo,...upd};
+    }
+    return {dep,cat,tipo};
+  }catch(e){
+    console.error('garantirEstruturaDPOutros:', e);
+    if(!silencioso) toast('Não foi possível criar a estrutura do DP: '+(e?.message||String(e)),'err');
+    return null;
+  }
+}
+
 async function init(){
   let session = null;
   try{
@@ -4641,6 +4718,7 @@ async function loadCols(){
 }
 async function loadDeps(){
   try{
+    await garantirEstruturaDPOutros();
     const [dR,cR,tR] = await Promise.all([
       sb.from('departamentos').select('*').eq('ativo',true).order('ordem'),
       sb.from('categorias').select('*').eq('ativo',true).order('ordem'),
@@ -4899,12 +4977,10 @@ async function loadDash(){
 
   const {data:cr}=await sbRest('demandas').select('responsavel_atual_id').not('status','in','(concluida,cancelada)').limit(500);
   const eC=document.getElementById('dCarga');
-  if(eC){
   if(!cr?.length){eC.innerHTML='<div class="vazio">Sem demandas abertas.</div>';}
   else{const profs=dbGet('profiles');const m={};cr.forEach(d=>{const id=d.responsavel_atual_id;const prof=profs.find(p=>p.id===id);const n=prof?.nome||'?';if(!m[id])m[id]={nome:n,n:0};m[id].n++;});
   const l=Object.values(m).sort((a,b)=>b.n-a.n),mx=l[0]?.n||1;
   eC.innerHTML=l.map(c=>{const i=c.nome.split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase(),pct=Math.round(c.n/mx*100),cor=pct>80?'var(--red)':pct>60?'var(--amber)':'var(--sky)';return`<div class="carga-item"><div class="carga-av">${i}</div><div style="font-size:13px;flex:1">${c.nome.split(' ')[0]}</div><div class="carga-bar" style="width:80px"><div class="carga-fill" style="width:${pct}%;background:${cor}"></div></div><div class="carga-n">${c.n}</div></div>`;}).join('');}
-  }
 
   const {data:ap}=await sb.from('aprovacoes').select('*,demandas(numero,clientes(nome)),profiles!aprovacoes_solicitado_por_fkey(nome)').eq('status','pendente').order('solicitado_em');
   document.getElementById('dAprov').innerHTML=ap?.length?ap.map(a=>`<div class="ui" onclick="abrirDet('${a.demanda_id}')"><div class="uc" style="background:var(--green)"></div><div class="uinfo"><div class="utit">${a.demandas?.numero}</div><div class="umeta">${a.demandas?.clientes?.nome} · ${a.profiles?.nome}</div></div><span class="ud tg">Aprovar</span></div>`).join(''):'<div class="vazio">Nenhuma pendente ✅</div>';
@@ -4922,12 +4998,24 @@ async function loadDash(){
     responsavel_nome: p.profiles?.nome||'—',
     dias_vencida: Math.floor((Date.now()-new Date(p.data_prevista))/86400000)
   }))};
-  document.getElementById('dProx').innerHTML=pr?.data?.length?pr.data.map(p=>`<div class="ui" onclick="abrirDet('${p.demanda_id}')"><div class="uc" style="background:var(--amber)"></div><div class="uinfo"><div class="utit">${p.demanda_numero} — ${p.cliente_nome}</div><div class="umeta">${p.descricao} · ${p.responsavel_nome}</div></div><span class="ud ta">${p.dias_vencida}d</span></div>`).join(''):'<div class="vazio">Nenhuma vencida ✅</div>';
+  document.getElementById('dProx').innerHTML=pr?.data?.length?pr.data.map(p=>`<div class="ui" onclick="abrirDet('${p.demanda_id}')"><div class="uc" style="background:var(--amber)"></div><div class="uinfo"><div class="utit">${p.demanda_numero} — ${p.cliente_nome}</div><div class="umeta">${p.descricao} · ${p.responsavel_nome}</div></div><span class="ud ta">${p.dias_vencida}d</span><button onclick="event.stopPropagation();concluirProximaAcaoRapida('${p.id}','${p.demanda_id||''}')" style="background:var(--green);border:none;color:#fff;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:11px;font-weight:700;margin-left:6px">Concluir</button></div>`).join(''):'<div class="vazio">Nenhuma vencida ✅</div>';
 
   // Mini kanban no dashboard (sem concluídas para compactar)
   const {data:kbData}=await sbRest('demandas').select('id,numero,resumo,status,prioridade,prazo,ultima_movimentacao,cliente_id,responsavel_atual_id,departamento_atual_id').not('status','in','(concluida,cancelada)').order('created_at',{ascending:false}).limit(150);
   // Render dashboard calendar
   await renderDashCal();
+}
+
+async function concluirProximaAcaoRapida(id, demandaId=''){
+  if(!id)return;
+  if(!confirm('Concluir esta tarefa/ação?')) return;
+  await sbRest('proximas_acoes').update({concluida:true}).eq('id',id);
+  if(demandaId){
+    await registrarUltimoTramite(demandaId,'movimentacao_geral','Próxima ação concluída por '+(U.nome||'usuário')+'.');
+  }
+  toast('Tarefa concluída.','ok');
+  await loadDash();
+  if(document.getElementById('pg-caixa')?.classList.contains('on') && typeof loadCaixa==='function') await loadCaixa();
 }
 
 let _caixaOrdenacao = 'tram';
@@ -5131,7 +5219,7 @@ async function carregarAtalhoAdmissaoGestor(){
     const ultimas = rows.map(f=>{
       const d = f.dados || {};
       const data = f.created_at ? new Date(f.created_at).toLocaleDateString('pt-BR') : '';
-      return `<div style="font-size:12px;color:var(--text2);margin-top:4px">${agEsc(d.empresa||'Empresa nao informada')} - ${agEsc(d.nome||f.funcionario_nome||'Funcionario')} ${data?'- '+data:''}</div>`;
+      return `<div style="font-size:12px;color:var(--text2);margin-top:4px">${esc(d.empresa||'Empresa nao informada')} - ${esc(d.nome||f.funcionario_nome||'Funcionario')} ${data?'- '+data:''}</div>`;
     }).join('');
     box.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><div style="font-size:14px;font-weight:700;color:var(--text)">${total ? total+' ficha(s) recente(s)' : 'Nenhuma ficha recente'}</div><div style="font-size:12px;color:var(--text3);margin-top:2px">Acesse o Módulo 3 - Trabalhista (DP) para conferir, exportar ou imprimir PDF.</div>${ultimas}</div><button class="btn btn-p" onclick="window.location.href='modulo3-trabalhista-dp.html'">Abrir admissões</button></div>`;
   } catch(e) {
@@ -6015,10 +6103,51 @@ function renderListaUrgentes() {
         <td><span class="tag ${diasSemMov>=10?'tr':diasSemMov>=5?'ta':'ts'}">${diasSemMov}d</span></td>
         <td>
           <button onclick="event.stopPropagation();fm('mUrgentes');abrirDilatarPrazo('${d.id}','${d.prazo||''}','${d.numero}')" style="background:none;border:1px solid var(--amber);color:var(--amber);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:11px">📅 Prazo</button>
+          <button onclick="event.stopPropagation();concluirDemandaOperacionalRapida('${d.id}')" style="background:var(--green);border:none;color:#fff;border-radius:4px;padding:2px 8px;cursor:pointer;font-size:11px;font-weight:700;margin-left:4px">Concluir</button>
         </td>
       </tr>`;
     }).join('')}</tbody>
   </table>`;
+}
+
+async function concluirDemandaOperacionalRapida(demandaId){
+  if(!demandaId)return;
+  const obs = prompt('Observação da conclusão (opcional):') || '';
+  const {data:dem,error}=await sbRest('demandas').select('id,numero,resumo,status').eq('id',demandaId).single();
+  if(error||!dem){toast('Não foi possível localizar a demanda.','err');return;}
+  const gestor = typeof agGestor==='function' ? agGestor() : ['gestor','admin','administrador'].includes(String(U?.perfil||'').toLowerCase());
+  if(gestor && dem.status==='aguardando_conclusao'){
+    if(!confirm('Aprovar e concluir esta demanda agora?'))return;
+    await sbRest('demandas').update({
+      status:'concluida',
+      data_conclusao:new Date().toISOString(),
+      ultima_movimentacao:new Date().toISOString(),
+      ultimo_tramite_at:new Date().toISOString(),
+      ultimo_tramite_usuario:U.nome,
+      ultimo_tramite_descricao:'Conclusão aprovada pelo gestor no Painel de Urgências.'+(obs?' '+obs:'')
+    }).eq('id',demandaId);
+    await sbRest('aprovacoes').update({status:'aprovada',aprovado_por:U.id,respondido_em:new Date().toISOString(),observacao_resposta:obs||null}).eq('demanda_id',demandaId).eq('status','pendente');
+    await sbRest('pendencias').update({resolvida:true,resolvida_em:new Date().toISOString(),resolvida_por:U.id}).eq('demanda_id',demandaId).eq('resolvida',false);
+    await sbRest('proximas_acoes').update({concluida:true}).eq('demanda_id',demandaId).eq('concluida',false);
+    await registrarUltimoTramite(demandaId,'aprovacao_concedida','Conclusão aprovada pelo gestor no Painel de Urgências.'+(obs?' '+obs:''));
+    toast('Demanda concluída.','ok');
+  }else{
+    if(!confirm('Solicitar conclusão desta demanda ao gestor?'))return;
+    await sbRest('aprovacoes').insert({demanda_id:demandaId,solicitado_por:U.id,observacao_envio:obs||null});
+    await sbRest('demandas').update({status:'aguardando_conclusao'}).eq('id',demandaId);
+    await registrarUltimoTramite(demandaId,'aprovacao_solicitada','Conclusão solicitada pelo Painel de Urgências por '+(U.nome||'usuário')+'.'+(obs?' '+obs:''));
+    try{
+      const {data:gestores}=await sbRest('profiles_public').select('id').eq('perfil','gestor').eq('ativo',true);
+      for(const g of (gestores||[])){
+        if(g.id!==U.id) await criarNotificacao(g.id,'Solicitação de conclusão', (U.nome||'Usuário')+' solicitou conclusão da demanda '+(dem.numero||'')+' - '+(dem.resumo||''), demandaId, 'conclusao_solicitada');
+      }
+    }catch(e){console.error('notificar gestores conclusao rapida',e);}
+    toast('Conclusão solicitada ao gestor.','ok');
+  }
+  if(typeof carregarDadosUrgentes==='function'){await carregarDadosUrgentes();renderListaUrgentes();}
+  if(typeof loadDash==='function')await loadDash();
+  if(typeof loadCaixa==='function'&&document.getElementById('pg-caixa')?.classList.contains('on'))await loadCaixa();
+  if(typeof loadDem==='function'&&document.getElementById('pg-dem')?.classList.contains('on'))await loadDem();
 }
 
 // ================================================================
@@ -6444,7 +6573,7 @@ function preencherFiltroCliente(id, valores, primeiroRotulo='Todos', labels={}){
   const atual=sel.value;
   const unicos=[...new Set((valores||[]).map(v=>String(v||'').trim()).filter(Boolean))];
   unicos.sort((a,b)=>a.localeCompare(b,'pt-BR',{numeric:true,sensitivity:'base'}));
-  sel.innerHTML=`<option value="">${primeiroRotulo}</option>`+unicos.map(v=>`<option value="${agEsc(v)}">${agEsc(labels[v]||v)}</option>`).join('');
+  sel.innerHTML=`<option value="">${primeiroRotulo}</option>`+unicos.map(v=>`<option value="${esc(v)}">${esc(labels[v]||v)}</option>`).join('');
   sel.value=unicos.includes(atual)?atual:'';
 }
 function popularFiltrosClientes(){
@@ -6708,6 +6837,7 @@ function verDemCli(nome){ir('dem');document.getElementById('fBusca').value=nome;
 
 let pDepSel2=null,pCatSel2=null;
 async function loadParam(){
+  await garantirEstruturaDPOutros();
   const {data}=await sb.from('departamentos').select('*').order('ordem');
   const el=document.getElementById('pDeps');
   el.innerHTML=data?.length?data.map(d=>`
@@ -10428,7 +10558,7 @@ async function dashCarregarAgendaMes(ano, mes) {
       const resp=profs.find(p=>p.id===respId)||{};
       const cli=clisCache.find(x=>x.id===m.empresa_id)||{};
       const ev={_tipo:'compromisso',id:c.id,data:c.data,hora:c.hora,titulo:c.titulo,descricao:c.descricao,participantes:c.participantes,subtipo:c.tipo,usuario_id:respId,responsavel_id:respId,responsavel:resp.nome||'Sem responsavel',empresa_id:m.empresa_id||'',empresa_nome:cli.nome||m.empresa_nome||'',visibilidade:m.visibilidade||'privado',situacao:m.situacao||'pendente'};
-      if(agCanSee(ev)&&!['excluido'].includes(ev.situacao||'')) eventos.push(ev);
+      if(agCanSee(ev)&&!['concluido','excluido'].includes(ev.situacao||'')) eventos.push(ev);
     });
     (rLem.data||[]).forEach(l=>{
       const m=agMetaGet('lembrete',l.id);
@@ -10582,6 +10712,7 @@ async function renderDashCal() {
             <span>${c._tipo==='compromisso'?(ti[c.subtipo]||'📅'):'📌'}</span>
             <span style="font-size:12px;font-weight:500;color:var(--text)">${c.titulo}</span>
             ${c.hora?`<span style="font-size:11px;color:${cor};font-weight:600">🕐 ${c.hora.slice(0,5)}</span>`:''}
+            <button onclick="event.stopPropagation();agConcluirRegistroRapido('${c._tipo}','${c.id}')" style="margin-left:auto;background:var(--green);border:none;color:#fff;border-radius:5px;padding:2px 7px;cursor:pointer;font-size:10px;font-weight:700">Concluir</button>
           </div>`;
         }).join('')}
       </div>`;
@@ -10644,6 +10775,7 @@ async function dashCalDiaClick(d) {
           ${ev.empresa_nome?`<div style="font-size:11px;color:var(--text3)">${agEsc(ev.empresa_nome)}</div>`:''}
           ${ev.demanda_num?`<div style="font-size:11px;color:var(--accent)">${agEsc(ev.demanda_num)} ${agEsc(ev.demanda_cli||'')}</div>`:''}
         </div>
+        <button onclick="event.stopPropagation();agConcluirRegistroRapido('${ev._tipo}','${ev.id}')" style="background:var(--green);border:none;color:#fff;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:11px;font-weight:700;align-self:center">Concluir</button>
       </div>`).join('');
     }
     if(!dashHtml) dashHtml = '<div class="vazio" style="padding:16px 0">Nenhum evento neste dia.</div>';
@@ -11373,7 +11505,7 @@ function agEventosFiltrados(){
   return agDedupEventos(_agEventos.filter(e=>{
     const hist=['concluido','excluido','reagendado'].includes(e.situacao||e.status);
     if(_agVisao==='historico'){ if(!hist) return false; }
-    else { if((e.situacao||e.status)==='excluido') return false; if(!mostrarPassados&&e.data<hoje) return false; if(periodo>0&&e.data>dtFim) return false; }
+    else { if(['concluido','excluido'].includes(e.situacao||e.status)) return false; if(!mostrarPassados&&e.data<hoje) return false; if(periodo>0&&e.data>dtFim) return false; }
     if(_agDiaSel&&e.data!==_agDiaSel) return false;
     if(_agFiltro==='compromissos'&&e._tipo!=='compromisso') return false;
     if(_agFiltro==='lembretes'&&e._tipo!=='lembrete') return false;
@@ -11415,7 +11547,7 @@ function agRenderGrade(eventos,visao){
   </div>${fora.length?`<div style="padding:10px;border-top:1px solid var(--border)"><strong style="font-size:12px;color:var(--text3)">Fora do horario padrao</strong>${fora.map(agMiniEvento).join('')}</div>`:''}</div>`;
 }
 
-function agMiniEvento(e){return `<div draggable="true" ondragstart="agDragStart(event,'${e._tipo}','${e.id}')" onclick="agAbrirRegistro('${e._tipo}','${e.id}')" style="background:${e._tipo==='compromisso'?'var(--accent-pale)':'var(--green-pale)'};border-left:3px solid ${e._tipo==='compromisso'?'var(--accent)':'var(--green)'};border-radius:6px;padding:5px 7px;margin-bottom:4px;cursor:pointer;font-size:11px"><strong>${e.hora?e.hora.slice(0,5)+' ':''}${agEsc(e.titulo)}</strong><div style="color:var(--text3)">${agEsc(e.responsavel)}</div></div>`}
+function agMiniEvento(e){return `<div draggable="true" ondragstart="agDragStart(event,'${e._tipo}','${e.id}')" onclick="agAbrirRegistro('${e._tipo}','${e.id}')" style="background:${e._tipo==='compromisso'?'var(--accent-pale)':'var(--green-pale)'};border-left:3px solid ${e._tipo==='compromisso'?'var(--accent)':'var(--green)'};border-radius:6px;padding:5px 7px;margin-bottom:4px;cursor:pointer;font-size:11px;display:flex;gap:6px;align-items:flex-start"><div style="flex:1;min-width:0"><strong>${e.hora?e.hora.slice(0,5)+' ':''}${agEsc(e.titulo)}</strong><div style="color:var(--text3)">${agEsc(e.responsavel)}</div></div><button onclick="event.stopPropagation();agConcluirRegistroRapido('${e._tipo}','${e.id}')" style="background:var(--green);border:none;color:#fff;border-radius:5px;padding:2px 6px;cursor:pointer;font-size:10px;font-weight:700">OK</button></div>`}
 
 function agCardEvento(ev){
   const isComp=ev._tipo==='compromisso', cor=isComp?'var(--accent)':'var(--green)', bg=isComp?'var(--accent-pale)':'var(--green-pale)';
@@ -11428,20 +11560,23 @@ function agCardEvento(ev){
       ${ev.demanda_num?`<div style="font-size:11px;color:var(--accent)" onclick="event.stopPropagation();abrirDet('${ev.demanda_id}')">Processo: ${agEsc(ev.demanda_num)} ${agEsc(ev.demanda_cli||'')}</div>`:''}
       ${ev.descricao?`<div style="font-size:11px;color:var(--text3);margin-top:2px">${agEsc(ev.descricao)}</div>`:''}
       <div style="font-size:11px;color:var(--text3);margin-top:4px">${ev.hora?ev.hora.slice(0,5)+' · ':''}${agEsc(ev.responsavel)}${ev.recorrencia?' · Recorrencia: '+ev.recorrencia:''}</div>
-    </div><div style="font-size:11px;color:var(--accent);white-space:nowrap;align-self:center">Abrir</div></div>`;
+    </div><div style="display:flex;flex-direction:column;gap:4px;align-self:center" onclick="event.stopPropagation()">
+      ${['concluido','excluido'].includes(status)?'':`<button onclick="agConcluirRegistroRapido('${ev._tipo}','${ev.id}')" style="background:var(--green);border:none;color:#fff;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:11px;font-weight:700;white-space:nowrap">Concluir</button>`}
+      <button onclick="agAbrirRegistro('${ev._tipo}','${ev.id}')" style="background:none;border:1px solid var(--accent);color:var(--accent);border-radius:5px;padding:3px 8px;cursor:pointer;font-size:11px;white-space:nowrap">Abrir</button>
+    </div></div>`;
 }
 
 function agRenderCal(){
   const tituloEl=document.getElementById('agCalTitulo'), gridEl=document.getElementById('agCalGrid'); if(!tituloEl||!gridEl)return;
   tituloEl.textContent=AG_NOMES_MES[_agMes]+' '+_agAno;
   const hoje=new Date().toISOString().split('T')[0], primeiro=new Date(_agAno,_agMes,1).getDay(), total=new Date(_agAno,_agMes+1,0).getDate();
-  const mapa={}; _agEventos.filter(e=>(e.situacao||e.status)!=='excluido').forEach(e=>{const d=new Date((e.data||'')+'T12:00:00');if(d.getFullYear()===_agAno&&d.getMonth()===_agMes){const dia=d.getDate();if(!mapa[dia])mapa[dia]={c:0,l:0};if(e._tipo==='compromisso')mapa[dia].c++;else mapa[dia].l++;}});
+  const mapa={}; _agEventos.filter(e=>!['concluido','excluido'].includes(e.situacao||e.status)).forEach(e=>{const d=new Date((e.data||'')+'T12:00:00');if(d.getFullYear()===_agAno&&d.getMonth()===_agMes){const dia=d.getDate();if(!mapa[dia])mapa[dia]={c:0,l:0};if(e._tipo==='compromisso')mapa[dia].c++;else mapa[dia].l++;}});
   let cells=''; for(let i=0;i<primeiro;i++)cells+='<div></div>';
   for(let d=1;d<=total;d++){const ds=`${_agAno}-${String(_agMes+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`, ev=mapa[d]||{}, sel=ds===_agDiaSel, hj=ds===hoje;cells+=`<div onclick="agDiaClick('${ds}')" ondragover="event.preventDefault()" ondrop="agDropRegistro(event,'${ds}','')" style="padding:4px 1px;min-height:42px;display:flex;flex-direction:column;align-items:center;cursor:pointer;border-radius:7px;background:${sel?'var(--navy)':hj?'var(--accent)':'transparent'};color:${sel||hj?'#fff':'var(--text)'};border:${ev.c||ev.l?'1.5px solid var(--border2)':'none'}"><span style="font-size:11px;font-weight:${sel||hj?'700':'400'}">${d}</span><div style="display:flex;gap:2px;margin-top:2px">${ev.c?'<span style="width:5px;height:5px;border-radius:50%;background:var(--accent);display:inline-block"></span>':''}${ev.l?'<span style="width:5px;height:5px;border-radius:50%;background:var(--green);display:inline-block"></span>':''}</div></div>`}
   gridEl.innerHTML=cells;
 }
 
-function agDiaClick(dataStr){_agDiaSel=_agDiaSel===dataStr?null:dataStr;const p=document.getElementById('agPainelDia');if(_agDiaSel){p.style.display='block';document.getElementById('agPainelDiaTit').textContent=new Date(dataStr+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'});const evs=agDedupEventos(_agEventos.filter(e=>e.data===dataStr&&(e.situacao||e.status)!=='excluido'));document.getElementById('agPainelDiaConteudo').innerHTML=evs.length?evs.map(agMiniEvento).join(''):'<div class="vazio">Nenhum registro neste dia.</div>';}else p.style.display='none';agRenderCal();renderAgenda();}
+function agDiaClick(dataStr){_agDiaSel=_agDiaSel===dataStr?null:dataStr;const p=document.getElementById('agPainelDia');if(_agDiaSel){p.style.display='block';document.getElementById('agPainelDiaTit').textContent=new Date(dataStr+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'});const evs=agDedupEventos(_agEventos.filter(e=>e.data===dataStr&&!['concluido','excluido'].includes(e.situacao||e.status)));document.getElementById('agPainelDiaConteudo').innerHTML=evs.length?evs.map(agMiniEvento).join(''):'<div class="vazio">Nenhum registro neste dia.</div>';}else p.style.display='none';agRenderCal();renderAgenda();}
 
 function agPopularClientesSelect(id){const el=document.getElementById(id);if(!el)return;el.innerHTML='<option value="">Interno / sem cliente</option>';dbGet('clientes').filter(c=>c.ativo!==false).sort((a,b)=>a.nome.localeCompare(b.nome)).forEach(c=>el.innerHTML+=`<option value="${c.id}">${agEsc(c.nome)}</option>`);}
 function agPopularResponsaveisSelect(id){const el=document.getElementById(id);if(!el)return;el.innerHTML='<option value="">Selecione...</option>';dbGet('profiles').filter(p=>p.ativo!==false).sort((a,b)=>a.nome.localeCompare(b.nome)).forEach(p=>{const opt=document.createElement('option');opt.value=p.id;opt.textContent=p.nome;if(p.id===U.id)opt.selected=true;el.appendChild(opt);});}
@@ -11551,7 +11686,49 @@ async function agConcluirRegistro(tipo,id){
     const prox=agNextRecDate(ev.data,ev.recorrencia,ev.recorrencia_dias);
     if(prox){const {data:ins}=await sbRest('lembretes').insert({demanda_id:ev.demanda_id||null,usuario_id:U.id,descricao:ev.titulo,data_lembrete:prox,hora_lembrete:ev.hora||null,responsavel_id:ev.responsavel_id,status:'pendente'});const nid=ins?.[0]?.id;if(nid)agMetaSet('lembrete',nid,{titulo:ev.titulo,observacao:ev.descricao,empresa_id:ev.empresa_id,recorrencia:ev.recorrencia,recorrencia_dias:ev.recorrencia_dias,situacao:'pendente'});}
   }else agMetaSet('compromisso',id,{situacao:'concluido',ultima_observacao:obs});
-  agAudit('concluiu',tipo,id,obs||ev.titulo);toast('Registro concluido.','ok');await agCarregarEventos();renderAgenda();
+  agAudit('concluiu',tipo,id,obs||ev.titulo);toast('Registro concluido.','ok');await agAtualizarPaineisRegistro();
+}
+async function agConcluirRegistroRapido(tipo,id){
+  if(!id)return;
+  const nome = tipo==='compromisso' ? 'compromisso' : 'lembrete';
+  if(!confirm('Concluir este '+nome+'?')) return;
+  const ev=_agEventos.find(e=>e._tipo===tipo&&e.id===id)||{};
+  if(tipo==='lembrete'){
+    const {data:rows}=await sbRest('lembretes').select('id,descricao,data_lembrete,hora_lembrete,demanda_id,responsavel_id,status').eq('id',id).limit(1);
+    const atual=(rows||[])[0]||{};
+    await sbRest('lembretes').update({status:'concluido'}).eq('id',id);
+    agMetaSet('lembrete',id,{situacao:'concluido',ultima_observacao:'Concluido pelo botao rapido'});
+    const meta=agMetaGet('lembrete',id);
+    const prox=agNextRecDate(atual.data_lembrete||ev.data,meta.recorrencia||ev.recorrencia,meta.recorrencia_dias||ev.recorrencia_dias);
+    if(prox){
+      const {data:ins}=await sbRest('lembretes').insert({
+        demanda_id:atual.demanda_id||ev.demanda_id||null,
+        usuario_id:U.id,
+        descricao:atual.descricao||ev.titulo||'Lembrete',
+        data_lembrete:prox,
+        hora_lembrete:atual.hora_lembrete||ev.hora||null,
+        responsavel_id:atual.responsavel_id||ev.responsavel_id||U.id,
+        status:'pendente'
+      });
+      const nid=ins?.[0]?.id;
+      if(nid)agMetaSet('lembrete',nid,{titulo:meta.titulo||ev.titulo||atual.descricao,observacao:meta.observacao||ev.descricao||'',empresa_id:meta.empresa_id||ev.empresa_id||'',recorrencia:meta.recorrencia||ev.recorrencia||'',recorrencia_dias:meta.recorrencia_dias||ev.recorrencia_dias||'',situacao:'pendente'});
+    }
+  }else{
+    agMetaSet('compromisso',id,{situacao:'concluido',ultima_observacao:'Concluido pelo botao rapido'});
+  }
+  agAudit('concluiu',tipo,id,'Concluido pelo botao rapido');
+  toast((tipo==='compromisso'?'Compromisso':'Lembrete')+' concluido.','ok');
+  await agAtualizarPaineisRegistro();
+}
+async function agAtualizarPaineisRegistro(){
+  if(typeof agCarregarEventos==='function'){
+    await agCarregarEventos();
+    if(typeof renderAgenda==='function') renderAgenda();
+  }
+  if(typeof renderDashCal==='function') await renderDashCal();
+  if(typeof carregarLembretesDash==='function') await carregarLembretesDash();
+  if(typeof carregarLembretesHoje==='function') await carregarLembretesHoje();
+  if(typeof carregarLembretesDet==='function' && (typeof demId!=='undefined') && demId) await carregarLembretesDet(demId);
 }
 async function agExcluirRegistro(tipo,id){
   const ev=_agEventos.find(e=>e._tipo===tipo&&e.id===id);if(!ev)return;
@@ -11643,6 +11820,7 @@ async function carregarLembretesDet(demandaId) {
       </div>
       <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
         ${l.status==='pendente'?`<button onclick="event.stopPropagation();abrirAcaoLembrete('${l.id}','${descEsc}','${l.demanda_id}','${numDem}','${cliNome}')" style="background:var(--accent);border:none;color:#fff;border-radius:6px;padding:3px 8px;cursor:pointer;font-size:11px">▶ Agir</button>`:''}
+        ${['pendente','reagendado'].includes(l.status)?`<button onclick="event.stopPropagation();agConcluirRegistroRapido('lembrete','${l.id}')" style="background:var(--green);border:none;color:#fff;border-radius:6px;padding:3px 8px;cursor:pointer;font-size:11px;font-weight:700">Concluir</button>`:''}
         <button onclick="event.stopPropagation();excluirLembrete('${l.id}')" style="background:none;border:1px solid var(--border);color:var(--text3);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:11px">🗑</button>
       </div>
     </div>`;
@@ -11748,6 +11926,7 @@ async function carregarLembretesHoje() {
       </div>
       <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
         <button onclick="event.stopPropagation();abrirAcaoLembrete('${l.id}','${descEsc}','${l.demanda_id}','${dem.numero||''}','${dem.cli_nome||''}')" style="background:var(--accent);border:none;color:#fff;border-radius:6px;padding:3px 8px;cursor:pointer;font-size:11px">▶ Agir</button>
+        <button onclick="event.stopPropagation();agConcluirRegistroRapido('lembrete','${l.id}')" style="background:var(--green);border:none;color:#fff;border-radius:6px;padding:3px 8px;cursor:pointer;font-size:11px;font-weight:700">Concluir</button>
         ${!jaVisto&&!futuro?`<button onclick="event.stopPropagation();marcarLembreteVisto('${l.id}')" style="background:none;border:1px solid var(--border);color:var(--text3);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:11px">👁 Visto</button>`:''}
       </div>
     </div>`;
@@ -11838,6 +12017,7 @@ async function carregarLembretesDash() {
       </div>
       <div style="display:flex;flex-direction:column;gap:3px;flex-shrink:0" onclick="event.stopPropagation()">
         <button onclick="abrirAcaoLembrete('${l.id}','${descEsc}','${l.demanda_id||''}','${demNum}','${cliNome}')" style="background:var(--accent);border:none;color:#fff;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:11px;white-space:nowrap">▶ Agir</button>
+        <button onclick="agConcluirRegistroRapido('lembrete','${l.id}')" style="background:var(--green);border:none;color:#fff;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:11px;font-weight:700;white-space:nowrap">Concluir</button>
         ${!jaVisto && !futuro ? `<button onclick="dashMarcarVisto('${l.id}')" style="background:none;border:1px solid var(--border);color:var(--text3);border-radius:5px;padding:2px 7px;cursor:pointer;font-size:11px">👁</button>` : ''}
       </div>
     </div>`;
@@ -11870,11 +12050,7 @@ function marcarLembreteVisto(id) {
 }
 
 async function concluirLembreteRapido(id) {
-  await sbRest('lembretes').update({status:'concluido'}).eq('id',id);
-  toast('Lembrete concluído!','ok');
-  await carregarLembretesHoje();
-  _lemsMes = []; // Forçar recarregamento do calendário
-  if(calDiaSel) await selecionarDia(calDiaSel);
+  await agConcluirRegistroRapido('lembrete',id);
 }
 </script>
 <script>

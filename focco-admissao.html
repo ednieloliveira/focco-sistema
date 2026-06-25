@@ -344,27 +344,32 @@ body{
         </div>
         <div class="form-row col-2">
           <div class="field">
-            <label for="naturalidade_cidade">Naturalidade — Cidade</label>
+            <label for="naturalidade_cidade">Naturalidade — Cidade <span class="req">*</span></label>
             <input type="text" id="naturalidade_cidade" name="naturalidade_cidade" placeholder="Cidade de nascimento">
+            <span class="error-msg" id="err-naturalidade_cidade">Campo obrigatório</span>
           </div>
           <div class="field">
-            <label for="naturalidade_uf">Estado (UF)</label>
+            <label for="naturalidade_uf">Estado (UF) <span class="req">*</span></label>
             <select id="naturalidade_uf" name="naturalidade_uf"><option value="">UF</option><option>AC</option><option>AL</option><option>AM</option><option>AP</option><option>BA</option><option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option><option>MG</option><option>MS</option><option>MT</option><option>PA</option><option>PB</option><option>PE</option><option>PI</option><option>PR</option><option>RJ</option><option>RN</option><option>RO</option><option>RR</option><option>RS</option><option>SC</option><option>SE</option><option>SP</option><option>TO</option></select>
+            <span class="error-msg" id="err-naturalidade_uf">Campo obrigatório</span>
           </div>
         </div>
         <div class="form-row col-2">
           <div class="field">
-            <label for="nome_mae">Nome da Mãe</label>
-            <input type="text" id="nome_mae" name="nome_mae" placeholder="Nome completo da mãe">
+            <label for="nome_mae">Nome da Mãe <span class="req">*</span></label>
+            <input type="text" id="nome_mae" name="nome_mae" list="lista-nao-declarado" placeholder="Nome completo da mãe ou selecione Não Declarado">
+            <span class="error-msg" id="err-nome_mae">Campo obrigatório</span>
           </div>
           <div class="field">
-            <label for="nome_pai">Nome do Pai</label>
-            <input type="text" id="nome_pai" name="nome_pai" placeholder="Nome completo do pai">
+            <label for="nome_pai">Nome do Pai <span class="req">*</span></label>
+            <input type="text" id="nome_pai" name="nome_pai" list="lista-nao-declarado" placeholder="Nome completo do pai ou selecione Não Declarado">
+            <span class="error-msg" id="err-nome_pai">Campo obrigatório</span>
           </div>
         </div>
+        <datalist id="lista-nao-declarado"><option value="Não Declarado"></option></datalist>
         <div class="form-row col-2">
           <div class="field">
-            <label for="estado_civil">Estado Civil</label>
+            <label for="estado_civil">Estado Civil <span class="req">*</span></label>
             <select id="estado_civil" name="estado_civil" onchange="toggleConjuge()">
               <option value="">Selecione...</option>
               <option value="solteiro">Solteiro(a)</option>
@@ -373,9 +378,10 @@ body{
               <option value="divorciado">Divorciado(a)</option>
               <option value="viuvo">Viúvo(a)</option>
             </select>
+            <span class="error-msg" id="err-estado_civil">Campo obrigatório</span>
           </div>
           <div class="field">
-            <label for="grau_instrucao">Grau de Instrução</label>
+            <label for="grau_instrucao">Grau de Instrução <span class="req">*</span></label>
             <select id="grau_instrucao" name="grau_instrucao">
               <option value="">Selecione...</option>
               <option value="1">Analfabeto</option>
@@ -389,6 +395,7 @@ body{
               <option value="9">Mestrado</option>
               <option value="10">Doutorado / PhD</option>
             </select>
+            <span class="error-msg" id="err-grau_instrucao">Campo obrigatório</span>
           </div>
         </div>
         <div class="form-row col-1 hidden" id="conjuge-row">
@@ -399,7 +406,7 @@ body{
         </div>
         <div class="form-row col-2">
           <div class="field">
-            <label for="raca_cor">Raça / Cor</label>
+            <label for="raca_cor">Raça / Cor <span class="req">*</span></label>
             <select id="raca_cor" name="raca_cor">
               <option value="">Selecione...</option>
               <option value="branca">Branca</option>
@@ -408,6 +415,7 @@ body{
               <option value="indigena">Indígena</option>
               <option value="parda">Parda</option>
             </select>
+            <span class="error-msg" id="err-raca_cor">Campo obrigatório</span>
           </div>
           <div class="field">
             <label for="tipo_sanguineo">Tipo Sanguíneo</label>
@@ -746,8 +754,9 @@ body{
         </div>
         <div class="form-row col-2">
           <div class="field">
-            <label for="salario">Salário</label>
+            <label for="salario">Salário <span class="req">*</span></label>
             <input type="text" id="salario" name="salario" placeholder="R$ 0,00" oninput="maskMoney(this)">
+            <span class="error-msg" id="err-salario">Campo obrigatório</span>
           </div>
           <div class="field">
             <label for="beneficios">Benefícios</label>
@@ -792,11 +801,12 @@ body{
       <div class="section-body">
         <div class="form-row col-1">
           <div class="field">
-            <label>Contrato de Experiência?</label>
+            <label>Contrato de Experiência? <span class="req">*</span></label>
             <div class="radio-group">
-              <label><input type="radio" name="contrato_exp" value="nao" checked onchange="toggleContratoExp()"> Não</label>
+              <label><input type="radio" name="contrato_exp" value="nao" onchange="toggleContratoExp()"> Não</label>
               <label><input type="radio" name="contrato_exp" value="sim" onchange="toggleContratoExp()"> Sim</label>
             </div>
+            <span class="error-msg" id="err-contrato_exp">Campo obrigatório</span>
           </div>
         </div>
         <div class="form-row col-1 hidden" id="contrato-exp-fields">
@@ -810,6 +820,7 @@ body{
               <option value="75">75 dias</option>
               <option value="90">90 dias</option>
             </select>
+            <span class="error-msg" id="err-contrato_duracao">Informe a duração do contrato de experiência</span>
           </div>
         </div>
       </div>
@@ -919,6 +930,13 @@ function required(id) {
   return ok;
 }
 
+function requiredRadio(name) {
+  var checked = document.querySelector("input[name='" + name + "']:checked");
+  var err = document.getElementById("err-" + name);
+  if (err) err.classList.toggle("show", !checked);
+  return !!checked;
+}
+
 function setSubmitAlert(items) {
   var box = document.getElementById("submit-alert");
   if (!box) return;
@@ -934,8 +952,8 @@ function setSubmitAlert(items) {
 }
 
 function primeiraAbaComErro() {
-  var aba1 = ["nome","nascimento","sexo","cep","celular","cpf","cnh_numero","cnh_categoria","cnh_validade"];
-  var aba3 = ["data_admissao","funcao"];
+  var aba1 = ["nome","nascimento","sexo","naturalidade_cidade","naturalidade_uf","nome_mae","nome_pai","estado_civil","grau_instrucao","raca_cor","cep","celular","cpf","cnh_numero","cnh_categoria","cnh_validade"];
+  var aba3 = ["data_admissao","funcao","salario","contrato_exp","contrato_duracao"];
   var erroAba1 = aba1.some(function(id) {
     var el = document.getElementById(id);
     var err = document.getElementById("err-" + id);
@@ -957,6 +975,13 @@ function validateAllRequired() {
   var nomeOk = required("nome"); if (!nomeOk) faltando.push("Nome completo");
   var nascOk = required("nascimento"); if (!nascOk) faltando.push("Data de nascimento");
   var sexoOk = required("sexo"); if (!sexoOk) faltando.push("Sexo");
+  var natCidadeOk = required("naturalidade_cidade"); if (!natCidadeOk) faltando.push("Naturalidade - cidade");
+  var natUfOk = required("naturalidade_uf"); if (!natUfOk) faltando.push("Naturalidade - UF");
+  var maeOk = required("nome_mae"); if (!maeOk) faltando.push("Nome da mãe ou Não Declarado");
+  var paiOk = required("nome_pai"); if (!paiOk) faltando.push("Nome do pai ou Não Declarado");
+  var estadoCivilOk = required("estado_civil"); if (!estadoCivilOk) faltando.push("Estado civil");
+  var instrucaoOk = required("grau_instrucao"); if (!instrucaoOk) faltando.push("Grau de instrução");
+  var racaOk = required("raca_cor"); if (!racaOk) faltando.push("Raça/Cor");
   var cepOk = required("cep"); if (!cepOk) faltando.push("CEP");
   var celularOk = required("celular"); if (!celularOk) faltando.push("Celular principal");
   var cpfOk = validateCPF(); if (!cpfOk) faltando.push("CPF válido");
@@ -964,6 +989,19 @@ function validateAllRequired() {
   if (!depsCpf.ok) faltando.push("CPF válido dos dependentes");
   var dataAdmOk = required("data_admissao"); if (!dataAdmOk) faltando.push("Data de admissão");
   var funcaoOk = required("funcao"); if (!funcaoOk) faltando.push("Função / Cargo");
+  var salarioOk = required("salario"); if (!salarioOk) faltando.push("Salário");
+  var contratoExpOk = requiredRadio("contrato_exp"); if (!contratoExpOk) faltando.push("Contrato de experiência");
+  var contratoDuracaoOk = true;
+  var contratoExp = document.querySelector("input[name=contrato_exp]:checked");
+  if (contratoExp && contratoExp.value === "sim") {
+    contratoDuracaoOk = required("contrato_duracao");
+    if (!contratoDuracaoOk) faltando.push("Duração do contrato de experiência");
+  } else {
+    var contratoDuracao = document.getElementById("contrato_duracao");
+    var errContratoDuracao = document.getElementById("err-contrato_duracao");
+    if (contratoDuracao) contratoDuracao.classList.remove("error");
+    if (errContratoDuracao) errContratoDuracao.classList.remove("show");
+  }
   var cnhPossui = document.querySelector("input[name=cnh_possui]:checked");
   var cnhOk = true;
   if (cnhPossui && cnhPossui.value === "sim") {
@@ -977,7 +1015,7 @@ function validateAllRequired() {
   var lgpdOk  = lgpd.checked;
   errLgpd.style.display = lgpdOk ? "none" : "block";
   if (!lgpdOk) faltando.push("Aceite da declaração LGPD");
-  var ok = empresaOk && nomeOk && nascOk && sexoOk && cepOk && celularOk && cpfOk && depsCpf.ok && dataAdmOk && funcaoOk && cnhOk && lgpdOk;
+  var ok = empresaOk && nomeOk && nascOk && sexoOk && natCidadeOk && natUfOk && maeOk && paiOk && estadoCivilOk && instrucaoOk && racaOk && cepOk && celularOk && cpfOk && depsCpf.ok && dataAdmOk && funcaoOk && salarioOk && contratoExpOk && contratoDuracaoOk && cnhOk && lgpdOk;
   setSubmitAlert(ok ? [] : faltando);
   return ok;
 }
@@ -1122,8 +1160,13 @@ function togglePCD() {
     document.querySelector("input[name=pcd]:checked").value !== "sim");
 }
 function toggleContratoExp() {
+  var selected = document.querySelector("input[name=contrato_exp]:checked");
   document.getElementById("contrato-exp-fields").classList.toggle("hidden",
-    document.querySelector("input[name=contrato_exp]:checked").value !== "sim");
+    !selected || selected.value !== "sim");
+  if (selected) {
+    var err = document.getElementById("err-contrato_exp");
+    if (err) err.classList.remove("show");
+  }
 }
 function toggleOutroBanco() {
   document.getElementById("outro-banco-row").classList.toggle("hidden",
@@ -1211,7 +1254,9 @@ function collectData() {
   data.empresa    = document.getElementById("empresa").value;
   var horSelect = document.getElementById("hor_tipo");
   var horTexto  = horSelect && horSelect.selectedIndex >= 0 ? horSelect.options[horSelect.selectedIndex].text : "";
-  data.horario   = horSelect && horSelect.value === "OUTRO" ? (data.horario_obs || "") : [horTexto, data.horario_obs].filter(Boolean).join(" | Obs: ");
+  data.horario_codigo = horSelect ? horSelect.value : "";
+  data.horario   = horSelect && horSelect.value === "OUTRO" ? "" : horTexto;
+  data.horario_livre = horSelect && horSelect.value === "OUTRO" ? (data.horario_obs || "") : "";
   data.protocolo  = generateProtocol();
   data.data_envio = new Date().toISOString();
   return data;
