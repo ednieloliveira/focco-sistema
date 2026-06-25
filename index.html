@@ -5627,8 +5627,8 @@ async function renderDet(){
           <div class="fg" style="margin-bottom:8px">
             <textarea class="fi" id="tramiteInline" rows="3" placeholder="Escreva uma mensagem. Use @Nome para notificar alguem." style="resize:vertical;margin-bottom:8px"></textarea>
             <select class="fi" id="tTipoInline" style="margin-bottom:8px">
-              <option value="comentario_interno">Comentário interno</option>
               <option value="movimentacao_geral">Atualização do Processo</option>
+              <option value="comentario_interno">Comentário interno</option>
               <option value="documento_recebido">Recebimento de Documento</option>
               <option value="documento_solicitado">Solicitação de Documento</option>
               <option value="protocolo">Protocolo Efetuado</option>
@@ -6282,7 +6282,7 @@ Justificativa: ${justificativa}`;
 // Tramite inline no detalhe da demanda
 async function salvarTramiteInline(){
   const desc=document.getElementById('tramiteInline')?.value.trim();
-  const tipo=document.getElementById('tTipoInline')?.value||'comentario_interno';
+  const tipo=document.getElementById('tTipoInline')?.value||'movimentacao_geral';
   if(!desc){toast('Informe a descricao do tramite','err');return;}
 
   // Desabilitar botão durante o salvamento
