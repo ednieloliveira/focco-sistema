@@ -4319,6 +4319,48 @@ async function initDB(){
 }
 
 let U,allDem=[],allCli=[],cols=[],deps=[];
+
+function foccoTextoSeguro(txt){
+  return String(txt||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});
+}
+
+function foccoNormalizarNome(txt){
+  return String(txt||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
+}
+
+function usuariosMencionados(texto){
+  const mencoes = [...String(texto||'').matchAll(/@([A-Za-zÀ-ÿ0-9._-]+)/g)].map(m=>foccoNormalizarNome(m[1])).filter(Boolean);
+  if(!mencoes.length) return [];
+  const unicos = new Map();
+  const profs = dbGet('profiles').filter(p=>p.ativo!==false);
+  profs.forEach(p=>{
+    const nomeCompleto = foccoNormalizarNome(p.nome||'');
+    const usuario = foccoNormalizarNome(p.usuario||'');
+    const primeiroNome = foccoNormalizarNome(String(p.nome||'').split(/\s+/)[0]||'');
+    const achou = mencoes.some(m=>m && (m===usuario || m===primeiroNome || nomeCompleto.startsWith(m)));
+    if(achou && p.id!==U.id) unicos.set(p.id,p);
+  });
+  return [...unicos.values()];
+}
+
+function formatarMencoes(texto){
+  return foccoTextoSeguro(texto).replace(/@([A-Za-zÀ-ÿ0-9._-]+)/g,'<strong style="color:var(--accent)">@$1</strong>');
+}
+
+async function notificarMencoes(texto, demandaId, demandaInfo){
+  const users = usuariosMencionados(texto);
+  if(!users.length) return 0;
+  const numero = demandaInfo?.numero || '';
+  const resumo = demandaInfo?.resumo || '';
+  await Promise.all(users.map(p=>criarNotificacao(
+    p.id,
+    'Voce foi mencionado em uma demanda',
+    (U.nome||'Um usuario')+' citou voce na demanda '+numero+(resumo?' - '+resumo:'')+'.',
+    demandaId,
+    'mencao'
+  )));
+  return users.length;
+}
 let demId=null,pDepSel=null,pCatSel=null,editUser=false;
 const SL={aberta:'Aberta',em_andamento:'Em andamento',aguardando_aceite:'Ag. aceite',aguardando_cliente:'Ag. cliente',aguardando_orgao:'Ag. órgão',aguardando_gestor:'Ag. gestor',aguardando_conclusao:'Ag. conclusão',concluida:'Concluída',cancelada:'Cancelada'};
 const SC={aberta:'ts',em_andamento:'tg',aguardando_aceite:'ta',aguardando_cliente:'ta',aguardando_orgao:'tp',aguardando_gestor:'tn',aguardando_conclusao:'tg',concluida:'tgr',cancelada:'tr'};
@@ -5572,7 +5614,7 @@ async function renderDet(){
             const dt=new Date(t.created_at).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
             return `<div class="tram-item-v2 ${tipoClass}">
               <span class="tram-tipo-badge ${tipoClass}">${label}</span>
-              <div class="tram-desc-v2">${t.descricao||''}</div>
+              <div class="tram-desc-v2">${formatarMencoes(t.descricao)}</div>
               <div class="tram-meta-v2">👤 ${t.profiles?.nome||'—'} &nbsp;·&nbsp; 🕐 ${dt}</div>
             </div>`;
           }).join('')}</div>`:'<div id="tramitesLista"><div class="vazio">Nenhum trâmite registrado.</div></div>'}
@@ -5580,11 +5622,12 @@ async function renderDet(){
       </div>
 
       <div class="card" id="tramiteInlineBox">
-        <div class="ch"><div class="ct">✏️ Registrar Trâmite</div></div>
+        <div class="ch"><div class="ct">Comentários internos</div></div>
         <div class="cb">
           <div class="fg" style="margin-bottom:8px">
-            <textarea class="fi" id="tramiteInline" rows="3" placeholder="Descreva a movimentação..." style="resize:vertical;margin-bottom:8px"></textarea>
+            <textarea class="fi" id="tramiteInline" rows="3" placeholder="Escreva uma mensagem. Use @Nome para notificar alguem." style="resize:vertical;margin-bottom:8px"></textarea>
             <select class="fi" id="tTipoInline" style="margin-bottom:8px">
+              <option value="comentario_interno">Comentário interno</option>
               <option value="movimentacao_geral">Atualização do Processo</option>
               <option value="documento_recebido">Recebimento de Documento</option>
               <option value="documento_solicitado">Solicitação de Documento</option>
@@ -5592,7 +5635,7 @@ async function renderDet(){
               <option value="exigencia_recebida">Exigência Recebida</option>
               <option value="exigencia_respondida">Exigência Respondida</option>
             </select>
-            <button class="btn btn-p" style="width:100%;justify-content:center" onclick="salvarTramiteInline()">✏️ Registrar Trâmite</button>
+            <button class="btn btn-p" style="width:100%;justify-content:center" onclick="salvarTramiteInline()">Enviar mensagem</button>
           </div>
         </div>
       </div>
@@ -5649,7 +5692,7 @@ function fillDetSelects(){
   ['pResp','aResp','trResp'].forEach(id=>{const el=document.getElementById(id);if(!el)return;el.innerHTML=id==='pResp'?'<option value="">Ninguém</option>':'<option value="">Selecione...</option>';cols.forEach(c=>{el.innerHTML+=`<option value="${c.id}" ${c.id===U.id?'selected':''}>${c.nome}</option>`;});});
   const sd=document.getElementById('trDep');if(sd){sd.innerHTML='<option value="">Selecione...</option>';deps.forEach(d=>{sd.innerHTML+=`<option value="${d.id}">${d.nome}</option>`;});}
 }
-async function salvarTram(){const desc=document.getElementById('tDesc').value.trim(),tipo=document.getElementById('tTipo').value;if(!desc){toast('Informe a descrição','err');return;}await registrarUltimoTramite(demId,tipo,desc);delete _detCache[demId];toast('Trâmite registrado!','ok');fm('mTram');document.getElementById('tDesc').value='';await renderDet();}
+async function salvarTram(){const desc=document.getElementById('tDesc').value.trim(),tipo=document.getElementById('tTipo').value;if(!desc){toast('Informe a descrição','err');return;}const {data:dem}=await sbRest('demandas').select('numero,resumo').eq('id',demId).single();await registrarUltimoTramite(demId,tipo,desc);const qtdMen=await notificarMencoes(desc,demId,dem);delete _detCache[demId];toast(qtdMen?'Trâmite registrado e menção enviada!':'Trâmite registrado!','ok');fm('mTram');document.getElementById('tDesc').value='';await renderDet();}
 async function registrarUltimoTramite(demandaId, tipo, descricao){
   const agora = new Date().toISOString();
   await sbRest('tramites').insert({demanda_id:demandaId,usuario_id:U.id,tipo,descricao,created_at:agora});
@@ -5693,6 +5736,7 @@ async function salvarTransf(){
       `${U.nome} transferiu a demanda ${dem?.numero} — "${dem?.resumo||''}" para você.${obs?' Mensagem: '+obs:''}`,
       demId,'transferencia');
   }
+  if(obs) await notificarMencoes(obs,demId,dem);
   toast('Demanda transferida com sucesso!','ok');
   fm('mTransf');
   await renderDet();
@@ -6238,7 +6282,7 @@ Justificativa: ${justificativa}`;
 // Tramite inline no detalhe da demanda
 async function salvarTramiteInline(){
   const desc=document.getElementById('tramiteInline')?.value.trim();
-  const tipo=document.getElementById('tTipoInline')?.value||'movimentacao_geral';
+  const tipo=document.getElementById('tTipoInline')?.value||'comentario_interno';
   if(!desc){toast('Informe a descricao do tramite','err');return;}
 
   // Desabilitar botão durante o salvamento
@@ -6247,7 +6291,9 @@ async function salvarTramiteInline(){
 
   // Inserir trâmite no banco
   const {error} = await sbRest('tramites').insert({demanda_id:demId,usuario_id:U.id,tipo,descricao:desc});
-  if(error){toast('Erro ao registrar trâmite','err');if(btn){btn.disabled=false;btn.textContent='📝 Registrar Tramite';}return;}
+  if(error){toast('Erro ao registrar trâmite','err');if(btn){btn.disabled=false;btn.textContent='Enviar mensagem';}return;}
+  const {data:demInfo}=await sbRest('demandas').select('numero,resumo').eq('id',demId).single();
+  const qtdMen=await notificarMencoes(desc,demId,demInfo);
 
   // Atualizar último trâmite na demanda
   await sbRest('demandas').update({
@@ -6259,7 +6305,7 @@ async function salvarTramiteInline(){
 
   // Limpar campo e restaurar botão
   document.getElementById('tramiteInline').value='';
-  if(btn){btn.disabled=false;btn.textContent='📝 Registrar Tramite';}
+  if(btn){btn.disabled=false;btn.textContent='Enviar mensagem';}
 
   // Adicionar trâmite instantaneamente na lista SEM recarregar tudo
   const agora = new Date();
@@ -6273,7 +6319,7 @@ async function salvarTramiteInline(){
   };
   adicionarTramiteNaTela(novoTram);
   delete _detCache[demId];
-  toast('Tramite registrado!','ok');
+  toast(qtdMen?'Mensagem registrada e menção enviada!':'Mensagem registrada!','ok');
 }
 
 function adicionarTramiteNaTela(tram) {
@@ -6289,7 +6335,7 @@ function adicionarTramiteNaTela(tram) {
   const dtStr = dt.toLocaleDateString('pt-BR');
   const hrStr = dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
   const tipoLabel = {
-    abertura:'🔓 Abertura',movimentacao_geral:'📝 Movimentação',
+    abertura:'🔓 Abertura',comentario_interno:'Comentário interno',movimentacao_geral:'📝 Movimentação',
     documento_recebido:'📄 Doc. Recebido',documento_solicitado:'📋 Doc. Solicitado',
     protocolo:'🏛️ Protocolo',exigencia_recebida:'⚠️ Exigência',
     exigencia_respondida:'✅ Exigência Respondida',aceite:'✅ Aceite',
@@ -6304,7 +6350,7 @@ function adicionarTramiteNaTela(tram) {
       <span style="font-size:12px;font-weight:700;color:var(--accent)">${tipoLabel}</span>
       <span style="font-size:11px;color:var(--text3);flex-shrink:0">${dtStr} ${hrStr}</span>
     </div>
-    <div style="font-size:13px;line-height:1.5;white-space:pre-line">${tram.descricao}</div>
+    <div style="font-size:13px;line-height:1.5;white-space:pre-line">${formatarMencoes(tram.descricao)}</div>
     <div style="font-size:11px;color:var(--text3);margin-top:6px">👤 ${tram.profiles?.nome||U.nome}</div>`;
   
   // Inserir no topo da lista
@@ -6329,11 +6375,26 @@ async function salvarDescricao(id){
 }
 
 async function loadCli(){
-  const {data}=await sb.from('clientes').select('*').eq('ativo',true).order('nome');
-  allCli=data||[];
-  if(allCli.length){
-    dbSet('clientes',allCli);
-    localStorage.setItem('focco_cache_clientes', JSON.stringify(allCli));
+  const tabela=document.getElementById('cliTabela');
+  if(tabela)tabela.innerHTML='<tr><td colspan="10" class="loading">Carregando...</td></tr>';
+  try{
+    const {data,error}=await sb.from('clientes').select('*').eq('ativo',true).order('nome');
+    if(error) throw error;
+    allCli=data||[];
+    if(allCli.length){
+      dbSet('clientes',allCli);
+      localStorage.setItem('focco_cache_clientes', JSON.stringify(allCli));
+    }
+  }catch(e){
+    let cache=[];
+    try{cache=JSON.parse(localStorage.getItem('focco_cache_clientes')||'[]')}catch(_){}
+    allCli=cache.length?cache:dbGet('clientes');
+    if(!allCli.length){
+      if(tabela)tabela.innerHTML='<tr><td colspan="10" class="vazio">Não foi possível carregar clientes. Verifique a conexão com o Supabase.</td></tr>';
+      toast('Não foi possível carregar clientes: '+(e?.message||'falha de conexão'),'err');
+      return;
+    }
+    toast('Clientes carregados do cache local.','ok');
   }
   document.getElementById('cliTotal').textContent=`${allCli.length} cliente(s)`;
   popularFiltrosClientes();
@@ -6573,7 +6634,7 @@ function preencherFiltroCliente(id, valores, primeiroRotulo='Todos', labels={}){
   const atual=sel.value;
   const unicos=[...new Set((valores||[]).map(v=>String(v||'').trim()).filter(Boolean))];
   unicos.sort((a,b)=>a.localeCompare(b,'pt-BR',{numeric:true,sensitivity:'base'}));
-  sel.innerHTML=`<option value="">${primeiroRotulo}</option>`+unicos.map(v=>`<option value="${esc(v)}">${esc(labels[v]||v)}</option>`).join('');
+  sel.innerHTML=`<option value="">${foccoTextoSeguro(primeiroRotulo)}</option>`+unicos.map(v=>`<option value="${foccoTextoSeguro(v)}">${foccoTextoSeguro(labels[v]||v)}</option>`).join('');
   sel.value=unicos.includes(atual)?atual:'';
 }
 function popularFiltrosClientes(){
