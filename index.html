@@ -143,7 +143,8 @@ textarea.fi{resize:vertical;margin-bottom:12px}
 /* ── CARD ────────────────────────────────────────── */
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);margin-bottom:16px;overflow:hidden}
 .ch{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-.ct{font-size:13px;font-weight:600;color:var(--text);letter-spacing:-.1px}
+.ct{font-size:13px;font-weight:600;color:var(--text);letter-spacing:0}
+.param-title-icon{width:24px;height:24px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;background:var(--accent-pale);color:var(--accent);border:1px solid rgba(51,85,255,.18);font-size:13px;font-weight:800;line-height:1;margin-right:7px;vertical-align:middle}
 .cb{padding:18px}
 
 /* ── TABLE ───────────────────────────────────────── */
@@ -970,7 +971,7 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
     <!-- DEPARTAMENTOS -->
     <div class="card">
       <div class="ch">
-        <div class="ct">📁 Departamentos</div>
+        <div class="ct"><span class="param-title-icon">▣</span>Departamentos</div>
         <button class="btn btn-s btn-sm" onclick="toggleFormDep()">+ Novo</button>
       </div>
       <div id="formDep" style="display:none;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface2)">
@@ -990,7 +991,7 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
     <!-- CATEGORIAS -->
     <div class="card">
       <div class="ch">
-        <div class="ct">📂 Categorias</div>
+        <div class="ct"><span class="param-title-icon">▦</span>Categorias</div>
         <button class="btn btn-s btn-sm" id="btnNovaCat" onclick="toggleFormCat()" style="display:none">+ Nova</button>
       </div>
       <div id="formCat" style="display:none;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface2)">
@@ -1008,7 +1009,7 @@ tr:hover td{background:var(--accent-pale);cursor:pointer}
     <!-- TIPOS DE DEMANDA -->
     <div class="card">
       <div class="ch">
-        <div class="ct">🏷️ Tipos de Demanda</div>
+        <div class="ct"><span class="param-title-icon">◆</span>Tipos de Demanda</div>
         <button class="btn btn-s btn-sm" id="btnNovoTipo" onclick="toggleFormTipo()" style="display:none">+ Novo</button>
       </div>
       <div id="formTipo" style="display:none;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface2)">
@@ -4373,6 +4374,12 @@ const ESTRUTURA_DP_OUTROS = {
   tipo: {nome:'Atendimentos Diversos', prefixo_numeracao:'DPDIV', prioridade_padrao:'normal', ordem:999}
 };
 
+const ESTRUTURA_PREFEITURA_ALVARA = {
+  departamento: {nome:'Prefeitura e Alvarás', cor:'#0EA5E9', icone:'🏛️', ordem:40},
+  categoria: {nome:'Licenças', ordem:10},
+  tipo: {nome:'Licença de Transportes', prefixo_numeracao:'LIT', prioridade_padrao:'normal', ordem:10}
+};
+
 async function garantirEstruturaDPOutros(silencioso=true){
   try{
     const agora = new Date().toISOString();
@@ -4440,6 +4447,78 @@ async function garantirEstruturaDPOutros(silencioso=true){
   }catch(e){
     console.error('garantirEstruturaDPOutros:', e);
     if(!silencioso) toast('Não foi possível criar a estrutura do DP: '+(e?.message||String(e)),'err');
+    return null;
+  }
+}
+
+async function garantirEstruturaPrefeituraAlvara(silencioso=true){
+  try{
+    const agora = new Date().toISOString();
+    let {data:deps,error:depErr}=await sb.from('departamentos').select('*').in('nome',['Prefeitura e Alvarás','Prefeitura e Alvará','Prefeitura','Prefeitura e Alvaras']).order('nome').limit(4);
+    if(depErr) throw depErr;
+    let dep = (deps||[]).find(d=>d.nome==='Prefeitura e Alvarás') || deps?.[0];
+    if(!dep){
+      const {data,error}=await sb.from('departamentos').insert({
+        ...ESTRUTURA_PREFEITURA_ALVARA.departamento,
+        ativo:true,
+        created_at:agora
+      }).select('*').single();
+      if(error) throw error;
+      dep=data;
+    }else if(dep.ativo===false || dep.nome !== ESTRUTURA_PREFEITURA_ALVARA.departamento.nome){
+      await sb.from('departamentos').update({
+        ativo:true,
+        nome:ESTRUTURA_PREFEITURA_ALVARA.departamento.nome,
+        cor:ESTRUTURA_PREFEITURA_ALVARA.departamento.cor,
+        icone:ESTRUTURA_PREFEITURA_ALVARA.departamento.icone
+      }).eq('id',dep.id);
+      dep={...dep,ativo:true,nome:ESTRUTURA_PREFEITURA_ALVARA.departamento.nome};
+    }
+
+    let {data:cats,error:catErr}=await sb.from('categorias').select('*').eq('departamento_id',dep.id).eq('nome',ESTRUTURA_PREFEITURA_ALVARA.categoria.nome).limit(1);
+    if(catErr) throw catErr;
+    let cat = cats?.[0];
+    if(!cat){
+      const {data,error}=await sb.from('categorias').insert({
+        nome:ESTRUTURA_PREFEITURA_ALVARA.categoria.nome,
+        departamento_id:dep.id,
+        ativo:true,
+        ordem:ESTRUTURA_PREFEITURA_ALVARA.categoria.ordem,
+        created_at:agora
+      }).select('*').single();
+      if(error) throw error;
+      cat=data;
+    }else if(cat.ativo===false){
+      await sb.from('categorias').update({ativo:true}).eq('id',cat.id);
+      cat={...cat,ativo:true};
+    }
+
+    let {data:tipos,error:tipoErr}=await sb.from('tipos_demanda').select('*').eq('categoria_id',cat.id).eq('nome',ESTRUTURA_PREFEITURA_ALVARA.tipo.nome).limit(1);
+    if(tipoErr) throw tipoErr;
+    let tipo = tipos?.[0];
+    if(!tipo){
+      const {data,error}=await sb.from('tipos_demanda').insert({
+        nome:ESTRUTURA_PREFEITURA_ALVARA.tipo.nome,
+        categoria_id:cat.id,
+        prefixo_numeracao:ESTRUTURA_PREFEITURA_ALVARA.tipo.prefixo_numeracao,
+        prioridade_padrao:ESTRUTURA_PREFEITURA_ALVARA.tipo.prioridade_padrao,
+        ativo:true,
+        ordem:ESTRUTURA_PREFEITURA_ALVARA.tipo.ordem,
+        created_at:agora
+      }).select('*').single();
+      if(error) throw error;
+      tipo=data;
+    }else{
+      const upd={ativo:true};
+      if(!tipo.prefixo_numeracao) upd.prefixo_numeracao=ESTRUTURA_PREFEITURA_ALVARA.tipo.prefixo_numeracao;
+      if(!tipo.prioridade_padrao) upd.prioridade_padrao=ESTRUTURA_PREFEITURA_ALVARA.tipo.prioridade_padrao;
+      if(tipo.ativo===false||upd.prefixo_numeracao||upd.prioridade_padrao) await sb.from('tipos_demanda').update(upd).eq('id',tipo.id);
+      tipo={...tipo,...upd};
+    }
+    return {dep,cat,tipo};
+  }catch(e){
+    console.error('garantirEstruturaPrefeituraAlvara:', e);
+    if(!silencioso) toast('Não foi possível criar a estrutura Prefeitura e Alvará: '+(e?.message||String(e)),'err');
     return null;
   }
 }
@@ -4761,6 +4840,7 @@ async function loadCols(){
 async function loadDeps(){
   try{
     await garantirEstruturaDPOutros();
+    await garantirEstruturaPrefeituraAlvara();
     const [dR,cR,tR] = await Promise.all([
       sb.from('departamentos').select('*').eq('ativo',true).order('ordem'),
       sb.from('categorias').select('*').eq('ativo',true).order('ordem'),
@@ -4857,7 +4937,7 @@ const DEPT_CONFIG = {
   'Despachante Imobiliário':             {icon:'🏠',cor:'#0F9B6E',page:'imob',   desc:'Compra/venda, regularização, cartório'},
   'IRPF':                                {icon:'🧾',cor:'#DC2626',page:'irpf',   desc:'Declaração, malha fina, ganho de capital'},
   'Parcelamentos e Regularização Fiscal':{icon:'📑',cor:'#9333EA',page:'parc',   desc:'Receita Federal, PGFN, certidões'},
-  'Prefeitura e Alvarás':                {icon:'🏛️',cor:'#EA580C',page:'pref',   desc:'Inscrições, alvarás, ISS municipal'},
+  'Prefeitura e Alvarás':                {icon:'🏛️',cor:'#0EA5E9',page:'pref',   desc:'Licenças, alvarás, transportes e ISS municipal'},
   'Certidões e Documentações':           {icon:'📜',cor:'#64748B',page:'certs',  desc:'Certidões federais, estaduais, municipais'},
   'Atendimento ao Cliente':              {icon:'🤝',cor:'#0EA5E9',page:'atend',  desc:'Solicitações, financeiro, comercial, ouvidoria'},
 };
@@ -6897,27 +6977,235 @@ function voltarDoDet(){
 function verDemCli(nome){ir('dem');document.getElementById('fBusca').value=nome;if(allDem.length)filtDem();else loadDem();}
 
 let pDepSel2=null,pCatSel2=null;
+function normParamNome(v){
+  return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+}
+function paramIconBox(simbolo, cor){
+  const c=cor||'#2563EB';
+  return `<span style="width:28px;height:28px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;background:${c}18;color:${c};border:1px solid ${c}30;font-size:15px;font-weight:800;line-height:1;flex-shrink:0">${simbolo}</span>`;
+}
+function departamentoIconeParam(nome, atual){
+  const n=normParamNome(nome);
+  const map=[
+    ['atendimento','◉'],
+    ['certidoes','▧'],
+    ['contabilidade','▤'],
+    ['departamento pessoal','◇'],
+    ['despachante','⌂'],
+    ['escrita fiscal','∑'],
+    ['fiscal','∑'],
+    ['irpf','▥'],
+    ['legalizacao','▦'],
+    ['licitacoes','⚖'],
+    ['parcelamentos','☷'],
+    ['prefeitura','⌂'],
+    ['rural','☘']
+  ];
+  const found=map.find(([k])=>n.includes(k));
+  if(found) return found[1];
+  return atual && !/[\u{1F300}-\u{1FAFF}]/u.test(atual) ? atual : '▣';
+}
+function departamentoCorParam(nome, atual){
+  const n=normParamNome(nome);
+  if(n.includes('prefeitura')) return '#0EA5E9';
+  if(n.includes('atendimento')) return '#0EA5E9';
+  if(n.includes('certidoes')) return '#64748B';
+  if(n.includes('contabilidade')) return '#059669';
+  if(n.includes('departamento pessoal')) return '#7C3AED';
+  if(n.includes('despachante')) return '#0F9B6E';
+  if(n.includes('fiscal')) return '#4F46E5';
+  if(n.includes('irpf')) return '#DC2626';
+  if(n.includes('legalizacao')) return '#1D4ED8';
+  if(n.includes('licitacoes')) return '#92400E';
+  if(n.includes('parcelamentos')) return '#9333EA';
+  if(n.includes('rural')) return '#D97706';
+  return atual || '#64748B';
+}
+function tipoIconeParam(nome){
+  const n=normParamNome(nome);
+  if(n.includes('transport')) return '⇄';
+  if(n.includes('licenca')) return '▣';
+  if(n.includes('alvara')) return '◇';
+  if(n.includes('certidao')) return '▧';
+  if(n.includes('consulta')) return '⌕';
+  if(n.includes('alteracao')) return '✎';
+  return '◆';
+}
+function categoriaCorParam(nome){
+  const n=normParamNome(nome);
+  if(n.includes('licenca')) return '#0EA5E9';
+  if(n.includes('alvara')) return '#7C3AED';
+  if(n.includes('cadastro')) return '#059669';
+  if(n.includes('process')) return '#D97706';
+  if(n.includes('regular')) return '#2563EB';
+  return '#64748B';
+}
+function tipoCorParam(nome){
+  const n=normParamNome(nome);
+  if(n.includes('transport')) return '#0EA5E9';
+  if(n.includes('licenca')) return '#2563EB';
+  if(n.includes('alvara')) return '#7C3AED';
+  if(n.includes('certidao')) return '#64748B';
+  if(n.includes('consulta')) return '#059669';
+  return '#D97706';
+}
+async function consolidarPrefeituraDuplicada(){
+  try{
+    const {data:deps,error}=await sb.from('departamentos').select('*');
+    if(error) throw error;
+    const prefs=(deps||[]).filter(d=>{
+      const n=normParamNome(d.nome);
+      return n === 'prefeitura' || n.includes('prefeitura e alvara') || n.includes('prefeitura e alvaras');
+    });
+    if(!prefs.length) return null;
+    const principal=prefs.find(d=>normParamNome(d.nome)==='prefeitura e alvaras') || prefs[0];
+    await sb.from('departamentos').update({
+      nome:'Prefeitura e Alvarás',
+      ativo:true,
+      cor:'#0EA5E9',
+      icone:'🏛️',
+      ordem:principal.ordem || 40
+    }).eq('id',principal.id);
+    for(const dep of prefs){
+      if(dep.id===principal.id) continue;
+      await sb.from('categorias').update({departamento_id:principal.id}).eq('departamento_id',dep.id);
+      await sb.from('demandas').update({departamento_id:principal.id}).eq('departamento_id',dep.id);
+      await sb.from('demandas').update({departamento_atual_id:principal.id}).eq('departamento_atual_id',dep.id);
+      const del=await sb.from('departamentos').delete().eq('id',dep.id);
+      if(del.error){
+        await sb.from('departamentos').update({ativo:false,nome:(dep.nome||'Prefeitura duplicada')+' (duplicado removido)'}).eq('id',dep.id);
+      }
+    }
+    return principal.id;
+  }catch(e){
+    console.warn('Não foi possível consolidar Prefeitura automaticamente:', e);
+    return null;
+  }
+}
 async function loadParam(){
   await garantirEstruturaDPOutros();
-  const {data}=await sb.from('departamentos').select('*').order('ordem');
+  await garantirEstruturaPrefeituraAlvara();
+  await consolidarPrefeituraDuplicada();
+  const {data}=await sb.from('departamentos').select('*').eq('ativo',true).order('ordem');
   const el=document.getElementById('pDeps');
   el.innerHTML=data?.length?data.map(d=>`
     <div onclick="selDep('${d.id}')" style="display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:8px;cursor:pointer;border:1px solid ${pDepSel2===d.id?'var(--accent)':'var(--border)'};background:${pDepSel2===d.id?'var(--accent-pale)':'transparent'};margin-bottom:6px;transition:all .12s">
-      <span style="font-size:18px;flex-shrink:0">${d.icone||'📋'}</span>
-      <div style="width:8px;height:8px;border-radius:50%;background:${d.cor||'#888'};flex-shrink:0"></div>
+      ${paramIconBox(departamentoIconeParam(d.nome,d.icone),departamentoCorParam(d.nome,d.cor))}
       <span style="flex:1;font-size:13px;font-weight:500;color:${pDepSel2===d.id?'var(--accent)':'var(--text)'}">${d.nome}</span>
       <span style="font-size:10px;padding:1px 6px;border-radius:10px;background:${d.ativo?'var(--green-pale)':'var(--surface2)'};color:${d.ativo?'var(--green)':'var(--text3)'};">${d.ativo?'Ativo':'Inativo'}</span>
     </div>`).join(''):'<div class="vazio" style="padding:20px;font-size:12px">Nenhum departamento. Clique em + Novo.</div>';
 }
-async function selDep(id){pDepSel2=id;pCatSel2=null;document.getElementById('btnNovaCat').style.display='inline-flex';await loadParam();const {data}=await sb.from('categorias').select('*').eq('departamento_id',id).order('ordem');const el=document.getElementById('pCats');el.innerHTML=data?.length?data.map(c=>`<div onclick="selCat('${c.id}')" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;cursor:pointer;border:1px solid ${pCatSel2===c.id?'var(--sky)':'var(--border)'};background:${pCatSel2===c.id?'var(--sky-pale)':'transparent'};margin-bottom:6px"><span style="flex:1;font-size:13px;font-weight:500">${c.nome}</span></div>`).join(''):'<div class="vazio">Nenhuma.</div>';document.getElementById('pTipos').innerHTML='<div class="vazio">← Selecione uma categoria</div>';}
+function categoriaIconeParam(nome){
+  const n=String(nome||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  if(n.includes('licenca')) return '▣';
+  if(n.includes('alvara')) return '◇';
+  if(n.includes('transport')) return '⇄';
+  if(n.includes('cadastro')) return '▤';
+  if(n.includes('process')) return '☰';
+  if(n.includes('regular')) return '✓';
+  return '▦';
+}
+function categoriaChaveParam(nome){
+  const n=normParamNome(nome);
+  if(n.includes('licenca') || n.includes('licencas')) return 'licencas';
+  return n;
+}
+async function consolidarCategoriasDuplicadas(depId){
+  try{
+    const {data,error}=await sb.from('categorias').select('*').eq('departamento_id',depId);
+    if(error) throw error;
+    const grupos=new Map();
+    (data||[]).forEach(c=>{
+      const k=categoriaChaveParam(c.nome);
+      if(!grupos.has(k)) grupos.set(k,[]);
+      grupos.get(k).push(c);
+    });
+    for(const [,cats] of grupos.entries()){
+      if(cats.length<2) continue;
+      cats.sort((a,b)=>(a.ordem||999)-(b.ordem||999));
+      const principal=cats.find(c=>categoriaChaveParam(c.nome)==='licencas') || cats[0];
+      if(categoriaChaveParam(principal.nome)==='licencas'){
+        await sb.from('categorias').update({nome:'Licenças',ativo:true,ordem:principal.ordem||10}).eq('id',principal.id);
+      }
+      for(const cat of cats){
+        if(cat.id===principal.id) continue;
+        await sb.from('tipos_demanda').update({categoria_id:principal.id}).eq('categoria_id',cat.id);
+        await sb.from('demandas').update({categoria_id:principal.id}).eq('categoria_id',cat.id);
+        const del=await sb.from('categorias').delete().eq('id',cat.id);
+        if(del.error){
+          await sb.from('categorias').update({ativo:false,nome:(cat.nome||'Categoria')+' (duplicada removida)'}).eq('id',cat.id);
+        }
+      }
+    }
+  }catch(e){
+    console.warn('Não foi possível consolidar categorias automaticamente:', e);
+  }
+}
+function categoriasUnicasParam(categorias){
+  const map=new Map();
+  (categorias||[]).filter(c=>c.ativo!==false).forEach(c=>{
+    const k=categoriaChaveParam(c.nome);
+    const atual=map.get(k);
+    if(!atual || (c.ordem||999)<(atual.ordem||999)) map.set(k,c);
+  });
+  return [...map.values()].sort((a,b)=>(a.ordem||999)-(b.ordem||999)||String(a.nome).localeCompare(String(b.nome),'pt-BR'));
+}
+async function selDep(id){pDepSel2=id;pCatSel2=null;document.getElementById('btnNovaCat').style.display='inline-flex';await loadParam();await consolidarCategoriasDuplicadas(id);const {data}=await sb.from('categorias').select('*').eq('departamento_id',id).eq('ativo',true).order('ordem');const cats=categoriasUnicasParam(data);const el=document.getElementById('pCats');el.innerHTML=cats.length?cats.map(c=>`<div onclick="selCat('${c.id}')" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;cursor:pointer;border:1px solid ${pCatSel2===c.id?'var(--sky)':'var(--border)'};background:${pCatSel2===c.id?'var(--sky-pale)':'transparent'};margin-bottom:6px">${paramIconBox(categoriaIconeParam(c.nome),categoriaCorParam(c.nome))}<span style="flex:1;font-size:13px;font-weight:500">${c.nome}</span></div>`).join(''):'<div class="vazio">Nenhuma.</div>';document.getElementById('pTipos').innerHTML='<div class="vazio">← Selecione uma categoria</div>';}
+function tipoChaveParam(nome){
+  const n=normParamNome(nome);
+  if(n.includes('licenca') && n.includes('transport')) return 'licenca_transportes';
+  return n;
+}
+function tiposUnicosParam(tipos){
+  const map=new Map();
+  (tipos||[]).filter(t=>t.ativo!==false).forEach(t=>{
+    const k=tipoChaveParam(t.nome);
+    const atual=map.get(k);
+    if(!atual || (t.ordem||999)<(atual.ordem||999)) map.set(k,t);
+  });
+  return [...map.values()].sort((a,b)=>String(a.nome).localeCompare(String(b.nome),'pt-BR'));
+}
+async function consolidarTiposDuplicados(catId){
+  try{
+    const {data,error}=await sb.from('tipos_demanda').select('*').eq('categoria_id',catId);
+    if(error) throw error;
+    const grupos=new Map();
+    (data||[]).forEach(t=>{
+      const k=tipoChaveParam(t.nome);
+      if(!grupos.has(k)) grupos.set(k,[]);
+      grupos.get(k).push(t);
+    });
+    for(const [,tipos] of grupos.entries()){
+      if(tipos.length<2) continue;
+      tipos.sort((a,b)=>(a.ordem||999)-(b.ordem||999));
+      const principal=tipos[0];
+      if(tipoChaveParam(principal.nome)==='licenca_transportes'){
+        await sb.from('tipos_demanda').update({nome:'Licença de Transportes',ativo:true,prefixo_numeracao:principal.prefixo_numeracao||'LIT',prioridade_padrao:principal.prioridade_padrao||'normal',ordem:principal.ordem||10}).eq('id',principal.id);
+      }
+      for(const tipo of tipos){
+        if(tipo.id===principal.id) continue;
+        await sb.from('demandas').update({tipo_demanda_id:principal.id}).eq('tipo_demanda_id',tipo.id);
+        const del=await sb.from('tipos_demanda').delete().eq('id',tipo.id);
+        if(del.error){
+          await sb.from('tipos_demanda').update({ativo:false,nome:(tipo.nome||'Tipo')+' (duplicado removido)'}).eq('id',tipo.id);
+        }
+      }
+    }
+  }catch(e){
+    console.warn('Não foi possível consolidar tipos automaticamente:', e);
+  }
+}
 async function selCat(id){
   pCatSel2=id;
   document.getElementById('btnNovoTipo').style.display='inline-flex';
   await selDep(pDepSel2);
-  const {data}=await sb.from('tipos_demanda').select('*').eq('categoria_id',id).order('nome');
+  await consolidarTiposDuplicados(id);
+  const {data}=await sb.from('tipos_demanda').select('*').eq('categoria_id',id).eq('ativo',true).order('nome');
+  const tipos=tiposUnicosParam(data);
   const el=document.getElementById('pTipos');
-  el.innerHTML=data?.length?data.map(t=>`
+  el.innerHTML=tipos.length?tipos.map(t=>`
     <div style="display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:8px;border:1px solid var(--border);margin-bottom:6px;background:var(--surface)">
+      ${paramIconBox(tipoIconeParam(t.nome),tipoCorParam(t.nome))}
       <span style="flex:1;font-size:13px;font-weight:500;color:var(--text)">${t.nome}</span>
       <span style="font-size:10px;font-weight:700;background:var(--amber-pale);color:#d97706;padding:2px 7px;border-radius:4px;font-family:monospace">${t.prefixo_numeracao}</span>
       <span style="font-size:10px;padding:1px 6px;border-radius:10px;background:var(--surface2);color:var(--text3)">${t.prioridade_padrao||'normal'}</span>
