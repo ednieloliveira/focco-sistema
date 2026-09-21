@@ -5024,6 +5024,10 @@ async function loadDash(){
   const im=new Date();im.setDate(1);const ims=im.toISOString();
   const hj=new Date().toISOString().split('T')[0];
   const demandaAtiva = d => !['concluida','concluido','cancelada','cancelado'].includes(String(d?.status||'').toLowerCase());
+  // Gestores e supervisores acompanham a equipe; colaboradores veem somente
+  // as demandas em que são o responsável atual.
+  const dashSomenteMinhas = U?.perfil !== 'gestor' && U?.perfil !== 'supervisor';
+  const escopoDash = query => dashSomenteMinhas ? query.eq('responsavel_atual_id', U.id) : query;
   // IMPORTANTE: NÃO usamos mais a RPC fn_dashboard_kpis para estes números.
   // Essa função roda no banco (fora deste arquivo) e estava contando
   // pendências/urgências de demandas já Concluídas/Canceladas. Para garantir
@@ -5034,17 +5038,17 @@ async function loadDash(){
   {
     const cincodiasAtras = new Date(Date.now()-5*86400000).toISOString();
     const [r1,r2,r3,r4,r5,r6,r7,r8] = await Promise.all([
-      sbRest('demandas').select('id',{count:'exact',head:true}).not('status','in','(concluida,cancelada)'),
-      sbRest('demandas').select('id',{count:'exact',head:true}).eq('status','aguardando_cliente'),
-      sbRest('demandas').select('id',{count:'exact',head:true}).eq('status','aguardando_orgao'),
-      sbRest('demandas').select('id,status').eq('prioridade','urgente').not('status','in','(concluida,cancelada)'),
-      sbRest('demandas').select('id',{count:'exact',head:true}).eq('status','aguardando_conclusao'),
-      sbRest('demandas').select('id',{count:'exact',head:true}).eq('status','concluida').gte('data_conclusao',ims),
+      escopoDash(sbRest('demandas').select('id',{count:'exact',head:true})).not('status','in','(concluida,cancelada)'),
+      escopoDash(sbRest('demandas').select('id',{count:'exact',head:true})).eq('status','aguardando_cliente'),
+      escopoDash(sbRest('demandas').select('id',{count:'exact',head:true})).eq('status','aguardando_orgao'),
+      escopoDash(sbRest('demandas').select('id,status')).eq('prioridade','urgente').not('status','in','(concluida,cancelada)'),
+      escopoDash(sbRest('demandas').select('id',{count:'exact',head:true})).eq('status','aguardando_conclusao'),
+      escopoDash(sbRest('demandas').select('id',{count:'exact',head:true})).eq('status','concluida').gte('data_conclusao',ims),
       sbRest('pendencias').select('id,demanda_id').eq('resolvida',false),
-      sbRest('demandas').select('id,status').not('status','in','(concluida,cancelada)').lt('ultima_movimentacao',cincodiasAtras)
+      escopoDash(sbRest('demandas').select('id,status')).not('status','in','(concluida,cancelada)').lt('ultima_movimentacao',cincodiasAtras)
     ]);
     // Pendências: filtrar pelo demanda_id — sbRest não suporta join relacional
-    const {data:_demsAtivas}=await sbRest('demandas').select('id,status').not('status','in','(concluida,cancelada)');
+    const {data:_demsAtivas}=await escopoDash(sbRest('demandas').select('id,status')).not('status','in','(concluida,cancelada)');
     const _idsAtivos=(_demsAtivas||[]).filter(demandaAtiva).map(d=>d.id);
     const pendAtivas=(r7.data||[]).filter(p=>_idsAtivos.includes(p.demanda_id));
     kpis = {ativas:r1.count||0,ag_cliente:r2.count||0,ag_orgao:r3.count||0,urgentes:(r4.data||[]).filter(demandaAtiva).length,ag_conclusao:r5.count||0,conc_mes:r6.count||0,pendencias:pendAtivas.length,sem_mov:(r8.data||[]).filter(demandaAtiva).length,vencidas:0};
@@ -5060,11 +5064,11 @@ async function loadDash(){
   // PAINEL URGENTE HOJE
   const urgenteItems = [];
   if(u>0) urgenteItems.push({label:`${u} demanda(s) urgente(s) em aberto`,badge:u,fn:`ir('dem')`});
-  const {data:venc}=await sbRest('demandas').select('id,numero,status').not('status','in','(concluida,cancelada)').not('prazo','is','null').lt('prazo',hj);
+  const {data:venc}=await escopoDash(sbRest('demandas').select('id,numero,status')).not('status','in','(concluida,cancelada)').not('prazo','is','null').lt('prazo',hj);
   const vencAtivas=(venc||[]).filter(demandaAtiva);
   if(vencAtivas.length) urgenteItems.push({label:`${vencAtivas.length} demanda(s) com prazo vencido`,badge:vencAtivas.length,fn:`ir('dem')`});
   // Pendências no painel urgente: filtrar por IDs de demandas ativas (sbRest não suporta join)
-  const {data:demsAtivas}=await sbRest('demandas').select('id,status').not('status','in','(concluida,cancelada)');
+  const {data:demsAtivas}=await escopoDash(sbRest('demandas').select('id,status')).not('status','in','(concluida,cancelada)');
   const idsAtivos=(demsAtivas||[]).filter(demandaAtiva).map(d=>d.id);
   const {data:pendRaw}=await sbRest('pendencias').select('id,demanda_id').eq('resolvida',false);
   const peReal=(pendRaw||[]).filter(p=>idsAtivos.includes(p.demanda_id)).length;
@@ -5081,8 +5085,8 @@ async function loadDash(){
   }
 
   // Central de Atenção — demandas sem movimentação há mais de 5 dias
-  const {data:atDems}=await _sb.from('demandas')
-    .select('id,numero,ultima_movimentacao,clientes(nome),profiles!demandas_responsavel_atual_id_fkey(nome),departamentos!demandas_departamento_atual_id_fkey(nome)')
+  const {data:atDems}=await escopoDash(_sb.from('demandas')
+    .select('id,numero,ultima_movimentacao,responsavel_atual_id,clientes(nome),profiles!demandas_responsavel_atual_id_fkey(nome),departamentos!demandas_departamento_atual_id_fkey(nome)'))
     .not('status','in','(concluida,cancelada)')
     .lt('ultima_movimentacao', new Date(Date.now()-5*86400000).toISOString())
     .order('ultima_movimentacao',{ascending:true}).limit(8);
@@ -5097,22 +5101,23 @@ async function loadDash(){
   document.getElementById('dAtenc').innerHTML=at?.data?.length?at.data.map(d=>`<div class="ui" onclick="abrirDet('${d.id}')"><div class="uc" style="background:${d.nivel_inatividade==='prioridade_maxima'?'#501313':'var(--red)'}"></div><div class="uinfo"><div class="utit">${d.numero} — ${d.cliente_nome}</div><div class="umeta">${d.responsavel_nome} · ${d.departamento_nome}</div></div><span class="ud tr">${d.dias_sem_movimentacao}d</span></div>`).join(''):'<div class="vazio">Nenhuma crítica ✅</div>';
   carregarLembretesDash();
 
-  const {data:cr}=await sbRest('demandas').select('responsavel_atual_id').not('status','in','(concluida,cancelada)').limit(500);
+  const {data:cr}=await escopoDash(sbRest('demandas').select('responsavel_atual_id')).not('status','in','(concluida,cancelada)').limit(500);
   const eC=document.getElementById('dCarga');
   if(!cr?.length){eC.innerHTML='<div class="vazio">Sem demandas abertas.</div>';}
   else{const profs=dbGet('profiles');const m={};cr.forEach(d=>{const id=d.responsavel_atual_id;const prof=profs.find(p=>p.id===id);const n=prof?.nome||'?';if(!m[id])m[id]={nome:n,n:0};m[id].n++;});
   const l=Object.values(m).sort((a,b)=>b.n-a.n),mx=l[0]?.n||1;
   eC.innerHTML=l.map(c=>{const i=c.nome.split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase(),pct=Math.round(c.n/mx*100),cor=pct>80?'var(--red)':pct>60?'var(--amber)':'var(--sky)';return`<div class="carga-item"><div class="carga-av">${i}</div><div style="font-size:13px;flex:1">${c.nome.split(' ')[0]}</div><div class="carga-bar" style="width:80px"><div class="carga-fill" style="width:${pct}%;background:${cor}"></div></div><div class="carga-n">${c.n}</div></div>`;}).join('');}
 
-  const {data:ap}=await sb.from('aprovacoes').select('*,demandas(numero,clientes(nome)),profiles!aprovacoes_solicitado_por_fkey(nome)').eq('status','pendente').order('solicitado_em');
-  document.getElementById('dAprov').innerHTML=ap?.length?ap.map(a=>`<div class="ui" onclick="abrirDet('${a.demanda_id}')"><div class="uc" style="background:var(--green)"></div><div class="uinfo"><div class="utit">${a.demandas?.numero}</div><div class="umeta">${a.demandas?.clientes?.nome} · ${a.profiles?.nome}</div></div><span class="ud tg">Aprovar</span></div>`).join(''):'<div class="vazio">Nenhuma pendente ✅</div>';
+  const {data:apRaw}=await sb.from('aprovacoes').select('*,demandas(numero,responsavel_atual_id,clientes(nome)),profiles!aprovacoes_solicitado_por_fkey(nome)').eq('status','pendente').order('solicitado_em');
+  const ap=(apRaw||[]).filter(a=>!dashSomenteMinhas||a.demandas?.responsavel_atual_id===U.id);
+  document.getElementById('dAprov').innerHTML=ap.length?ap.map(a=>`<div class="ui" onclick="abrirDet('${a.demanda_id}')"><div class="uc" style="background:var(--green)"></div><div class="uinfo"><div class="utit">${a.demandas?.numero}</div><div class="umeta">${a.demandas?.clientes?.nome} · ${a.profiles?.nome}</div></div><span class="ud tg">Aprovar</span></div>`).join(''):'<div class="vazio">Nenhuma pendente ✅</div>';
 
   // Próximas ações vencidas — query direta (ignora ações de demandas já concluídas/canceladas)
   const {data:prAcoesRaw}=await _sb.from('proximas_acoes')
-    .select('id,descricao,data_prevista,demanda_id,profiles!proximas_acoes_responsavel_id_fkey(nome),demandas(numero,status,clientes(nome))')
+    .select('id,descricao,data_prevista,demanda_id,profiles!proximas_acoes_responsavel_id_fkey(nome),demandas(numero,status,responsavel_atual_id,clientes(nome))')
     .eq('concluida',false).lt('data_prevista',hj)
     .order('data_prevista',{ascending:true}).limit(30);
-  const prAcoes=(prAcoesRaw||[]).filter(p=>p.demandas&&!['concluida','cancelada'].includes(p.demandas.status)).slice(0,8);
+  const prAcoes=(prAcoesRaw||[]).filter(p=>p.demandas&&!['concluida','cancelada'].includes(p.demandas.status)&&(!dashSomenteMinhas||p.demandas.responsavel_atual_id===U.id)).slice(0,8);
   const pr={data:(prAcoes||[]).map(p=>({
     ...p,
     demanda_numero: p.demandas?.numero||'—',
@@ -5123,7 +5128,7 @@ async function loadDash(){
   document.getElementById('dProx').innerHTML=pr?.data?.length?pr.data.map(p=>`<div class="ui" onclick="abrirDet('${p.demanda_id}')"><div class="uc" style="background:var(--amber)"></div><div class="uinfo"><div class="utit">${p.demanda_numero} — ${p.cliente_nome}</div><div class="umeta">${p.descricao} · ${p.responsavel_nome}</div></div><span class="ud ta">${p.dias_vencida}d</span><button onclick="event.stopPropagation();concluirProximaAcaoRapida('${p.id}','${p.demanda_id||''}')" style="background:var(--green);border:none;color:#fff;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:11px;font-weight:700;margin-left:6px">Concluir</button></div>`).join(''):'<div class="vazio">Nenhuma vencida ✅</div>';
 
   // Mini kanban no dashboard (sem concluídas para compactar)
-  const {data:kbData}=await sbRest('demandas').select('id,numero,resumo,status,prioridade,prazo,ultima_movimentacao,cliente_id,responsavel_atual_id,departamento_atual_id').not('status','in','(concluida,cancelada)').order('created_at',{ascending:false}).limit(150);
+  const {data:kbData}=await escopoDash(sbRest('demandas').select('id,numero,resumo,status,prioridade,prazo,ultima_movimentacao,cliente_id,responsavel_atual_id,departamento_atual_id')).not('status','in','(concluida,cancelada)').order('created_at',{ascending:false}).limit(150);
   // Render dashboard calendar
   await renderDashCal();
 }
